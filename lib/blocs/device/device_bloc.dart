@@ -74,27 +74,25 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
   Future<void> _onStopSending(
       StopSendingEvent event, Emitter<DeviceState> emit) async {
     final bluetoothBloc = event.context.read<BluetoothBloc>();
-    emit(state.copyWith(
-        trainModel: state.trainModel,
-        playbackState: PlaybackState.stopped,
-        startIndex: 0,
-        isSending: false));
-
-    var note = [
-      [99]
-    ];
 
     Map<String, dynamic> batchMessage = {
-      "rhythm": state.trainModel?.rhythm,
-      "bpm": 250,
-      "notes": note,
+      'notes': [99],
+      'rgb': [
+        [0, 0, 0]
+      ],
     };
 
     final String jsonString = '${jsonEncode(batchMessage)}\n';
     final List<int> data = utf8.encode(jsonString);
 
-    await bluetoothBloc.state.characteristic!
-        .write(data, withoutResponse: true);
+    emit(state.copyWith(
+      playbackState: PlaybackState.stopped,
+      isSending: state.isSending,
+      startIndex: 0,
+      trainModel: state.trainModel,
+    ));
+
+    await _sendLongData(bluetoothBloc, data);
   }
 
   Future<void> _sendMessage(
@@ -136,9 +134,6 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
         'notes': note,
         'rgb': rgbValues,
       };
-
-      print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-');
-      print('Sending message: $batchMessage');
 
       final String jsonString = '${jsonEncode(batchMessage)}\n';
       final List<int> data = utf8.encode(jsonString);

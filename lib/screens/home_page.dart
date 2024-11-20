@@ -51,7 +51,7 @@ class HomePageState extends State<HomePage> {
 
     final text = Text(
       state.isConnected
-          ? 'Connected to ${state.connectedDevice?.name ?? 'Unknown Device'}'
+          ? 'Connected to ${state.connectedDevice?.advName ?? 'Unknown Device'}'
           : 'Disconnected',
       style: TextStyle(
         fontSize: 18,

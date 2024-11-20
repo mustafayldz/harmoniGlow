@@ -242,7 +242,8 @@ class SongPageState extends State<SongPage> {
                   playbackState == PlaybackState.paused
               ? () {
                   setState(() {
-                    _controller?.reset();
+                    _controller?.seekTo(const Duration(seconds: 0));
+                    _controller?.pause();
                     playbackState = PlaybackState.stopped;
                   });
                   deviceBloc.add(StopSendingEvent(context));
