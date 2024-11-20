@@ -126,15 +126,15 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
         } else {
           // Otherwise, fetch the RGB value from local storage
           String drumName =
-              DrumParts.drumParts[drumPart.toString()]?["name"] as String;
+              DrumParts.drumParts[drumPart.toString()]?['name'] as String;
           List<int> rgb = await localStorage.getRgbForDrumPart(drumName);
           rgbValues.add(rgb);
         }
       }
 
       Map<String, dynamic> batchMessage = {
-        "notes": note,
-        "rgb": rgbValues,
+        'notes': note,
+        'rgb': rgbValues,
       };
 
       print('-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-');
@@ -183,8 +183,13 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
       final List<int> chunk = data.sublist(offset, end);
 
       try {
-        await bloc.state.characteristic!.write(chunk, withoutResponse: true);
-        debugPrint("Chunk sent successfully, offset: $offset");
+        // Ensure the characteristic supports writing
+        if (bloc.state.characteristic!.properties.write) {
+          await bloc.state.characteristic!.write(chunk);
+          debugPrint('Chunk sent successfully, offset: $offset');
+        } else {
+          debugPrint('Error: Characteristic does not support writing.');
+        }
       } catch (error) {
         debugPrint('Error sending chunk at offset $offset: $error');
       }

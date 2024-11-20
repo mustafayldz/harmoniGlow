@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -29,15 +30,16 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       emit(state.copyWith(isScanning: true));
 
       // Start the scan with a timeout
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
+      await FlutterBluePlus.startScan(
+          withServices: [], timeout: const Duration(seconds: 3));
+
       debugPrint('Bluetooth scan started.');
 
-      // Listen to scan results stream
-      final subscription = FlutterBluePlus.scanResults.listen(
+      // Listen for scan results and handle them properly
+      _scanSubscription = FlutterBluePlus.scanResults.listen(
         (results) {
-          debugPrint('Scan results received: ${results.length} devices found.');
-          if (emit.isDone) {
-            return; // Check if the emitter is done before emitting
+          if (results.isEmpty) {
+            debugPrint('No devices found during scan.');
           }
           emit(state.copyWith(scanResults: results));
         },
@@ -49,12 +51,11 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         },
       );
 
-      await FlutterBluePlus.stopScan();
-      emit(state.copyWith(isScanning: false));
-      debugPrint('Bluetooth scan completed.');
+      // Await the scan to complete before proceeding (using the timeout provided)
+      await Future.delayed(const Duration(seconds: 5));
 
-      // Cancel the subscription when done
-      await subscription.cancel();
+      // Stop the scan after timeout
+      await _stopScanning(emit);
     } catch (e) {
       debugPrint('Error during Bluetooth scan: $e');
       emit(state.copyWith(
@@ -64,9 +65,23 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
   Future<void> _onStopScan(
       StopScanEvent event, Emitter<BluetoothStateC> emit) async {
-    await FlutterBluePlus.stopScan();
-    await _scanSubscription?.cancel();
-    emit(state.copyWith(isScanning: false, scanResults: []));
+    await _stopScanning(emit);
+  }
+
+  Future<void> _stopScanning(Emitter<BluetoothStateC> emit) async {
+    try {
+      debugPrint('Stopping Bluetooth scan...');
+      await FlutterBluePlus.stopScan();
+      await _scanSubscription?.cancel();
+      _scanSubscription = null;
+
+      emit(state.copyWith(isScanning: false));
+      debugPrint('Bluetooth scan stopped.');
+    } catch (e) {
+      debugPrint('Error while stopping scan: $e');
+      emit(state.copyWith(
+          isScanning: false, errorMessage: 'Failed to stop scanning: $e'));
+    }
   }
 
   Future<void> _onConnectToDevice(
@@ -75,12 +90,19 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       // Connect to the device
       await event.device.connect();
 
+      // Discover services
       List<BluetoothService> services = await event.device.discoverServices();
 
-      // Find the first writable characteristic
+      // Find the correct characteristic
       for (BluetoothService service in services) {
         for (BluetoothCharacteristic c in service.characteristics) {
-          if (c.properties.write) {
+          debugPrint(
+              'Service UUID: ${service.uuid}, Characteristic UUID: ${c.uuid}, Properties: ${c.properties}');
+
+          // Check if the service UUID and characteristic UUID match the target
+          if (service.uuid.toString().toLowerCase() == 'ffe0' &&
+              c.uuid.toString().toLowerCase() == 'ffe1' &&
+              (c.properties.write)) {
             characteristic = c;
             emit(state.copyWith(
               characteristic: c,
@@ -91,6 +113,12 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
           }
         }
       }
+
+      // If no writable characteristic found
+      emit(state.copyWith(
+          isConnected: true,
+          connectedDevice: event.device,
+          errorMessage: 'No writable characteristic found.'));
     } catch (e) {
       emit(state.copyWith(
           characteristic: null,

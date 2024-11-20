@@ -4,7 +4,6 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
-import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/home_page.dart';
 
@@ -22,7 +21,6 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
   @override
   void initState() {
     super.initState();
-    // _checkSavedDevice();
     _startBluetoothScan();
   }
 
@@ -34,18 +32,6 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     context.read<BluetoothBloc>().add(StopScanEvent());
   }
 
-  // void _checkSavedDevice() async {
-  //   final device = await _storageService.getSavedDevice();
-  //   if (device.isNotEmpty) {
-  //     // Proceed with using the saved device information.
-  //     String deviceId = device['deviceId'] ?? 'Unknown ID';
-  //     String deviceName = device['deviceName'] ?? 'Unknown Name';
-  //     debugPrint('Device ID: $deviceId, Device Name: $deviceName');
-  //   } else {
-  //     // Handle the case where no device has been saved, such as prompting the user to connect.
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,12 +42,6 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => const RgbLedsScreen(),
-              //   ),
-              // );
               _startBluetoothScan();
             },
           ),
@@ -74,8 +54,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
           }
 
           filteredResults = state.scanResults.where((result) {
-            return result.advertisementData.serviceUuids
-                .contains(Constants.myServiceUuid);
+            return result.device.advName.isNotEmpty;
           }).toList();
 
           if (filteredResults.isEmpty) {
@@ -126,7 +105,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
           ),
         ),
         title: Text(
-          device.name.isNotEmpty ? device.name : 'Unknown Device',
+          device.advName.isNotEmpty ? device.advName : 'Unknown Device',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         trailing: const Icon(Icons.arrow_forward_ios),

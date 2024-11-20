@@ -10,7 +10,7 @@ class Countdown extends StatefulWidget {
 }
 
 class CountdownState extends State<Countdown> {
-  int _counter = 5;
+  int _counter = 3;
   late Timer _timer;
 
   @override
