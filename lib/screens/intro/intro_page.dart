@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/home_page.dart';
-import 'package:harmoniglow/screens/intro/drum_part_setup.dart';
+import 'package:harmoniglow/screens/intro/rgb_picker.dart';
 
 class IntroPage extends StatefulWidget {
   const IntroPage({super.key});
@@ -25,12 +26,14 @@ class IntroPageState extends State<IntroPage> {
             _currentPage = page;
           });
         },
-        itemCount: 11,
+        itemCount: 9,
         itemBuilder: (context, index) {
           if (index == 0) {
             return const WelcomePage();
           } else {
-            return DrumPartSetupPage(partNumber: index);
+            return RGBPicker(
+              partNumber: index,
+            );
           }
         },
       ),
@@ -55,12 +58,13 @@ class IntroPageState extends State<IntroPage> {
               opacity: 1.0,
               duration: const Duration(milliseconds: 300),
               child: TextButton(
-                onPressed: _currentPage < 10
+                onPressed: _currentPage < 8
                     ? () => _pageController.nextPage(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                         )
-                    : () {
+                    : () async {
+                        StorageService.setSkipIntroPage(true);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -68,7 +72,7 @@ class IntroPageState extends State<IntroPage> {
                           ),
                         );
                       },
-                child: Text(_currentPage < 10 ? 'Next' : 'Done'),
+                child: Text(_currentPage < 8 ? 'Next' : 'Done'),
               ),
             ),
           ],

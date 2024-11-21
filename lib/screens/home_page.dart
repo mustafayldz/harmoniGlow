@@ -4,7 +4,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
-import 'package:harmoniglow/screens/rgb_leds.dart';
+import 'package:harmoniglow/screens/setting/rgb_leds.dart';
 import 'package:harmoniglow/screens/songs/songs.dart';
 import 'package:harmoniglow/screens/training/traning.dart';
 

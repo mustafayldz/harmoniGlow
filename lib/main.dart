@@ -8,7 +8,9 @@ import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/bluetooth/bluetooth_off.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await StorageService.initializeDrumParts();
   setupLocator();
   runApp(const HarmoniGlow());
 }

@@ -2,185 +2,149 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:harmoniglow/constants.dart';
+import 'package:harmoniglow/models/drum_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
   /// Singleton instance
   static final StorageService _instance = StorageService._internal();
-
   factory StorageService() => _instance;
-
   StorageService._internal();
+
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+
+  static const String drumPartsKey = "drumParts";
+  static const bool skipIntro = false;
 
   /// Save the paired device ID and device name
   Future<void> saveDevice(BluetoothDevice device) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('paired_device_id', device.remoteId.toString());
-    await prefs.setString('paired_device_name', device.advName);
+    final prefs = await _prefs;
+    prefs.setString('paired_device_id', device.remoteId.toString());
+    prefs.setString('paired_device_name', device.advName);
   }
 
   /// Get the saved paired device ID and device name
   Future<Map<String, String?>> getSavedDevice() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? deviceId = prefs.getString('paired_device_id');
-    String? deviceName = prefs.getString('paired_device_name');
-
-    if (deviceId != null && deviceName != null) {
-      return {
-        'deviceId': deviceId,
-        'deviceName': deviceName,
-      };
-    }
-    return {};
+    final prefs = await _prefs;
+    return {
+      'deviceId': prefs.getString('paired_device_id'),
+      'deviceName': prefs.getString('paired_device_name'),
+    };
   }
 
   /// Clear the paired device ID and device name
   Future<void> clearDevice() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('paired_device_id');
-    await prefs.remove('paired_device_name');
+    final prefs = await _prefs;
+    prefs.remove('paired_device_id');
+    prefs.remove('paired_device_name');
   }
 
-  /// Save the RGB values for each LED
-  Future<void> saveAllLedData(List<Map<String, dynamic>> ledData) async {
-    final prefs = await SharedPreferences.getInstance();
+  ////--------------------------------- Drum Parts ---------------------------------////
+  ///
+  ///
+  /// Save all drum parts in bulk when the app starts, if they haven't been saved yet
+  static Future<void> initializeDrumParts() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedData = prefs.getString(drumPartsKey);
 
-    // Convert the list of LED data maps to a JSON string
-    String jsonString = jsonEncode(ledData);
-
-    // Save the JSON string to SharedPreferences
-    await prefs.setString('ledData', jsonString);
-
-    debugPrint('All LED data (names and RGB values) saved successfully.');
+    if (savedData == null) {
+      // Save the predefined drum parts
+      await saveDrumPartsBulk(DrumParts.drumParts.values
+          .map((e) => DrumModel.fromJson(e))
+          .toList());
+    }
   }
 
-  Future<List<Map<String, dynamic>>> loadAllLedData() async {
-    final prefs = await SharedPreferences.getInstance();
+  /// Save all drum parts in bulk
+  static Future<void> saveDrumPartsBulk(List<DrumModel> drumParts) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String encodedDrumParts =
+        jsonEncode(drumParts.map((e) => e.toJson()).toList());
+    await prefs.setString(drumPartsKey, encodedDrumParts);
+  }
 
-    // Get the JSON string from SharedPreferences
-    String? jsonString = prefs.getString('ledData');
+  /// Retrieves drum parts data from SharedPreferences.
+  /// Returns a list of DrumModel or null if not found.
+  static Future<List<DrumModel>?> getDrumPartsBulk() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedData = prefs.getString(drumPartsKey);
 
-    // Define default LED data if no data exists in SharedPreferences
-    const List<Map<String, dynamic>> defaultLedData = [
-      {"name": "Hi-Hat Open", "red": 0, "green": 0, "blue": 0},
-      {"name": "Hi-Hat Closed", "red": 0, "green": 0, "blue": 0},
-      {"name": "Snare Drum", "red": 0, "green": 0, "blue": 0},
-      {"name": "Tom 1", "red": 0, "green": 0, "blue": 0},
-      {"name": "Tom 2", "red": 0, "green": 0, "blue": 0},
-      {"name": "Tom 3", "red": 0, "green": 0, "blue": 0},
-      {"name": "Crash Cymbal", "red": 0, "green": 0, "blue": 0},
-      {"name": "Ride Cymbal", "red": 0, "green": 0, "blue": 0},
-      {"name": "Kick Drum", "red": 0, "green": 0, "blue": 0},
-    ];
+    if (savedData != null) {
+      try {
+        // Decode the JSON string and cast it to List<DrumModel>
+        return List<DrumModel>.from(
+            jsonDecode(savedData).map((x) => DrumModel.fromJson(x)));
+      } catch (e) {
+        // Handle any parsing errors
+        debugPrint("Error decoding saved drum parts: ${e.toString()}");
+        return null;
+      }
+    }
+    return null;
+  }
 
-    // If no data exists, return the default LED data
-    if (jsonString == null) {
-      return defaultLedData;
+  /// Save a single drum part
+  static Future<void> saveDrumPart(String id, DrumModel drumPart) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? encodedDrumParts = prefs.getString(drumPartsKey);
+    List<DrumModel> drumParts = [];
+
+    if (encodedDrumParts != null) {
+      drumParts = List<DrumModel>.from(
+          jsonDecode(encodedDrumParts).map((x) => DrumModel.fromJson(x)));
     }
 
-    // Decode the JSON string back to a list of maps
-    List<dynamic> decodedJson = jsonDecode(jsonString);
-    return List<Map<String, dynamic>>.from(
-        decodedJson.map((item) => Map<String, dynamic>.from(item)));
-  }
-
-  /// Get RGB values for a specific drum part by name
-  Future<List<int>> getRgbForDrumPart(String drumName) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Get the JSON string from SharedPreferences
-    String? jsonString = prefs.getString('ledData');
-
-    // Define a default RGB color (black/off)
-    List<int> defaultRgb = [0, 0, 0];
-
-    // If no data exists, return the default RGB value
-    if (jsonString == null) {
-      return defaultRgb;
+    // Update or add the drum part
+    int index = drumParts.indexWhere((element) => element.led.toString() == id);
+    if (index != -1) {
+      drumParts[index] = drumPart;
+    } else {
+      drumParts.add(drumPart);
     }
 
-    // Decode the JSON string back to a list of maps
-    List<dynamic> decodedJson = jsonDecode(jsonString);
-    List<Map<String, dynamic>> ledData = List<Map<String, dynamic>>.from(
-        decodedJson.map((item) => Map<String, dynamic>.from(item)));
+    await prefs.setString(
+        drumPartsKey, jsonEncode(drumParts.map((e) => e.toJson()).toList()));
+  }
 
-    // Search for the drum part by name
-    for (var item in ledData) {
-      if (item["name"] == drumName) {
-        int red = item["red"] ?? 0;
-        int green = item["green"] ?? 0;
-        int blue = item["blue"] ?? 0;
-        return [red, green, blue];
+  /// Get a single drum part by ID, return null if not found
+  static Future<DrumModel?> getDrumPart(String id) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? encodedDrumParts = prefs.getString(drumPartsKey);
+
+    if (encodedDrumParts != null) {
+      List<DrumModel> drumParts = List<DrumModel>.from(
+          jsonDecode(encodedDrumParts).map((x) => DrumModel.fromJson(x)));
+      try {
+        return drumParts.firstWhere((element) => element.led.toString() == id);
+      } catch (e) {
+        return null;
       }
     }
 
-    // Return default RGB value if the drum part is not found
-    return defaultRgb;
+    return null;
   }
 
-  // Save the RGB values for a specific drum part by name
-  Future<void> saveRgbForDrumPart(String drumName, List<int> rgbValues) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Get the JSON string from SharedPreferences
-    String? jsonString = prefs.getString('ledData');
-
-    // Define a default LED data map
-    Map<String, dynamic> defaultLedData = {
-      "name": drumName,
-      "red": 0,
-      "green": 0,
-      "blue": 0,
-    };
-
-    // If no data exists, create a new list with the default LED data
-    if (jsonString == null) {
-      List<Map<String, dynamic>> ledData = List<Map<String, dynamic>>.from([
-        defaultLedData,
-      ]);
-      jsonString = jsonEncode(ledData);
+  /// Update the RGB values of a drum part
+  static Future<void> updateDrumPartRgb(String id, List<int> rgb) async {
+    DrumModel? drumPart = await getDrumPart(id);
+    if (drumPart != null) {
+      drumPart.rgb = rgb;
+      await saveDrumPart(id, drumPart);
     }
-
-    // Decode the JSON string back to a list of maps
-    List<dynamic> decodedJson = jsonDecode(jsonString);
-    List<Map<String, dynamic>> ledData = List<Map<String, dynamic>>.from(
-        decodedJson.map((item) => Map<String, dynamic>.from(item)));
-
-    // Search for the drum part by name
-    bool found = false;
-    for (var item in ledData) {
-      if (item["name"] == drumName) {
-        item["red"] = rgbValues[0];
-        item["green"] = rgbValues[1];
-        item["blue"] = rgbValues[2];
-        found = true;
-        break;
-      }
-    }
-
-    // If the drum part is not found, add it to the list
-    if (!found) {
-      ledData.add({
-        "name": drumName,
-        "red": rgbValues[0],
-        "green": rgbValues[1],
-        "blue": rgbValues[2],
-      });
-    }
-
-    // Convert the list of LED data maps to a JSON string
-    jsonString = jsonEncode(ledData);
-
-    // Save the JSON string to SharedPreferences
-    await prefs.setString('ledData', jsonString);
-
-    debugPrint('RGB values for $drumName saved successfully.');
   }
 
-  /// has the user seen the intro screen
+  /// Skip the intro page
+  ///
+  /// Returns true if the intro page should be skipped
+  static Future<bool> skipIntroPage() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('skip_intro') ?? false;
+  }
 
-  Future<bool> hasSeenIntro() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('has_seen_intro') ?? false;
+  /// Set the skip intro page flag
+  static Future<void> setSkipIntroPage(bool skip) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('skip_intro', skip);
   }
 }

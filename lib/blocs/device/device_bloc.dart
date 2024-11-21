@@ -7,6 +7,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/enums.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
+import 'package:harmoniglow/models/drum_model.dart';
 
 import 'device_event.dart';
 import 'device_state.dart';
@@ -99,9 +100,6 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
       BuildContext context, Emitter<DeviceState> emit) async {
     final bluetoothBloc = context.read<BluetoothBloc>();
 
-    // Use context from a widget where StorageService is provided
-    final localStorage = RepositoryProvider.of<StorageService>(context);
-
     int bpm = state.trainModel?.bpm ?? 60;
     int timeInterval = (60000 ~/ bpm);
     int startIndex = (state.startIndex != 0) ? state.startIndex : 0;
@@ -125,7 +123,8 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
           // Otherwise, fetch the RGB value from local storage
           String drumName =
               DrumParts.drumParts[drumPart.toString()]?['name'] as String;
-          List<int> rgb = await localStorage.getRgbForDrumPart(drumName);
+          DrumModel? drumParta = await StorageService.getDrumPart(drumName);
+          List<int> rgb = drumParta?.rgb ?? [0, 0, 0];
           rgbValues.add(rgb);
         }
       }
