@@ -5,7 +5,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/screens/home_page.dart';
+import 'package:harmoniglow/screens/intro/intro_page.dart';
 
 class FindDevicesScreen extends StatefulWidget {
   const FindDevicesScreen({super.key});
@@ -145,7 +145,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const HomePage(),
+        builder: (context) => const IntroPage(),
       ),
     );
   }

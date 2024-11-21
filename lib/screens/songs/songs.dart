@@ -171,6 +171,7 @@ class SongPageState extends State<SongPage> {
                           },
                           onEnded: (metaData) => setState(() {
                             playbackState = PlaybackState.stopped;
+                            deviceBloc.add(StopSendingEvent(context));
                           }),
                         ),
                     ],

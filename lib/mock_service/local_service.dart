@@ -42,9 +42,6 @@ class StorageService {
   }
 
   /// Save the RGB values for each LED
-  ///
-  ///
-
   Future<void> saveAllLedData(List<Map<String, dynamic>> ledData) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -119,5 +116,71 @@ class StorageService {
 
     // Return default RGB value if the drum part is not found
     return defaultRgb;
+  }
+
+  // Save the RGB values for a specific drum part by name
+  Future<void> saveRgbForDrumPart(String drumName, List<int> rgbValues) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Get the JSON string from SharedPreferences
+    String? jsonString = prefs.getString('ledData');
+
+    // Define a default LED data map
+    Map<String, dynamic> defaultLedData = {
+      "name": drumName,
+      "red": 0,
+      "green": 0,
+      "blue": 0,
+    };
+
+    // If no data exists, create a new list with the default LED data
+    if (jsonString == null) {
+      List<Map<String, dynamic>> ledData = List<Map<String, dynamic>>.from([
+        defaultLedData,
+      ]);
+      jsonString = jsonEncode(ledData);
+    }
+
+    // Decode the JSON string back to a list of maps
+    List<dynamic> decodedJson = jsonDecode(jsonString);
+    List<Map<String, dynamic>> ledData = List<Map<String, dynamic>>.from(
+        decodedJson.map((item) => Map<String, dynamic>.from(item)));
+
+    // Search for the drum part by name
+    bool found = false;
+    for (var item in ledData) {
+      if (item["name"] == drumName) {
+        item["red"] = rgbValues[0];
+        item["green"] = rgbValues[1];
+        item["blue"] = rgbValues[2];
+        found = true;
+        break;
+      }
+    }
+
+    // If the drum part is not found, add it to the list
+    if (!found) {
+      ledData.add({
+        "name": drumName,
+        "red": rgbValues[0],
+        "green": rgbValues[1],
+        "blue": rgbValues[2],
+      });
+    }
+
+    // Convert the list of LED data maps to a JSON string
+    jsonString = jsonEncode(ledData);
+
+    // Save the JSON string to SharedPreferences
+    await prefs.setString('ledData', jsonString);
+
+    debugPrint('RGB values for $drumName saved successfully.');
+  }
+
+  /// has the user seen the intro screen
+
+  Future<bool> hasSeenIntro() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('has_seen_intro') ?? false;
   }
 }

@@ -31,7 +31,9 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
       // Start the scan with a timeout
       await FlutterBluePlus.startScan(
-          withServices: [], timeout: const Duration(seconds: 3));
+          withNames: ["BT05"],
+          withServices: [],
+          timeout: const Duration(seconds: 3));
 
       debugPrint('Bluetooth scan started.');
 

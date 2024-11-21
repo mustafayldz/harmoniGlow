@@ -1,7 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 
@@ -43,19 +40,29 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
   checkSavedRgbValues() async {
     loadedLedData = await prefs.loadAllLedData();
 
-    if (loadedLedData.isNotEmpty) {
-      for (int i = 0; i < loadedLedData.length; i++) {
+    for (int i = 0; i < drumPartKeys.length; i++) {
+      if (loadedLedData.isNotEmpty &&
+          loadedLedData[i]["red"] != 0 &&
+          loadedLedData[i]["green"] != 0 &&
+          loadedLedData[i]["blue"] != 0) {
         redValues[i] = loadedLedData[i]["red"];
         greenValues[i] = loadedLedData[i]["green"];
         blueValues[i] = loadedLedData[i]["blue"];
+      } else {
+        // Set default values from DrumParts if no user input or RGB values are [0, 0, 0]
+        List<int> defaultRgb =
+            (DrumParts.drumParts[drumPartKeys[i]]!["rgb"] as List).cast<int>();
+        redValues[i] = defaultRgb[0];
+        greenValues[i] = defaultRgb[1];
+        blueValues[i] = defaultRgb[2];
       }
-      setState(() {});
     }
+
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('RGB LED Drum Controller'),
@@ -64,18 +71,7 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
         itemCount: drumPartKeys.length,
         itemBuilder: (context, index) {
           String key = drumPartKeys[index];
-          String drumName = DrumParts.drumParts[key]!["name"].toString();
-          List<int> defaultRgb =
-              (DrumParts.drumParts[key]!["rgb"] as List).cast<int>();
-
-          // Set default RGB if no user input
-          if (redValues[index] == 0 &&
-              greenValues[index] == 0 &&
-              blueValues[index] == 0) {
-            redValues[index] = defaultRgb[0];
-            greenValues[index] = defaultRgb[1];
-            blueValues[index] = defaultRgb[2];
-          }
+          String drumName = DrumParts.drumParts[key]!['name'].toString();
 
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -172,7 +168,7 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
 
           for (int i = 0; i < drumPartKeys.length; i++) {
             String key = drumPartKeys[i];
-            String ledName = DrumParts.drumParts[key]!["name"].toString();
+            String ledName = DrumParts.drumParts[key]!['name'].toString();
             int red = redValues[i].toInt();
             int green = greenValues[i].toInt();
             int blue = blueValues[i].toInt();
@@ -184,32 +180,6 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
               "blue": blue,
             });
           }
-
-          String jsonData = jsonEncode(ledData);
-          List<int> bytes = utf8.encode('$jsonData\n');
-
-          if (bluetoothBloc.state.characteristic != null) {
-            try {
-              await bluetoothBloc.state.characteristic!
-                  .write(bytes, withoutResponse: true);
-              debugPrint('Data sent: $jsonData');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Data sent successfully!')),
-              );
-            } catch (e) {
-              debugPrint('Failed to send data: $e');
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to send data!')),
-              );
-            }
-          } else {
-            debugPrint('Bluetooth characteristic is null.');
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Bluetooth characteristic not available!')),
-            );
-          }
-
           await prefs.saveAllLedData(ledData);
         },
         child: const Icon(Icons.send),
