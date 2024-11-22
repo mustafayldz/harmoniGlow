@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/enums.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/models/drum_model.dart';
@@ -120,10 +119,8 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
           // If the note is 99, set RGB to [0, 0, 0] (turn off the light)
           rgbValues.add([0, 0, 0]);
         } else {
-          // Otherwise, fetch the RGB value from local storage
-          String drumName =
-              DrumParts.drumParts[drumPart.toString()]?['name'] as String;
-          DrumModel? drumParta = await StorageService.getDrumPart(drumName);
+          DrumModel? drumParta =
+              await StorageService.getDrumPart(drumPart.toString());
           List<int> rgb = drumParta?.rgb ?? [0, 0, 0];
           rgbValues.add(rgb);
         }
