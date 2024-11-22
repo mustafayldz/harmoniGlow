@@ -7,6 +7,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/home_page.dart';
 import 'package:harmoniglow/screens/intro/intro_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FindDevicesScreen extends StatefulWidget {
   const FindDevicesScreen({super.key});
@@ -36,49 +37,73 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connect Device'),
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              _startBluetoothScan();
-            },
-          ),
-        ],
-      ),
-      body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
-        builder: (context, state) {
-          if (state.isScanning) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _startBluetoothScan();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30),
+          child: Column(
+            children: [
+              Expanded(
+                child: BlocBuilder<BluetoothBloc, BluetoothStateC>(
+                  builder: (context, state) {
+                    if (state.isScanning) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-          filteredResults = state.scanResults.where((result) {
-            return result.device.advName.isNotEmpty;
-          }).toList();
+                    filteredResults = state.scanResults.where((result) {
+                      return result.device.advName.isNotEmpty;
+                    }).toList();
 
-          if (filteredResults.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  'No devices found. Please ensure Bluetooth is enabled.',
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
+                    if (filteredResults.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(
+                                'No devices found. Please ensure Bluetooth is enabled.',
+                                style: TextStyle(
+                                    fontSize: 18, color: Colors.grey[600]),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                _startBluetoothScan();
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Refresh'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: filteredResults.length,
+                      itemBuilder: (context, index) {
+                        final result = filteredResults[index];
+                        return _buildDeviceCard(context, result.device, result);
+                      },
+                    );
+                  },
                 ),
               ),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: filteredResults.length,
-            itemBuilder: (context, index) {
-              final result = filteredResults[index];
-              return _buildDeviceCard(context, result.device, result);
-            },
-          );
-        },
+              _buildPurchaseCard(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -93,30 +118,82 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor:
-              bluetoothBloc.state.isConnected ? Colors.green : Colors.grey,
-          child: Icon(
-            bluetoothBloc.state.isConnected
-                ? Icons.bluetooth_connected
-                : Icons.bluetooth_disabled,
-            color: Colors.white,
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: CircleAvatar(
+              backgroundColor:
+                  bluetoothBloc.state.isConnected ? Colors.green : Colors.grey,
+              child: Icon(
+                bluetoothBloc.state.isConnected
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth_disabled,
+                color: Colors.white,
+              ),
+            ),
+            title: Text(
+              device.advName.isNotEmpty ? device.advName : 'Unknown Device',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text('Signal Strength: ${result.rssi} dBm'),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                if (bluetoothBloc.state.isConnected) {
+                  await _disconnectDevice(context, device);
+                } else {
+                  await _connectToDevice(context, device);
+                }
+              },
+              icon: Icon(bluetoothBloc.state.isConnected
+                  ? Icons.bluetooth_disabled
+                  : Icons.bluetooth_connected),
+              label: Text(
+                  bluetoothBloc.state.isConnected ? 'Disconnect' : 'Connect'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPurchaseCard() {
+    return Card(
+      elevation: 6,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: ElevatedButton(
+          onPressed: () async {
+            const url =
+                'https://www.amazon.ca/Jackery-Generator-Portable-Charging-Emergencies/dp/B0DHRV6W9K?ref=dlx_black_dg_dcl_B0DHRV6W9K_dt_sl7_14&th=1';
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(Uri.parse(url));
+            } else {
+              throw 'Could not launch $url';
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Text('Buy on Amazon'),
         ),
-        title: Text(
-          device.advName.isNotEmpty ? device.advName : 'Unknown Device',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: () async {
-          if (bluetoothBloc.state.isConnected) {
-            await _disconnectDevice(context, device);
-          } else {
-            await _connectToDevice(context, device);
-          }
-        },
       ),
     );
   }

@@ -1,16 +1,27 @@
+import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-class DeleteAccount extends StatefulWidget {
-  const DeleteAccount({super.key});
+class CustomButton extends StatefulWidget {
+  final Color color;
+  final String label;
+  final VoidCallback onPress;
+  const CustomButton({
+    super.key,
+    required this.color,
+    required this.label,
+    required this.onPress,
+  });
 
   @override
-  State<DeleteAccount> createState() => _DeleteAccountState();
+  State<CustomButton> createState() => _CustomButtonState();
 }
 
-class _DeleteAccountState extends State<DeleteAccount>
+class _CustomButtonState extends State<CustomButton>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   double gradientProgress = 0.0;
+  Timer? _pressTimer;
 
   @override
   void initState() {
@@ -25,7 +36,48 @@ class _DeleteAccountState extends State<DeleteAccount>
   @override
   void dispose() {
     _controller.dispose();
+    _pressTimer?.cancel();
     super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    _controller.forward();
+    setState(() {
+      gradientProgress = 1.0;
+    });
+
+    // Start a timer to determine if the user holds down long enough
+    _pressTimer = Timer(const Duration(seconds: 1), () {
+      // User has pressed until the end (for 1 second)
+      widget.onPress(); // Call the provided callback function
+      print("========= User pressed until the end =========");
+    });
+
+    print("========= onTapDown =========");
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    _controller.reverse();
+    setState(() {
+      gradientProgress = 0.0;
+    });
+
+    // Cancel the timer since the user released early
+    _pressTimer?.cancel();
+
+    print("========= onTapUp =========");
+  }
+
+  void _handleTapCancel() {
+    _controller.reverse();
+    setState(() {
+      gradientProgress = 0.0;
+    });
+
+    // Cancel the timer since the user cancelled the press
+    _pressTimer?.cancel();
+
+    print("========= onTapCancel =========");
   }
 
   @override
@@ -34,39 +86,28 @@ class _DeleteAccountState extends State<DeleteAccount>
       children: [
         Center(
           child: CustomPaint(
-              painter: AnimatedBorderPainter(animation: _controller),
-              child: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0.0, end: gradientProgress),
-                  duration: const Duration(seconds: 1),
-                  builder: (_, progress, child) {
-                    return GestureDetector(
-                      onTapDown: (_) {
-                        _controller.forward();
-
-                        setState(() {
-                          gradientProgress = 1.0;
-                        });
-                      },
-                      onTapUp: (_) {
-                        _controller.reverse();
-
-                        setState(() {
-                          gradientProgress = 0.0;
-                        });
-                      },
-                      onTapCancel: () {
-                        _controller.reverse();
-
-                        setState(() {
-                          gradientProgress = 0.0;
-                        });
-                      },
-                      child: ProgressButton(
-                        size: const Size(250, kButtonHeight),
-                        progress: progress,
-                      ),
-                    );
-                  })),
+            painter: AnimatedBorderPainter(
+              animation: _controller,
+              color: widget.color,
+            ),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: gradientProgress),
+              duration: const Duration(seconds: 1),
+              builder: (_, progress, child) {
+                return GestureDetector(
+                  onTapDown: _handleTapDown,
+                  onTapUp: _handleTapUp,
+                  onTapCancel: _handleTapCancel,
+                  child: ProgressButton(
+                    size: const Size(250, 40),
+                    progress: progress,
+                    color: widget.color,
+                    label: widget.label,
+                  ),
+                );
+              },
+            ),
+          ),
         ),
       ],
     );
@@ -74,20 +115,21 @@ class _DeleteAccountState extends State<DeleteAccount>
 }
 
 class AnimatedBorderPainter extends CustomPainter {
+  final Color color;
   final Animation<double> animation;
 
-  AnimatedBorderPainter({required this.animation}) : super(repaint: animation);
+  AnimatedBorderPainter({required this.animation, required this.color})
+      : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = kPrimaryColor
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.5;
 
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    final rRect =
-        RRect.fromRectAndRadius(rect, const Radius.circular(kBorderRadius));
+    final rRect = RRect.fromRectAndRadius(rect, const Radius.circular(10));
 
     final path = Path()..addRRect(rRect);
 
@@ -136,7 +178,14 @@ class AnimatedBorderPainter extends CustomPainter {
 class ProgressButton extends StatelessWidget {
   final Size size;
   final double progress;
-  const ProgressButton({super.key, required this.size, required this.progress});
+  final Color color;
+  final String label;
+  const ProgressButton(
+      {super.key,
+      required this.size,
+      required this.progress,
+      required this.color,
+      required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -145,27 +194,23 @@ class ProgressButton extends StatelessWidget {
       width: size.width,
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: kPrimaryColor.withOpacity(0.3)),
+          color: color.withOpacity(0.3)),
       child: Stack(
         children: <Widget>[
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Container(
-              color: kPrimaryColor,
+              color: color,
               width: size.width * progress,
             ),
           ),
-          const Center(
+          Center(
               child: Text(
-            "PRESS AND HOLD TO SAVE",
-            style: TextStyle(color: Colors.white, fontSize: 12),
+            label,
+            style: const TextStyle(color: Colors.black, fontSize: 14),
           ))
         ],
       ),
     );
   }
 }
-
-const kBorderRadius = 10.0;
-const kButtonHeight = 40.0;
-final kPrimaryColor = Colors.red[800]!;

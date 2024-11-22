@@ -17,8 +17,9 @@ class RgbLedsScreen extends StatefulWidget {
 }
 
 class RgbLedsScreenState extends State<RgbLedsScreen> {
-  List<Color> _currentColors = []; // To store color for each DrumModel
   List<DrumModel>? loadedLedData = [];
+  DrumModel? selectedDrumPart;
+  Color _selectedColor = Colors.white;
 
   @override
   void initState() {
@@ -29,17 +30,6 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
   // Load saved RGB values
   void checkSavedRgbValues() async {
     loadedLedData = await StorageService.getDrumPartsBulk();
-    _currentColors = loadedLedData?.map((drum) {
-          return Color.fromRGBO(
-            drum.rgb?[0] ?? 0,
-            drum.rgb?[1] ?? 0,
-            drum.rgb?[2] ?? 0,
-            1.0,
-          );
-        }).toList() ??
-        [];
-    setState(() {});
-    loadedLedData = await StorageService.getDrumPartsBulk();
     setState(() {});
   }
 
@@ -49,79 +39,100 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
       appBar: AppBar(
         title: const Text('RGB LED Drum Controller'),
       ),
-      body: ListView.builder(
-        itemCount: loadedLedData?.length ?? 0,
-        itemBuilder: (context, index) {
-          DrumModel drumPart = loadedLedData![index];
-          String drumName = drumPart.name ?? 'Unknown';
-
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    drumName,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ColorPicker(
-                    pickerColor: _currentColors[index],
-                    onColorChanged: (Color color) {
-                      setState(() {
-                        _currentColors[index] = color;
-                      });
-                    },
-                    pickerAreaHeightPercent: 0.8,
-                    pickerAreaBorderRadius:
-                        const BorderRadius.all(Radius.circular(10.0)),
-                    displayThumbColor: true,
-                    labelTypes: const [],
-                    enableAlpha: false,
-                  ),
-                  GestureDetector(
-                    onTap: () async {
-                      await _sendColorData(drumPart, _currentColors[index]);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 24),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.blue.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.lightbulb_outline,
-                              color: Colors.white),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Shine ${drumPart.led}. light',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.deepPurpleAccent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: DropdownButton<DrumModel>(
+                isExpanded: true,
+                hint: const Text('Select Drum Part',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+                value: selectedDrumPart,
+                onChanged: (DrumModel? newValue) {
+                  setState(() {
+                    selectedDrumPart = newValue;
+                    if (newValue != null) {
+                      _selectedColor = Color.fromRGBO(
+                        newValue.rgb?[0] ?? 0,
+                        newValue.rgb?[1] ?? 0,
+                        newValue.rgb?[2] ?? 0,
+                        1.0,
+                      );
+                    }
+                  });
+                },
+                items: loadedLedData
+                    ?.map<DropdownMenuItem<DrumModel>>((DrumModel drum) {
+                  return DropdownMenuItem<DrumModel>(
+                    value: drum,
+                    child: Text(
+                      drum.name ?? 'Unknown',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  DeleteAccount(),
-                ],
+                  );
+                }).toList(),
               ),
             ),
-          );
-        },
+            const SizedBox(height: 24),
+            if (selectedDrumPart != null)
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Card(
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 32),
+                              ColorPicker(
+                                pickerColor: _selectedColor,
+                                onColorChanged: (Color color) {
+                                  setState(() {
+                                    _selectedColor = color;
+                                  });
+                                },
+                                pickerAreaHeightPercent: 0.6,
+                                enableAlpha: false,
+                                displayThumbColor: true,
+                                labelTypes: const [],
+                                pickerAreaBorderRadius: const BorderRadius.all(
+                                    Radius.circular(10.0)),
+                              ),
+                              const SizedBox(height: 16),
+                              CustomButton(
+                                label: 'Shine and Save',
+                                onPress: () async {
+                                  await _sendColorData(
+                                      selectedDrumPart!, _selectedColor);
+                                },
+                                color: _selectedColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
