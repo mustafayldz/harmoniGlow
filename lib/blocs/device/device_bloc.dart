@@ -131,10 +131,6 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
         'rgb': rgbValues,
       };
 
-      print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-      print(batchMessage);
-      print("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-
       final String jsonString = '${jsonEncode(batchMessage)}\n';
       final List<int> data = utf8.encode(jsonString);
 

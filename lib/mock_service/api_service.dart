@@ -1,3 +1,4 @@
+import 'package:harmoniglow/models/shuffle_model.dart';
 import 'package:harmoniglow/models/traning_model.dart';
 
 class MockApiService {
@@ -819,5 +820,65 @@ class MockApiService {
     ];
 
     return beatSongList[index];
+  }
+
+  /*----------------------------------------------------------------------
+                  Shuffle List
+----------------------------------------------------------------------*/
+  Future<List<ShuffleModel>?> getShuffleList() async {
+    List<ShuffleModel> shuffleList = [
+      ShuffleModel(
+        name: "Basic Rock Beat",
+        color: "0xFFB71C1C", // Dark Red
+        bpm: 100,
+      ),
+      ShuffleModel(
+        name: "Basic Pop Beat",
+        color: "0xFF4CAF50", // Green
+        bpm: 50,
+      ),
+      ShuffleModel(
+        name: "Disco Beat",
+        color: "0xFFFFC107", // Amber
+        bpm: 130,
+      ),
+      ShuffleModel(
+        name: "Funk Beat",
+        color: "0xFF9C27B0", // Purple
+        bpm: 110,
+      ),
+      ShuffleModel(
+        name: "Shuffle Beat",
+        color: "0xFF2196F3", // Blue
+        bpm: 90,
+      ),
+      ShuffleModel(
+        name: "16th Note Groove",
+        color: "0xFFFF5722", // Deep Orange
+        bpm: 140,
+      ),
+      ShuffleModel(
+        name: "Half-Time Groove",
+        color: "0xFF795548", // Brown
+        bpm: 80,
+      ),
+      ShuffleModel(
+        name: "Reggae Beat",
+        color: "0xFF8BC34A", // Light Green
+        bpm: 70,
+      ),
+      ShuffleModel(
+        name: "Jazz Swing Beat",
+        color: "0xFF3F51B5", // Indigo
+        bpm: 110,
+      ),
+      ShuffleModel(
+        name: "Bossa Nova Beat",
+        color: "0xFFFF9800", // Orange
+        bpm: 120,
+      ),
+    ];
+
+    return shuffleList;
   }
 }

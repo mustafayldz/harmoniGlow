@@ -5,6 +5,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
 import 'package:harmoniglow/screens/setting/rgb_leds.dart';
+import 'package:harmoniglow/screens/shuffle/shuffle_mode.dart';
 import 'package:harmoniglow/screens/songs/songs.dart';
 import 'package:harmoniglow/screens/training/traning.dart';
 
@@ -223,6 +224,37 @@ class HomePageState extends State<HomePage> {
               alignment: Alignment.center,
               child: const Text(
                 'Settings',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+        Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ShuffleMode(),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              height: 150,
+              decoration: cardDecoration,
+              alignment: Alignment.center,
+              child: const Text(
+                'Shuffle Mode',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

@@ -7,6 +7,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/models/drum_model.dart';
 import 'package:harmoniglow/shared/countdown.dart';
+import 'package:harmoniglow/shared/send_data.dart';
 
 class RGBPicker extends StatefulWidget {
   final int partNumber;
@@ -98,7 +99,7 @@ class RGBPickerState extends State<RGBPicker> {
             final List<int> data = utf8.encode(jsonString);
 
             // Send the data
-            await _sendLongData(bluetoothBloc, data);
+            await SendData().sendLongData(bluetoothBloc, data);
 
             await showDialog(
               context: context,
@@ -120,39 +121,11 @@ class RGBPickerState extends State<RGBPicker> {
             final List<int> offData = utf8.encode(offJsonString);
 
             // Send the data to turn off the light
-            await _sendLongData(bluetoothBloc, offData);
+            await SendData().sendLongData(bluetoothBloc, offData);
           },
           child: Text('Shine ${widget.partNumber}. light'),
         ),
       ],
     );
-  }
-
-  Future<void> _sendLongData(BluetoothBloc bloc, List<int> data) async {
-    final device = bloc.state.connectedDevice;
-    int mtuSize = 20;
-    try {
-      mtuSize = await device!.mtu.first - 5;
-    } catch (error) {
-      debugPrint('Error fetching MTU size, using default 20 bytes: $error');
-    }
-
-    for (int offset = 0; offset < data.length; offset += mtuSize) {
-      final int end =
-          (offset + mtuSize < data.length) ? offset + mtuSize : data.length;
-      final List<int> chunk = data.sublist(offset, end);
-
-      try {
-        // Ensure the characteristic supports writing
-        if (bloc.state.characteristic!.properties.write) {
-          await bloc.state.characteristic!.write(chunk);
-          debugPrint('Chunk sent successfully, offset: $offset');
-        } else {
-          debugPrint('Error: Characteristic does not support writing.');
-        }
-      } catch (error) {
-        debugPrint('Error sending chunk at offset $offset: $error');
-      }
-    }
   }
 }

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/gestures.dart';
+
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatefulWidget {
@@ -50,10 +50,7 @@ class _CustomButtonState extends State<CustomButton>
     _pressTimer = Timer(const Duration(seconds: 1), () {
       // User has pressed until the end (for 1 second)
       widget.onPress(); // Call the provided callback function
-      print("========= User pressed until the end =========");
     });
-
-    print("========= onTapDown =========");
   }
 
   void _handleTapUp(TapUpDetails details) {
@@ -64,8 +61,6 @@ class _CustomButtonState extends State<CustomButton>
 
     // Cancel the timer since the user released early
     _pressTimer?.cancel();
-
-    print("========= onTapUp =========");
   }
 
   void _handleTapCancel() {
@@ -76,8 +71,6 @@ class _CustomButtonState extends State<CustomButton>
 
     // Cancel the timer since the user cancelled the press
     _pressTimer?.cancel();
-
-    print("========= onTapCancel =========");
   }
 
   @override
