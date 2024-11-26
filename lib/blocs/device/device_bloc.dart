@@ -7,6 +7,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/enums.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/models/drum_model.dart';
+import 'package:harmoniglow/shared/send_data.dart';
 
 import 'device_event.dart';
 import 'device_state.dart';
@@ -49,7 +50,7 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
       emit(updatedState);
 
       // Await the message sending and handle potential errors
-      await _sendMessage(event.context, emit);
+      await _sendMessage(event, emit);
     } catch (e) {
       // Revert the state if sending fails
       final revertedState = state.copyWith(
@@ -92,64 +93,80 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
       trainModel: state.trainModel,
     ));
 
-    await _sendLongData(bluetoothBloc, data);
+    await SendData().sendLongData(bluetoothBloc, data);
   }
 
   Future<void> _sendMessage(
-      BuildContext context, Emitter<DeviceState> emit) async {
-    final bluetoothBloc = context.read<BluetoothBloc>();
+      StartSendingEvent event, Emitter<DeviceState> emit) async {
+    final bluetoothBloc = event.context.read<BluetoothBloc>();
 
     int bpm = state.trainModel?.bpm ?? 60;
     int timeInterval = (60000 ~/ bpm);
     int startIndex = (state.startIndex != 0) ? state.startIndex : 0;
 
-    for (int index = startIndex;
-        index < (state.trainModel?.notes?.length ?? 0);
-        index++) {
-      if (state.playbackState != PlaybackState.playing) {
-        return;
-      }
+    do {
+      for (int index = startIndex;
+          index < (state.trainModel?.notes?.length ?? 0);
+          index++) {
+        if (state.playbackState != PlaybackState.playing) {
+          return;
+        }
 
-      var note = state.trainModel!.notes![index];
-      List<List<int>> rgbValues = [];
+        var note = state.trainModel!.notes![index];
+        List<List<int>> rgbValues = [];
 
-      // Iterate through each drum part in the current note
-      for (int drumPart in note) {
-        if (drumPart == 99) {
-          // If the note is 99, set RGB to [0, 0, 0] (turn off the light)
-          rgbValues.add([0, 0, 0]);
-        } else {
-          DrumModel? drumParta =
-              await StorageService.getDrumPart(drumPart.toString());
-          List<int> rgb = drumParta?.rgb ?? [0, 0, 0];
-          rgbValues.add(rgb);
+        // Iterate through each drum part in the current note
+        for (int drumPart in note) {
+          if (drumPart == 99) {
+            // If the note is 99, set RGB to [0, 0, 0] (turn off the light)
+            rgbValues.add([0, 0, 0]);
+          } else {
+            DrumModel? drumParta =
+                await StorageService.getDrumPart(drumPart.toString());
+            List<int> rgb = drumParta?.rgb ?? [0, 0, 0];
+            rgbValues.add(rgb);
+          }
+        }
+
+        Map<String, dynamic> batchMessage = {
+          'notes': note,
+          'rgb': rgbValues,
+        };
+
+        final String jsonString = '${jsonEncode(batchMessage)}\n';
+        final List<int> data = utf8.encode(jsonString);
+
+        emit(state.copyWith(
+          playbackState: state.playbackState,
+          isSending: state.isSending,
+          startIndex: index,
+          trainModel: state.trainModel,
+        ));
+
+        final startTime = DateTime.now();
+        await SendData().sendLongData(bluetoothBloc, data);
+        final elapsedTime = DateTime.now().difference(startTime).inMilliseconds;
+
+        if (elapsedTime < timeInterval) {
+          await Future.delayed(
+              Duration(milliseconds: timeInterval - elapsedTime));
         }
       }
 
-      Map<String, dynamic> batchMessage = {
-        'notes': note,
-        'rgb': rgbValues,
-      };
+      startIndex = 0; // Reset startIndex for next iteration
+    } while (event.isTest);
 
-      final String jsonString = '${jsonEncode(batchMessage)}\n';
-      final List<int> data = utf8.encode(jsonString);
+    Map<String, dynamic> finishData = {
+      'notes': [99],
+      'rgb': [
+        [0, 0, 0]
+      ],
+    };
 
-      emit(state.copyWith(
-        playbackState: state.playbackState,
-        isSending: state.isSending,
-        startIndex: index,
-        trainModel: state.trainModel,
-      ));
+    final String jsonString = '${jsonEncode(finishData)}\n';
+    final List<int> data = utf8.encode(jsonString);
 
-      final startTime = DateTime.now();
-      await _sendLongData(bluetoothBloc, data);
-      final elapsedTime = DateTime.now().difference(startTime).inMilliseconds;
-
-      if (elapsedTime < timeInterval) {
-        await Future.delayed(
-            Duration(milliseconds: timeInterval - elapsedTime));
-      }
-    }
+    await SendData().sendLongData(bluetoothBloc, data);
 
     emit(state.copyWith(
         playbackState: PlaybackState.stopped,
@@ -157,33 +174,5 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
         trainModel: state.trainModel,
         startIndex: 0,
         connected: true));
-  }
-
-  Future<void> _sendLongData(BluetoothBloc bloc, List<int> data) async {
-    final device = bloc.state.connectedDevice;
-    int mtuSize = 20;
-    try {
-      mtuSize = await device!.mtu.first - 5;
-    } catch (error) {
-      debugPrint('Error fetching MTU size, using default 20 bytes: $error');
-    }
-
-    for (int offset = 0; offset < data.length; offset += mtuSize) {
-      final int end =
-          (offset + mtuSize < data.length) ? offset + mtuSize : data.length;
-      final List<int> chunk = data.sublist(offset, end);
-
-      try {
-        // Ensure the characteristic supports writing
-        if (bloc.state.characteristic!.properties.write) {
-          await bloc.state.characteristic!.write(chunk);
-          debugPrint('Chunk sent successfully, offset: $offset');
-        } else {
-          debugPrint('Error: Characteristic does not support writing.');
-        }
-      } catch (error) {
-        debugPrint('Error sending chunk at offset $offset: $error');
-      }
-    }
   }
 }

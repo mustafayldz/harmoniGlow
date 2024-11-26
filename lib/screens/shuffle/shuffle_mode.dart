@@ -1,6 +1,13 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:harmoniglow/blocs/device/device_bloc.dart';
+import 'package:harmoniglow/blocs/device/device_event.dart';
 import 'package:harmoniglow/mock_service/api_service.dart';
 import 'package:harmoniglow/models/shuffle_model.dart';
+import 'package:harmoniglow/models/traning_model.dart';
+import 'package:harmoniglow/shared/countdown.dart';
 
 class ShuffleMode extends StatefulWidget {
   const ShuffleMode({super.key});
@@ -48,6 +55,7 @@ class _ShuffleModeState extends State<ShuffleMode>
 
   @override
   Widget build(BuildContext context) {
+    final deviceBloc = context.read<DeviceBloc>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Shuffle Mode'),
@@ -182,14 +190,16 @@ class _ShuffleModeState extends State<ShuffleMode>
                         ),
                       GestureDetector(
                         onTap: duration != null && duration! > 0
-                            ? () {
+                            ? () async {
+                                if (isPlaying) {
+                                  await stopShuffle(context, deviceBloc);
+                                  _controller.stop();
+                                } else {
+                                  await startShuffle(context, deviceBloc);
+                                  _controller.repeat();
+                                }
                                 setState(() {
                                   isPlaying = !isPlaying;
-                                  if (isPlaying) {
-                                    _controller.repeat();
-                                  } else {
-                                    _controller.stop();
-                                  }
                                 });
                               }
                             : null,
@@ -199,7 +209,7 @@ class _ShuffleModeState extends State<ShuffleMode>
                               ? Color(int.parse(selectedShuffleModel!.color!))
                               : Colors.grey,
                           child: Icon(
-                            isPlaying ? Icons.pause : Icons.play_arrow,
+                            isPlaying ? Icons.stop : Icons.play_arrow,
                             color: Colors.white,
                             size: 75,
                           ),
@@ -215,6 +225,61 @@ class _ShuffleModeState extends State<ShuffleMode>
         ),
       ),
     );
+  }
+
+  Future<void> startShuffle(BuildContext context, DeviceBloc bloc) async {
+    // calculate the total beats
+    int totalBeats = (duration! * bpm!).toInt();
+    List<List<int>> notes = [];
+
+    for (var i = 0; i < totalBeats; i++) {
+      //create a beat rondom notes
+      notes = generateRandomList(totalBeats);
+    }
+
+    TraningModel shuffleModel = TraningModel(
+      bpm: bpm!.toInt(),
+      name: "Shuffle",
+      rhythm: "4/4",
+      totalTime: duration! * 60,
+      notes: notes,
+    );
+
+    bloc.add(UpdateBeatDataEvent(shuffleModel));
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Countdown();
+      },
+    );
+
+    bloc.add(StartSendingEvent(context, false));
+
+    // send the notes to the device
+  }
+
+  Future<void> stopShuffle(BuildContext context, DeviceBloc bloc) async {
+    bloc.add(StopSendingEvent(context));
+  }
+
+  // Generate random notes
+  List<List<int>> generateRandomList(int size) {
+    final Random random = Random();
+    final List<List<int>> result = [];
+    for (int i = 0; i < size; i++) {
+      final List<int> innerList = [];
+      int randomValue = random.nextInt(3) + 1;
+      while (innerList.length < randomValue) {
+        int newValue = random.nextInt(8) + 1;
+        if (!innerList.contains(newValue)) {
+          innerList.add(newValue);
+        }
+      }
+      result.add(innerList);
+    }
+    return result;
   }
 }
 

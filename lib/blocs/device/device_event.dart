@@ -8,8 +8,9 @@ abstract class DeviceEvent {}
 // Event for starting data sending
 class StartSendingEvent extends DeviceEvent {
   final BuildContext context;
+  final bool isTest;
 
-  StartSendingEvent(this.context);
+  StartSendingEvent(this.context, this.isTest);
 }
 
 // Event for pausing data sending

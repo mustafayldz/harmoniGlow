@@ -7,7 +7,7 @@ import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
 import 'package:harmoniglow/screens/setting/rgb_leds.dart';
 import 'package:harmoniglow/screens/shuffle/shuffle_mode.dart';
 import 'package:harmoniglow/screens/songs/songs.dart';
-import 'package:harmoniglow/screens/training/traning.dart';
+import 'package:harmoniglow/screens/training/traning_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -112,50 +112,41 @@ class HomePageState extends State<HomePage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            width: double.infinity,
-            height: 200,
-            decoration: cardDecoration,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Training',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TrainingPage(),
                 ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TrainingPage(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.blueAccent,
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              height: 150,
+              decoration: cardDecoration,
+              child: const Column(
+                children: [
+                  Text(
+                    'Training',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
                   ),
-                  child: const Text(
-                    'Start Training',
+                  SizedBox(height: 10),
+                  Text(
+                    'Train with your own music',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      color: Colors.white70,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -212,6 +203,49 @@ class HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
+                  builder: (context) => const ShuffleMode(),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              height: 150,
+              decoration: cardDecoration,
+              child: const Column(
+                children: [
+                  Text(
+                    'Shuffle Mode',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Train with random music types',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
                   builder: (context) => const RgbLedsScreen(),
                 ),
               );
@@ -233,37 +267,6 @@ class HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        Card(
-          elevation: 6,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ShuffleMode(),
-                ),
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              width: double.infinity,
-              height: 150,
-              decoration: cardDecoration,
-              alignment: Alignment.center,
-              child: const Text(
-                'Shuffle Mode',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        )
       ],
     );
   }

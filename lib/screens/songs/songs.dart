@@ -217,7 +217,7 @@ class SongPageState extends State<SongPage> {
                     _controller?.play();
                     playbackState = PlaybackState.playing;
                   });
-                  deviceBloc.add(StartSendingEvent(context));
+                  deviceBloc.add(StartSendingEvent(context, false));
                 }
               : null,
         ),

@@ -8,6 +8,7 @@ import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/models/drum_model.dart';
 import 'package:harmoniglow/shared/countdown.dart';
 import 'package:harmoniglow/shared/custom_button.dart';
+import 'package:harmoniglow/shared/send_data.dart';
 
 class RgbLedsScreen extends StatefulWidget {
   const RgbLedsScreen({super.key});
@@ -157,7 +158,7 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
     final String jsonString = '${jsonEncode(batchMessage)}\n';
     final List<int> data = utf8.encode(jsonString);
 
-    await _sendLongData(bluetoothBloc, data);
+    await SendData().sendLongData(bluetoothBloc, data);
     if (!mounted) return;
 
     await showDialog(
@@ -179,34 +180,6 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
     final String offJsonString = '${jsonEncode(offMessage)}\n';
     final List<int> offData = utf8.encode(offJsonString);
 
-    await _sendLongData(bluetoothBloc, offData);
-  }
-
-  Future<void> _sendLongData(BluetoothBloc bloc, List<int> data) async {
-    final device = bloc.state.connectedDevice;
-    int mtuSize = 20;
-    try {
-      mtuSize = await device!.mtu.first - 5;
-    } catch (error) {
-      debugPrint('Error fetching MTU size, using default 20 bytes: $error');
-    }
-
-    for (int offset = 0; offset < data.length; offset += mtuSize) {
-      final int end =
-          (offset + mtuSize < data.length) ? offset + mtuSize : data.length;
-      final List<int> chunk = data.sublist(offset, end);
-
-      try {
-        // Ensure the characteristic supports writing
-        if (bloc.state.characteristic!.properties.write) {
-          await bloc.state.characteristic!.write(chunk);
-          debugPrint('Chunk sent successfully, offset: $offset');
-        } else {
-          debugPrint('Error: Characteristic does not support writing.');
-        }
-      } catch (error) {
-        debugPrint('Error sending chunk at offset $offset: $error');
-      }
-    }
+    await SendData().sendLongData(bluetoothBloc, offData);
   }
 }
