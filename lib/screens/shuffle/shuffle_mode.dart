@@ -56,171 +56,181 @@ class _ShuffleModeState extends State<ShuffleMode>
   @override
   Widget build(BuildContext context) {
     final deviceBloc = context.read<DeviceBloc>();
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shuffle Mode'),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (shuffleList.isNotEmpty)
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: DropdownButtonFormField<ShuffleModel>(
-                      value: selectedShuffleModel,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        labelText: 'Music Type',
-                        labelStyle: TextStyle(fontSize: 16),
-                      ),
-                      items: shuffleList.map((ShuffleModel model) {
-                        return DropdownMenuItem<ShuffleModel>(
-                          value: model,
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Color(int.parse(model.color!)),
-                                radius: 8,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(model.name!),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (ShuffleModel? newValue) {
-                        setState(() {
-                          selectedShuffleModel = newValue;
-                          bpm = newValue?.bpm?.toDouble();
-                        });
-                      },
-                      dropdownColor: Colors.white,
-                    ),
-                  ),
-                )
-              else
-                const Center(child: CircularProgressIndicator()),
-              const SizedBox(height: 20),
-              if (selectedShuffleModel != null) ...[
-                AnimatedOpacity(
-                  opacity: selectedShuffleModel != null ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 500),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
+    return GestureDetector(
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      behavior:
+          HitTestBehavior.opaque, // Ensure it captures taps on empty spaces
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Shuffle Mode'),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (shuffleList.isNotEmpty)
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 5,
-                          spreadRadius: 2,
-                        )
-                      ],
                     ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'How long will you play? (minutes)',
-                          style: TextStyle(fontSize: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: DropdownButtonFormField<ShuffleModel>(
+                        value: selectedShuffleModel,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          labelText: 'Music Type',
+                          labelStyle: TextStyle(fontSize: 16),
                         ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Enter duration',
+                        items: shuffleList.map((ShuffleModel model) {
+                          return DropdownMenuItem<ShuffleModel>(
+                            value: model,
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor:
+                                      Color(int.parse(model.color!)),
+                                  radius: 8,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(model.name!),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (ShuffleModel? newValue) {
+                          setState(() {
+                            selectedShuffleModel = newValue;
+                            bpm = newValue?.bpm?.toDouble();
+                          });
+                        },
+                        dropdownColor: Colors.white,
+                      ),
+                    ),
+                  )
+                else
+                  const Center(child: CircularProgressIndicator()),
+                const SizedBox(height: 20),
+                if (selectedShuffleModel != null) ...[
+                  AnimatedOpacity(
+                    opacity: selectedShuffleModel != null ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 500),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 5,
+                            spreadRadius: 2,
+                          )
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'How long will you play? (minutes)',
+                            style: TextStyle(fontSize: 16),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              duration = int.tryParse(value);
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        if (duration != null && duration! > 0) ...[
-                          Text(
-                            'BPM (Beats Per Minute): ${bpm?.toStringAsFixed(0)}',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          Slider(
-                            value: bpm ?? 60,
-                            min: 40,
-                            max: 200,
-                            divisions: 160,
-                            label: bpm?.toStringAsFixed(0),
+                          const SizedBox(height: 10),
+                          TextField(
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Enter duration',
+                            ),
                             onChanged: (value) {
                               setState(() {
-                                bpm = value;
+                                duration = int.tryParse(value);
                               });
                             },
                           ),
+                          const SizedBox(height: 20),
+                          if (duration != null && duration! > 0) ...[
+                            Text(
+                              'BPM (Beats Per Minute): ${bpm?.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            Slider(
+                              value: bpm ?? 60,
+                              min: 40,
+                              max: 200,
+                              divisions: 160,
+                              label: bpm?.toStringAsFixed(0),
+                              onChanged: (value) {
+                                setState(() {
+                                  bpm = value;
+                                });
+                              },
+                            ),
+                          ],
                         ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 50),
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        if (isPlaying)
+                          AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, child) {
+                              return CustomPaint(
+                                painter: _PulsePainter(_controller.value,
+                                    selectedShuffleModel:
+                                        selectedShuffleModel!),
+                                child: const SizedBox(
+                                  width: 200,
+                                  height: 200,
+                                ),
+                              );
+                            },
+                          ),
+                        GestureDetector(
+                          onTap: duration != null && duration! > 0
+                              ? () async {
+                                  if (isPlaying) {
+                                    await stopShuffle(context, deviceBloc);
+                                    _controller.stop();
+                                  } else {
+                                    await startShuffle(context, deviceBloc);
+
+                                    _controller.repeat();
+                                  }
+                                  setState(() {
+                                    isPlaying = !isPlaying;
+                                  });
+                                }
+                              : null,
+                          child: CircleAvatar(
+                            radius: 75,
+                            backgroundColor: duration != null && duration! > 0
+                                ? Color(int.parse(selectedShuffleModel!.color!))
+                                : Colors.grey,
+                            child: Icon(
+                              isPlaying ? Icons.stop : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 75,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 50),
-                Center(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      if (isPlaying)
-                        AnimatedBuilder(
-                          animation: _controller,
-                          builder: (context, child) {
-                            return CustomPaint(
-                              painter: _PulsePainter(_controller.value,
-                                  selectedShuffleModel: selectedShuffleModel!),
-                              child: const SizedBox(
-                                width: 200,
-                                height: 200,
-                              ),
-                            );
-                          },
-                        ),
-                      GestureDetector(
-                        onTap: duration != null && duration! > 0
-                            ? () async {
-                                if (isPlaying) {
-                                  await stopShuffle(context, deviceBloc);
-                                  _controller.stop();
-                                } else {
-                                  await startShuffle(context, deviceBloc);
-                                  _controller.repeat();
-                                }
-                                setState(() {
-                                  isPlaying = !isPlaying;
-                                });
-                              }
-                            : null,
-                        child: CircleAvatar(
-                          radius: 75,
-                          backgroundColor: duration != null && duration! > 0
-                              ? Color(int.parse(selectedShuffleModel!.color!))
-                              : Colors.grey,
-                          child: Icon(
-                            isPlaying ? Icons.stop : Icons.play_arrow,
-                            color: Colors.white,
-                            size: 75,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ]
-            ],
+                  const SizedBox(height: 20),
+                ]
+              ],
+            ),
           ),
         ),
       ),

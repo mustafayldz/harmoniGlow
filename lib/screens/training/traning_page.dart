@@ -163,15 +163,18 @@ class TrainingPageState extends State<TrainingPage> {
                       children: [
                         ListTile(
                           title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                beats![index].name!,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                              Flexible(
+                                child: Text(
+                                  beats![index].name!,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              const Spacer(),
                               TextButton.icon(
                                 onPressed: () async =>
                                     await _togglePlayStop(index),
