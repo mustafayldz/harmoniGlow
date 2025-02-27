@@ -1,28 +1,47 @@
-# This file configures the analyzer, which statically analyzes Dart code to
-# check for errors, warnings, and lints.
-#
-# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
-# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
-# invoked from the command line by running `flutter analyze`.
-
-# The following line activates a set of recommended lints for Flutter apps,
-# packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+analyzer:
+  exclude:
+    - "**.g.dart" # Otomatik oluşturulan dosyaları analizden hariç tut
+    - "**.freezed.dart" # Freezed için otomatik dosyaları hariç tut
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    # 🛑 Hataları önleyen kurallar
+    avoid_print: true # print yerine logger kullanmayı zorunlu kılar
+    avoid_relative_lib_imports: true # Lib içindeki dosyalarda relatıve import yasak
+    prefer_const_constructors: true # Mümkün olduğunca const kullan
+    prefer_final_fields: true # final kullanımı teşvik eder
+    always_put_required_named_parameters_first: true # required parametreleri önce yaz
+    avoid_types_as_parameter_names: true # Fonksiyon parametre adlarında tür isimleri yasak
+    cancel_subscriptions: true # Stream subscription'ları iptal etmeyi zorunlu tut
+    close_sinks: true # Stream sink'lerini kapatmayı zorunlu tut
+
+    # 🚀 Performansı artıran kurallar
+    prefer_single_quotes: true # String ifadelerde tek tırnak tercih edilir
+    unawaited_futures: true # async işlemleri beklemeyi zorunlu kılar
+    avoid_unnecessary_containers: true # Gereksiz Container widget'larını kaldır
+    unnecessary_null_checks: true # Gereksiz null kontrollerini engelle
+    unnecessary_null_in_if_null_operators: true # ?? null kullanımını optimize et
+    prefer_expression_function_bodies: true # Tek satırlık fonksiyonları ifade fonksiyonuna çevir
+
+    # 🎨 Kod stilini iyileştiren kurallar
+    require_trailing_commas: true # List ve Map gibi yapılar için sona virgül koymayı zorunlu kılar
+    prefer_interpolation_to_compose_strings: true # String birleştirme yerine interpolasyon kullan
+    avoid_function_literals_in_foreach_calls: true # foreach içinde anonim fonksiyon yerine method referansı kullan
+    prefer_typing_uninitialized_variables: true # Varsayılan olarak tanımsız değişkenlere tür ekle
+    use_super_parameters: true # super çağrılarını optimize eder
+
+    # ✅ Daha temiz ve düzenli kod yazmayı teşvik eden kurallar
+    sort_constructors_first: true # Constructor'ları sınıfın başına koy
+    sort_unnamed_constructors_first: true # İsimsiz constructor'ları önce koy
+    always_use_package_imports: true # Yerel importlar yerine package kullan
+    prefer_final_locals: true # Yerel değişkenlerin mümkünse final olmasını teşvik et
+    prefer_for_elements_to_map_fromIterable: true # `for` kullanımı, `map()` yerine teşvik edilir
+    avoid_classes_with_only_static_members: true # Sadece statik metodları olan sınıfları engeller (utility sınıfları için `abstract` kullan)
+
+    # 🛠 Flutter ile ilgili öneriler
+    use_key_in_widget_constructors: true # Stateful widget'larda key kullanımı önerilir
+    prefer_const_literals_to_create_immutables: true # Sabit listeleri const ile başlat
+    use_colored_box: true # Container yalnızca renk için kullanılıyorsa ColoredBox tercih edilir
+    use_decorated_box: true # Sadece dekorasyon için Container kullanılıyorsa, DecoratedBox tercih edilir

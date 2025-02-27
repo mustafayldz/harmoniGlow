@@ -20,28 +20,25 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage> {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
-        builder: (context, bluetoothState) {
-          return SingleChildScrollView(
+  Widget build(BuildContext context) => Scaffold(
+        body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
+          builder: (context, bluetoothState) => SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 50),
                 _buildConnectionStatus(
-                    bluetoothState), // Passing BluetoothState here
+                  bluetoothState,
+                ), // Passing BluetoothState here
                 const SizedBox(height: 16),
                 _buildNotesInfo(),
                 const SizedBox(height: 16),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        ),
+      );
 
   Widget _buildConnectionStatus(BluetoothStateC state) {
     final icon = Icon(
@@ -89,15 +86,15 @@ class HomePageState extends State<HomePage> {
       borderRadius: BorderRadius.circular(20),
       gradient: LinearGradient(
         colors: [
-          Colors.blueAccent.withOpacity(0.8),
-          Colors.cyanAccent.withOpacity(0.8),
+          Colors.blueAccent.withValues(alpha: (0.8 * 255)),
+          Colors.cyanAccent.withValues(alpha: (0.8 * 255)),
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: (0.8 * 255)),
           spreadRadius: 5,
           blurRadius: 10,
           offset: const Offset(0, 3),
@@ -133,7 +130,7 @@ class HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                   SizedBox(height: 10),
@@ -141,7 +138,7 @@ class HomePageState extends State<HomePage> {
                     'Train with your own music',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white70,
+                      color: Colors.black54,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -176,7 +173,7 @@ class HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                   SizedBox(height: 10),
@@ -184,7 +181,7 @@ class HomePageState extends State<HomePage> {
                     'Discover and train with your favorite songs',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white70,
+                      color: Colors.black54,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -219,7 +216,7 @@ class HomePageState extends State<HomePage> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                   ),
                   SizedBox(height: 10),
@@ -227,7 +224,7 @@ class HomePageState extends State<HomePage> {
                     'Train with random music types',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.white70,
+                      color: Colors.black54,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -261,7 +258,7 @@ class HomePageState extends State<HomePage> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
               ),
             ),

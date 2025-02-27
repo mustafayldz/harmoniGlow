@@ -7,10 +7,9 @@ abstract class DeviceEvent {}
 
 // Event for starting data sending
 class StartSendingEvent extends DeviceEvent {
+  StartSendingEvent(this.context, this.isTest);
   final BuildContext context;
   final bool isTest;
-
-  StartSendingEvent(this.context, this.isTest);
 }
 
 // Event for pausing data sending
@@ -18,12 +17,11 @@ class PauseSendingEvent extends DeviceEvent {}
 
 // Event for stopping data sending
 class StopSendingEvent extends DeviceEvent {
-  final BuildContext context;
-
   StopSendingEvent(this.context);
+  final BuildContext context;
 }
 
 class UpdateBeatDataEvent extends DeviceEvent {
-  final TraningModel beatData;
   UpdateBeatDataEvent(this.beatData);
+  final TraningModel beatData;
 }

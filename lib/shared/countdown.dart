@@ -45,26 +45,24 @@ class CountdownState extends State<Countdown> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.black54,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Text(
-            '$_counter',
-            style: const TextStyle(
-              fontSize: 80,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+  Widget build(BuildContext context) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              '$_counter',
+              style: const TextStyle(
+                fontSize: 80,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
 }

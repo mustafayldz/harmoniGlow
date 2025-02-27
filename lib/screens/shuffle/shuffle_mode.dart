@@ -87,22 +87,25 @@ class _ShuffleModeState extends State<ShuffleMode>
                           labelText: 'Music Type',
                           labelStyle: TextStyle(fontSize: 16),
                         ),
-                        items: shuffleList.map((ShuffleModel model) {
-                          return DropdownMenuItem<ShuffleModel>(
-                            value: model,
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor:
-                                      Color(int.parse(model.color!)),
-                                  radius: 8,
+                        items: shuffleList
+                            .map(
+                              (ShuffleModel model) =>
+                                  DropdownMenuItem<ShuffleModel>(
+                                value: model,
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor:
+                                          Color(int.parse(model.color!)),
+                                      radius: 8,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(model.name!),
+                                  ],
                                 ),
-                                const SizedBox(width: 10),
-                                Text(model.name!),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (ShuffleModel? newValue) {
                           setState(() {
                             selectedShuffleModel = newValue;
@@ -122,14 +125,14 @@ class _ShuffleModeState extends State<ShuffleMode>
                     duration: const Duration(milliseconds: 500),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: (0.8 * 255)),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: (0.1 * 255)),
                             blurRadius: 5,
                             spreadRadius: 2,
-                          )
+                          ),
                         ],
                       ),
                       padding: const EdgeInsets.all(16),
@@ -184,17 +187,16 @@ class _ShuffleModeState extends State<ShuffleMode>
                         if (isPlaying)
                           AnimatedBuilder(
                             animation: _controller,
-                            builder: (context, child) {
-                              return CustomPaint(
-                                painter: _PulsePainter(_controller.value,
-                                    selectedShuffleModel:
-                                        selectedShuffleModel!),
-                                child: const SizedBox(
-                                  width: 200,
-                                  height: 200,
-                                ),
-                              );
-                            },
+                            builder: (context, child) => CustomPaint(
+                              painter: _PulsePainter(
+                                _controller.value,
+                                selectedShuffleModel: selectedShuffleModel!,
+                              ),
+                              child: const SizedBox(
+                                width: 200,
+                                height: 200,
+                              ),
+                            ),
                           ),
                         GestureDetector(
                           onTap: duration != null && duration! > 0
@@ -205,7 +207,7 @@ class _ShuffleModeState extends State<ShuffleMode>
                                   } else {
                                     await startShuffle(context, deviceBloc);
 
-                                    _controller.repeat();
+                                    await _controller.repeat();
                                   }
                                   setState(() {
                                     isPlaying = !isPlaying;
@@ -228,7 +230,7 @@ class _ShuffleModeState extends State<ShuffleMode>
                     ),
                   ),
                   const SizedBox(height: 20),
-                ]
+                ],
               ],
             ),
           ),
@@ -239,7 +241,7 @@ class _ShuffleModeState extends State<ShuffleMode>
 
   Future<void> startShuffle(BuildContext context, DeviceBloc bloc) async {
     // calculate the total beats
-    int totalBeats = (duration! * bpm!).toInt();
+    final int totalBeats = (duration! * bpm!).toInt();
     List<List<int>> notes = [];
 
     for (var i = 0; i < totalBeats; i++) {
@@ -247,10 +249,10 @@ class _ShuffleModeState extends State<ShuffleMode>
       notes = generateRandomList(totalBeats);
     }
 
-    TraningModel shuffleModel = TraningModel(
+    final TraningModel shuffleModel = TraningModel(
       bpm: bpm!.toInt(),
-      name: "Shuffle",
-      rhythm: "4/4",
+      name: 'Shuffle',
+      rhythm: '4/4',
       totalTime: duration! * 60,
       notes: notes,
     );
@@ -260,9 +262,7 @@ class _ShuffleModeState extends State<ShuffleMode>
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Countdown();
-      },
+      builder: (BuildContext context) => const Countdown(),
     );
 
     bloc.add(StartSendingEvent(context, false));
@@ -280,9 +280,9 @@ class _ShuffleModeState extends State<ShuffleMode>
     final List<List<int>> result = [];
     for (int i = 0; i < size; i++) {
       final List<int> innerList = [];
-      int randomValue = random.nextInt(3) + 1;
+      final int randomValue = random.nextInt(3) + 1;
       while (innerList.length < randomValue) {
-        int newValue = random.nextInt(8) + 1;
+        final int newValue = random.nextInt(8) + 1;
         if (!innerList.contains(newValue)) {
           innerList.add(newValue);
         }
@@ -294,16 +294,15 @@ class _ShuffleModeState extends State<ShuffleMode>
 }
 
 class _PulsePainter extends CustomPainter {
+  _PulsePainter(this.progress, {required this.selectedShuffleModel});
   final double progress;
   final ShuffleModel selectedShuffleModel;
-
-  _PulsePainter(this.progress, {required this.selectedShuffleModel});
 
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = Color(int.parse(selectedShuffleModel.color!))
-          .withOpacity(1 - progress)
+          .withValues(alpha: (1 - progress * 255))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0;
 

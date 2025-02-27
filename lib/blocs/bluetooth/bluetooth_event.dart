@@ -7,11 +7,11 @@ class StartScanEvent extends BluetoothEvent {}
 class StopScanEvent extends BluetoothEvent {}
 
 class ConnectToDeviceEvent extends BluetoothEvent {
-  final BluetoothDevice device;
   ConnectToDeviceEvent(this.device);
+  final BluetoothDevice device;
 }
 
 class DisconnectFromDeviceEvent extends BluetoothEvent {
-  final BluetoothDevice device;
   DisconnectFromDeviceEvent(this.device);
+  final BluetoothDevice device;
 }

@@ -38,38 +38,36 @@ class _BluetoothOffScreenState extends State<BluetoothOffScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.lightBlue,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            // Spinning Bluetooth Icon
-            RotationTransition(
-              turns: _controller,
-              child: const Icon(
-                Icons.bluetooth_disabled,
-                size: 200.0,
-                color: Colors.white54,
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.lightBlue,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // Spinning Bluetooth Icon
+              RotationTransition(
+                turns: _controller,
+                child: const Icon(
+                  Icons.bluetooth_disabled,
+                  size: 200.0,
+                  color: Colors.white54,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            // Fade-in Text Message
-            FadeTransition(
-              opacity: _fadeAnimation,
-              child: Text(
-                'Bluetooth Adapter is ${widget.state != null ? widget.state.toString().substring(15) : 'not available'}.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: Colors.white, fontSize: 18),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 20),
+              // Fade-in Text Message
+              FadeTransition(
+                opacity: _fadeAnimation,
+                child: Text(
+                  'Bluetooth Adapter is ${widget.state != null ? widget.state!.name : 'not available'}.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: Colors.white, fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
 }

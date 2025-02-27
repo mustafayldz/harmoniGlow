@@ -7,7 +7,7 @@ class MockApiService {
     // Decide which notes to fetch: parametric beats or default generated notes
 
     // Get beat info if not using default notes
-    Map<String, dynamic> beatInfo = beatInfoList[beatIndex ?? 0];
+    final Map<String, dynamic> beatInfo = beatInfoList[beatIndex ?? 0];
 
     return TraningModel.fromJson(beatInfo);
   }
@@ -16,13 +16,13 @@ class MockApiService {
     // Decide which notes to fetch: parametric beats or default generated notes
 
     // Get beat info if not using default notes
-    Map<String, dynamic> songInfo = _getSongInfo(songIndex ?? 0);
+    final Map<String, dynamic> songInfo = _getSongInfo(songIndex ?? 0);
 
     return TraningModel.fromJson(songInfo);
   }
 
   Future<List<TraningModel>?> fetchAllBeats() async {
-    List<TraningModel> beats = [];
+    final List<TraningModel> beats = [];
     for (int i = 0; i < beatInfoList.length; i++) {
       beats.add(TraningModel.fromJson(beatInfoList[i]));
     }
@@ -31,9 +31,9 @@ class MockApiService {
 
   /// Fetches all beats based on the genre
   Future<List<TraningModel>> fetchBeatsByGenre(String genre) async {
-    List<TraningModel> beats = [];
+    final List<TraningModel> beats = [];
     for (int i = 0; i < beatInfoList.length; i++) {
-      if (beatInfoList[i]["genre"] == genre) {
+      if (beatInfoList[i]['genre'] == genre) {
         beats.add(TraningModel.fromJson(beatInfoList[i]));
       }
     }
@@ -42,14 +42,14 @@ class MockApiService {
 
   List<Map<String, dynamic>> beatInfoList = [
     {
-      "name": "Bread ‘n Butter",
-      "rhythm": "4:4",
-      "bpm": 92,
-      "totalTime": 100,
-      "genre": "Rock",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085321/1.-Bread-n-Butter-92bpm.wav",
-      "notes": [
+      'name': 'Bread ‘n Butter',
+      'rhythm': '4:4',
+      'bpm': 92,
+      'totalTime': 100,
+      'genre': 'Rock',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085321/1.-Bread-n-Butter-92bpm.wav',
+      'notes': [
         [1, 8],
         [99],
         [1, 2],
@@ -58,17 +58,17 @@ class MockApiService {
         [1, 8],
         [1, 2],
         [1],
-      ]
+      ],
     },
     {
-      "name": "Big Bell Bounce",
-      "rhythm": "4:4",
-      "bpm": 98,
-      "totalTime": 5,
-      "genre": "Pop",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Big Bell Bounce',
+      'rhythm': '4:4',
+      'bpm': 98,
+      'totalTime': 5,
+      'genre': 'Pop',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1, 3],
         [1],
         [1, 3],
@@ -79,17 +79,17 @@ class MockApiService {
         [1],
         [1, 2, 3],
         [1],
-      ]
+      ],
     },
     {
-      "name": "Hi-Hat Hotness",
-      "rhythm": "4:4",
-      "bpm": 100,
-      "totalTime": 10,
-      "genre": "Disco",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085414/3.-Hi-Hat-Hotness-100bpm.wav",
-      "notes": [
+      'name': 'Hi-Hat Hotness',
+      'rhythm': '4:4',
+      'bpm': 100,
+      'totalTime': 10,
+      'genre': 'Disco',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085414/3.-Hi-Hat-Hotness-100bpm.wav',
+      'notes': [
         [1, 8],
         [1],
         [1],
@@ -106,17 +106,17 @@ class MockApiService {
         [1],
         [1],
         [1],
-      ]
+      ],
     },
     {
-      "name": "Funk Beat",
-      "rhythm": "4:4",
-      "bpm": 110,
-      "totalTime": 10,
-      "genre": "Funk",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Funk Beat',
+      'rhythm': '4:4',
+      'bpm': 110,
+      'totalTime': 10,
+      'genre': 'Funk',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1, 3],
         [-1],
         [3],
@@ -126,17 +126,17 @@ class MockApiService {
         [3],
         [1, 3],
         [2, 3],
-      ]
+      ],
     },
     {
-      "name": "Shuffle Beat",
-      "rhythm": "4:4",
-      "bpm": 90,
-      "totalTime": 10,
-      "genre": "Pop",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Shuffle Beat',
+      'rhythm': '4:4',
+      'bpm': 90,
+      'totalTime': 10,
+      'genre': 'Pop',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1, 3],
         [-1],
         [2, 3],
@@ -145,17 +145,17 @@ class MockApiService {
         [-1],
         [2, 3],
         [-1],
-      ]
+      ],
     },
     {
-      "name": "16th Note Groove",
-      "rhythm": "4:4",
-      "bpm": 140,
-      "totalTime": 10,
-      "genre": "Groove",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': '16th Note Groove',
+      'rhythm': '4:4',
+      'bpm': 140,
+      'totalTime': 10,
+      'genre': 'Groove',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1, 3],
         [3],
         [3],
@@ -164,17 +164,17 @@ class MockApiService {
         [1, 3],
         [3],
         [2, 3],
-      ]
+      ],
     },
     {
-      "name": "Half-Time Groove",
-      "rhythm": "4:4",
-      "bpm": 80,
-      "totalTime": 30,
-      "genre": "Rock",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Half-Time Groove',
+      'rhythm': '4:4',
+      'bpm': 80,
+      'totalTime': 30,
+      'genre': 'Rock',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1, 3],
         [-1],
         [9],
@@ -223,17 +223,17 @@ class MockApiService {
         [-1],
         [3],
         [-1],
-      ]
+      ],
     },
     {
-      "name": "Reggae Beat",
-      "rhythm": "4:4",
-      "bpm": 70,
-      "totalTime": 10,
-      "genre": "Reggae",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Reggae Beat',
+      'rhythm': '4:4',
+      'bpm': 70,
+      'totalTime': 10,
+      'genre': 'Reggae',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1],
         [-4],
         [-1],
@@ -242,17 +242,17 @@ class MockApiService {
         [-4],
         [-1],
         [4],
-      ]
+      ],
     },
     {
-      "name": "Jazz Swing Beat",
-      "rhythm": "4:4",
-      "bpm": 110,
-      "totalTime": 10,
-      "genre": "Jazz",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Jazz Swing Beat',
+      'rhythm': '4:4',
+      'bpm': 110,
+      'totalTime': 10,
+      'genre': 'Jazz',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1, 5],
         [-1],
         [2, 5],
@@ -261,17 +261,17 @@ class MockApiService {
         [-1],
         [2, 5],
         [-1],
-      ]
+      ],
     },
     {
-      "name": "Bossa Nova Beat",
-      "rhythm": "4:4",
-      "bpm": 120,
-      "totalTime": 40,
-      "genre": "Pop",
-      "url":
-          "https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav",
-      "notes": [
+      'name': 'Bossa Nova Beat',
+      'rhythm': '4:4',
+      'bpm': 120,
+      'totalTime': 40,
+      'genre': 'Pop',
+      'url':
+          'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085354/2.-Big-Bell-Bounce-98bpm.wav',
+      'notes': [
         [1],
         [2],
         [3],
@@ -298,36 +298,33 @@ class MockApiService {
         [6, 7, 8],
         [7, 8, 1],
         [8, 1, 2],
-      ]
+      ],
     }
   ];
 
   /// Fetches all beat names
-  List<String> fetchAllBeatGenres() {
-    return [
-      "Rock",
-      "Pop",
-      "Disco",
-      "Funk",
-      "Groove",
-      "Reggae",
-      "Jazz",
-    ];
-  }
+  List<String> fetchAllBeatGenres() => [
+        'Rock',
+        'Pop',
+        'Disco',
+        'Funk',
+        'Groove',
+        'Reggae',
+        'Jazz',
+      ];
 
-  List<String> fetchAllSongNames() {
-    return ["Duman - Öyle dertli", "Duman - Senden Daha Güzel"];
-  }
+  List<String> fetchAllSongNames() =>
+      ['Duman - Öyle dertli', 'Duman - Senden Daha Güzel'];
 
   /// Retrieves beat metadata based on the index
   Map<String, dynamic> _getSongInfo(int index) {
-    List<Map<String, dynamic>> beatSongList = [
+    final List<Map<String, dynamic>> beatSongList = [
       {
-        "name": "Öyle dertli",
-        "rhythm": "4:4",
-        "bpm": 95,
-        "totalTime": 300,
-        "notes": [
+        'name': 'Öyle dertli',
+        'rhythm': '4:4',
+        'bpm': 95,
+        'totalTime': 300,
+        'notes': [
           [2, 3, 9],
           [2],
           [3],
@@ -802,15 +799,15 @@ class MockApiService {
           [2, 3, 9],
           [2],
           [3],
-          [2, 3, 9]
-        ]
+          [2, 3, 9],
+        ],
       },
       {
-        "name": "Senden Daha Güzel",
-        "rhythm": "4:4",
-        "bpm": 50,
-        "totalTime": 10,
-        "notes": [
+        'name': 'Senden Daha Güzel',
+        'rhythm': '4:4',
+        'bpm': 50,
+        'totalTime': 10,
+        'notes': [
           [1, 3],
           [-1],
           [3],
@@ -821,8 +818,8 @@ class MockApiService {
           [-1],
           [2, 3],
           [-1],
-          [99]
-        ]
+          [99],
+        ],
       },
     ];
 
@@ -833,55 +830,55 @@ class MockApiService {
                   Shuffle List
 ----------------------------------------------------------------------*/
   Future<List<ShuffleModel>?> getShuffleList() async {
-    List<ShuffleModel> shuffleList = [
+    final List<ShuffleModel> shuffleList = [
       ShuffleModel(
-        name: "Basic Rock Beat",
-        color: "0xFFB71C1C", // Dark Red
+        name: 'Basic Rock Beat',
+        color: '0xFFB71C1C', // Dark Red
         bpm: 100,
       ),
       ShuffleModel(
-        name: "Basic Pop Beat",
-        color: "0xFF4CAF50", // Green
+        name: 'Basic Pop Beat',
+        color: '0xFF4CAF50', // Green
         bpm: 50,
       ),
       ShuffleModel(
-        name: "Disco Beat",
-        color: "0xFFFFC107", // Amber
+        name: 'Disco Beat',
+        color: '0xFFFFC107', // Amber
         bpm: 130,
       ),
       ShuffleModel(
-        name: "Funk Beat",
-        color: "0xFF9C27B0", // Purple
+        name: 'Funk Beat',
+        color: '0xFF9C27B0', // Purple
         bpm: 110,
       ),
       ShuffleModel(
-        name: "Shuffle Beat",
-        color: "0xFF2196F3", // Blue
+        name: 'Shuffle Beat',
+        color: '0xFF2196F3', // Blue
         bpm: 90,
       ),
       ShuffleModel(
-        name: "16th Note Groove",
-        color: "0xFFFF5722", // Deep Orange
+        name: '16th Note Groove',
+        color: '0xFFFF5722', // Deep Orange
         bpm: 140,
       ),
       ShuffleModel(
-        name: "Half-Time Groove",
-        color: "0xFF795548", // Brown
+        name: 'Half-Time Groove',
+        color: '0xFF795548', // Brown
         bpm: 80,
       ),
       ShuffleModel(
-        name: "Reggae Beat",
-        color: "0xFF8BC34A", // Light Green
+        name: 'Reggae Beat',
+        color: '0xFF8BC34A', // Light Green
         bpm: 70,
       ),
       ShuffleModel(
-        name: "Jazz Swing Beat",
-        color: "0xFF3F51B5", // Indigo
+        name: 'Jazz Swing Beat',
+        color: '0xFF3F51B5', // Indigo
         bpm: 110,
       ),
       ShuffleModel(
-        name: "Bossa Nova Beat",
-        color: "0xFFFF9800", // Orange
+        name: 'Bossa Nova Beat',
+        color: '0xFFFF9800', // Orange
         bpm: 120,
       ),
     ];

@@ -12,45 +12,45 @@ class AppColors {
 
 class DrumParts {
   static const drumParts = {
-    "1": {
-      "led": 1,
-      "name": "Hi-Hat",
-      "rgb": [220, 0, 0]
+    '1': {
+      'led': 1,
+      'name': 'Hi-Hat',
+      'rgb': [220, 0, 0],
     }, // Yellow
-    "2": {
-      "led": 2,
-      "name": "Snare Drum",
-      "rgb": [7, 219, 2]
+    '2': {
+      'led': 2,
+      'name': 'Snare Drum',
+      'rgb': [7, 219, 2],
     }, // Red
-    "3": {
-      "led": 3,
-      "name": "Tom 1",
-      "rgb": [0, 212, 154]
+    '3': {
+      'led': 3,
+      'name': 'Tom 1',
+      'rgb': [0, 212, 154],
     }, // Green
-    "4": {
-      "led": 4,
-      "name": "Tom 2",
-      "rgb": [21, 25, 207]
+    '4': {
+      'led': 4,
+      'name': 'Tom 2',
+      'rgb': [21, 25, 207],
     }, // Light Blue
-    "5": {
-      "led": 5,
-      "name": "Tom 3",
-      "rgb": [235, 0, 255]
+    '5': {
+      'led': 5,
+      'name': 'Tom 3',
+      'rgb': [235, 0, 255],
     }, // Blue
-    "6": {
-      "led": 6,
-      "name": "Crash Cymbal",
-      "rgb": [208, 151, 154]
+    '6': {
+      'led': 6,
+      'name': 'Crash Cymbal',
+      'rgb': [208, 151, 154],
     }, // Orange Red
-    "7": {
-      "led": 7,
-      "name": "Ride Cymbal",
-      "rgb": [255, 125, 0]
+    '7': {
+      'led': 7,
+      'name': 'Ride Cymbal',
+      'rgb': [255, 125, 0],
     }, // Dark Orange
-    "8": {
-      "led": 8,
-      "name": "Kick Drum",
-      "rgb": [242, 255, 0]
+    '8': {
+      'led': 8,
+      'name': 'Kick Drum',
+      'rgb': [242, 255, 0],
     }, // Purple
   };
 }

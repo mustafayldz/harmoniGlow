@@ -35,81 +35,88 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          _startBluetoothScan();
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 30),
-          child: Column(
-            children: [
-              Expanded(
-                child: BlocBuilder<BluetoothBloc, BluetoothStateC>(
-                  builder: (context, state) {
-                    if (state.isScanning) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+  Widget build(BuildContext context) => Scaffold(
+        body: RefreshIndicator(
+          onRefresh: () async {
+            _startBluetoothScan();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 30),
+            child: Column(
+              children: [
+                Expanded(
+                  child: BlocBuilder<BluetoothBloc, BluetoothStateC>(
+                    builder: (context, state) {
+                      if (state.isScanning) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                    filteredResults = state.scanResults.where((result) {
-                      return result.device.advName.isNotEmpty;
-                    }).toList();
+                      filteredResults = state.scanResults
+                          .where((result) => result.device.advName.isNotEmpty)
+                          .toList();
 
-                    if (filteredResults.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: Text(
-                                'No devices found. Please ensure Bluetooth is enabled.',
-                                style: TextStyle(
-                                    fontSize: 18, color: Colors.grey[600]),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () async {
-                                _startBluetoothScan();
-                              },
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Refresh'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                      if (filteredResults.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                  'No devices found. Please ensure Bluetooth is enabled.',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey[600],
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  _startBluetoothScan();
+                                },
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Refresh'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-                    return ListView.builder(
-                      itemCount: filteredResults.length,
-                      itemBuilder: (context, index) {
-                        final result = filteredResults[index];
-                        return _buildDeviceCard(context, result.device, result);
-                      },
-                    );
-                  },
+                      return ListView.builder(
+                        itemCount: filteredResults.length,
+                        itemBuilder: (context, index) {
+                          final result = filteredResults[index];
+                          return _buildDeviceCard(
+                            context,
+                            result.device,
+                            result,
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-              _buildPurchaseCard(),
-            ],
+                _buildPurchaseCard(),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
+      );
 
   Widget _buildDeviceCard(
-      BuildContext context, BluetoothDevice device, ScanResult result) {
+    BuildContext context,
+    BluetoothDevice device,
+    ScanResult result,
+  ) {
     final bluetoothBloc = context.read<BluetoothBloc>();
 
     return Card(
@@ -148,11 +155,14 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
                   await _connectToDevice(context, device);
                 }
               },
-              icon: Icon(bluetoothBloc.state.isConnected
-                  ? Icons.bluetooth_disabled
-                  : Icons.bluetooth_connected),
+              icon: Icon(
+                bluetoothBloc.state.isConnected
+                    ? Icons.bluetooth_disabled
+                    : Icons.bluetooth_connected,
+              ),
               label: Text(
-                  bluetoothBloc.state.isConnected ? 'Disconnect' : 'Connect'),
+                bluetoothBloc.state.isConnected ? 'Disconnect' : 'Connect',
+              ),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
@@ -167,39 +177,39 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     );
   }
 
-  Widget _buildPurchaseCard() {
-    return Card(
-      elevation: 6,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-        child: ElevatedButton(
-          onPressed: () async {
-            const url =
-                'https://www.amazon.ca/Jackery-Generator-Portable-Charging-Emergencies/dp/B0DHRV6W9K?ref=dlx_black_dg_dcl_B0DHRV6W9K_dt_sl7_14&th=1';
-            if (await canLaunchUrl(Uri.parse(url))) {
-              await launchUrl(Uri.parse(url));
-            } else {
-              throw 'Could not launch $url';
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          child: const Text('Buy on Amazon'),
+  Widget _buildPurchaseCard() => Card(
+        elevation: 6,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-      ),
-    );
-  }
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          child: ElevatedButton(
+            onPressed: () async {
+              const url =
+                  'https://www.amazon.ca/Jackery-Generator-Portable-Charging-Emergencies/dp/B0DHRV6W9K?ref=dlx_black_dg_dcl_B0DHRV6W9K_dt_sl7_14&th=1';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(Uri.parse(url));
+              } else {
+                throw 'Could not launch $url';
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Buy on Amazon'),
+          ),
+        ),
+      );
 
   Future<void> _disconnectDevice(
-      BuildContext context, BluetoothDevice device) async {
+    BuildContext context,
+    BluetoothDevice device,
+  ) async {
     final bluetoothBloc = context.read<BluetoothBloc>();
 
     // Await the event dispatch to handle any asynchronous operation in the bloc
@@ -210,7 +220,9 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
   }
 
   Future<void> _connectToDevice(
-      BuildContext context, BluetoothDevice device) async {
+    BuildContext context,
+    BluetoothDevice device,
+  ) async {
     final bluetoothBloc = context.read<BluetoothBloc>();
     bluetoothBloc.add(ConnectToDeviceEvent(device));
     await _storageService.saveDevice(device);
@@ -224,14 +236,14 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     if (!mounted) return;
 
     if (skipIntro) {
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const HomePage(),
         ),
       );
     } else {
-      Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const IntroPage(),

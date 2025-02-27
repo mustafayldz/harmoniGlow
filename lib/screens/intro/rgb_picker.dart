@@ -10,8 +10,8 @@ import 'package:harmoniglow/shared/countdown.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 
 class RGBPicker extends StatefulWidget {
+  const RGBPicker({required this.partNumber, super.key});
   final int partNumber;
-  const RGBPicker({super.key, required this.partNumber});
 
   @override
   RGBPickerState createState() => RGBPickerState();
@@ -75,23 +75,30 @@ class RGBPickerState extends State<RGBPicker> {
         ElevatedButton(
           onPressed: () async {
             // Prepare the drum part model and save it
-            DrumModel drumPart = DrumModel(
+            final DrumModel drumPart = DrumModel(
               led: widget.partNumber,
               name: rgbValues?.name,
               rgb: [
-                _currentColor.red,
-                _currentColor.green,
-                _currentColor.blue,
+                _currentColor.r.toInt(),
+                _currentColor.g.toInt(),
+                _currentColor.b.toInt(),
               ],
             );
 
-            StorageService.saveDrumPart(widget.partNumber.toString(), drumPart);
+            await StorageService.saveDrumPart(
+              widget.partNumber.toString(),
+              drumPart,
+            );
 
             // Prepare the batch message to send
-            Map<String, dynamic> batchMessage = {
+            final Map<String, dynamic> batchMessage = {
               'notes': [widget.partNumber],
               'rgb': [
-                [_currentColor.red, _currentColor.green, _currentColor.blue]
+                [
+                  _currentColor.r.toInt(),
+                  _currentColor.g.toInt(),
+                  _currentColor.b.toInt(),
+                ],
               ],
             };
 
@@ -104,16 +111,14 @@ class RGBPickerState extends State<RGBPicker> {
             await showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (BuildContext context) {
-                return const Countdown();
-              },
+              builder: (BuildContext context) => const Countdown(),
             );
 
             // Prepare the message to turn off the light
-            Map<String, dynamic> offMessage = {
+            final Map<String, dynamic> offMessage = {
               'notes': [widget.partNumber],
               'rgb': [
-                [0, 0, 0]
+                [0, 0, 0],
               ],
             };
 

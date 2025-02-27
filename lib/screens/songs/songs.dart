@@ -33,11 +33,12 @@ class SongPageState extends State<SongPage> {
     _controller = YoutubePlayerController(
       initialVideoId: 'sqoNLQxTuz8',
       flags: const YoutubePlayerFlags(
-          autoPlay: false,
-          mute: false,
-          disableDragSeek: true,
-          enableCaption: false,
-          hideControls: true),
+        autoPlay: false,
+        mute: false,
+        disableDragSeek: true,
+        enableCaption: false,
+        hideControls: true,
+      ),
     );
   }
 
@@ -51,14 +52,14 @@ class SongPageState extends State<SongPage> {
   void listener() {
     if (_controller != null && mounted) {
       // Check the current player state
-      YoutubePlayerValue playerValue = _controller!.value;
+      final YoutubePlayerValue playerValue = _controller!.value;
 
       // Example: Auto-pause the video when it ends
       if (playerValue.playerState == PlayerState.ended) {
         setState(() {
           playbackState = PlaybackState.stopped;
         });
-        debugPrint("Video ended. Stopping playback.");
+        debugPrint('Video ended. Stopping playback.');
       }
     }
   }
@@ -95,7 +96,7 @@ class SongPageState extends State<SongPage> {
 
             // Exercise List Title
             const Text(
-              "Exercises",
+              'Exercises',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
@@ -104,7 +105,7 @@ class SongPageState extends State<SongPage> {
             LayoutBuilder(
               builder: (context, constraints) {
                 // Calculate the height based on the number of items
-                var itemHeight = 60.0; // Approximate height of each ListTile
+                final itemHeight = 60.0; // Approximate height of each ListTile
                 final maxListHeight = constraints.maxHeight * 0.5;
                 final totalHeight = beatNames!.length * itemHeight;
 
@@ -113,13 +114,11 @@ class SongPageState extends State<SongPage> {
                       totalHeight > maxListHeight ? maxListHeight : totalHeight,
                   child: ListView.builder(
                     itemCount: beatNames?.length ?? 0,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(beatNames![index]),
-                        trailing: const Icon(Icons.music_note),
-                        onTap: () => selectBeat(index),
-                      );
-                    },
+                    itemBuilder: (context, index) => ListTile(
+                      title: Text(beatNames![index]),
+                      trailing: const Icon(Icons.music_note),
+                      onTap: () => selectBeat(index),
+                    ),
                   ),
                 );
               },
@@ -139,16 +138,18 @@ class SongPageState extends State<SongPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Selected Beat: ${currentBeat!.name}",
+                        'Selected Beat: ${currentBeat!.name}',
                         style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 10),
-                      Text("Rhythm: ${currentBeat!.rhythm}"),
+                      Text('Rhythm: ${currentBeat!.rhythm}'),
                       const SizedBox(height: 10),
-                      Text("Total Time: ${currentBeat!.totalTime} seconds"),
+                      Text('Total Time: ${currentBeat!.totalTime} seconds'),
                       const SizedBox(height: 10),
-                      Text("Metronome BPM: ${currentBeat!.bpm!.toInt()}"),
+                      Text('Metronome BPM: ${currentBeat!.bpm!.toInt()}'),
                       const SizedBox(height: 10),
 
                       // Youtube Player
@@ -194,64 +195,61 @@ class SongPageState extends State<SongPage> {
     fetchBeat(index);
   }
 
-  Widget _buildPlaybackControls(BuildContext context, DeviceBloc deviceBloc) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // Play button: Enabled when stopped or paused
-        IconButton(
-          icon: const Icon(Icons.play_arrow, size: 30),
-          color: Colors.green,
-          onPressed: playbackState == PlaybackState.stopped ||
-                  playbackState == PlaybackState.paused ||
-                  currentBeat!.notes!.isNotEmpty
-              ? () async {
-                  await showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (BuildContext context) {
-                      return const Countdown();
-                    },
-                  );
-                  setState(() {
-                    _controller?.play();
-                    playbackState = PlaybackState.playing;
-                  });
-                  deviceBloc.add(StartSendingEvent(context, false));
-                }
-              : null,
-        ),
-        // Pause button: Enabled when playing
-        IconButton(
-          icon: const Icon(Icons.pause, size: 30),
-          color: Colors.orange,
-          onPressed: playbackState == PlaybackState.playing
-              ? () {
-                  setState(() {
-                    _controller?.pause();
-                    playbackState = PlaybackState.paused;
-                  });
-                  deviceBloc.add(PauseSendingEvent());
-                }
-              : null,
-        ),
-        // Stop button: Enabled when playing or paused
-        IconButton(
-          icon: const Icon(Icons.stop, size: 30),
-          color: Colors.red,
-          onPressed: playbackState == PlaybackState.playing ||
-                  playbackState == PlaybackState.paused
-              ? () {
-                  setState(() {
-                    _controller?.seekTo(const Duration(seconds: 0));
-                    _controller?.pause();
-                    playbackState = PlaybackState.stopped;
-                  });
-                  deviceBloc.add(StopSendingEvent(context));
-                }
-              : null,
-        ),
-      ],
-    );
-  }
+  Widget _buildPlaybackControls(BuildContext context, DeviceBloc deviceBloc) =>
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Play button: Enabled when stopped or paused
+          IconButton(
+            icon: const Icon(Icons.play_arrow, size: 30),
+            color: Colors.green,
+            onPressed: playbackState == PlaybackState.stopped ||
+                    playbackState == PlaybackState.paused ||
+                    currentBeat!.notes!.isNotEmpty
+                ? () async {
+                    await showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) => const Countdown(),
+                    );
+                    setState(() {
+                      _controller?.play();
+                      playbackState = PlaybackState.playing;
+                    });
+                    deviceBloc.add(StartSendingEvent(context, false));
+                  }
+                : null,
+          ),
+          // Pause button: Enabled when playing
+          IconButton(
+            icon: const Icon(Icons.pause, size: 30),
+            color: Colors.orange,
+            onPressed: playbackState == PlaybackState.playing
+                ? () {
+                    setState(() {
+                      _controller?.pause();
+                      playbackState = PlaybackState.paused;
+                    });
+                    deviceBloc.add(PauseSendingEvent());
+                  }
+                : null,
+          ),
+          // Stop button: Enabled when playing or paused
+          IconButton(
+            icon: const Icon(Icons.stop, size: 30),
+            color: Colors.red,
+            onPressed: playbackState == PlaybackState.playing ||
+                    playbackState == PlaybackState.paused
+                ? () {
+                    setState(() {
+                      _controller?.seekTo(const Duration(seconds: 0));
+                      _controller?.pause();
+                      playbackState = PlaybackState.stopped;
+                    });
+                    deviceBloc.add(StopSendingEvent(context));
+                  }
+                : null,
+          ),
+        ],
+      );
 }

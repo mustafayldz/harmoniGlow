@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class CustomButton extends StatefulWidget {
-  final Color color;
-  final String label;
-  final VoidCallback onPress;
   const CustomButton({
-    super.key,
     required this.color,
     required this.label,
     required this.onPress,
+    super.key,
   });
+  final Color color;
+  final String label;
+  final VoidCallback onPress;
 
   @override
   State<CustomButton> createState() => _CustomButtonState();
@@ -74,20 +74,18 @@ class _CustomButtonState extends State<CustomButton>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Center(
-          child: CustomPaint(
-            painter: AnimatedBorderPainter(
-              animation: _controller,
-              color: widget.color,
-            ),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0.0, end: gradientProgress),
-              duration: const Duration(seconds: 1),
-              builder: (_, progress, child) {
-                return GestureDetector(
+  Widget build(BuildContext context) => Column(
+        children: [
+          Center(
+            child: CustomPaint(
+              painter: AnimatedBorderPainter(
+                animation: _controller,
+                color: widget.color,
+              ),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0.0, end: gradientProgress),
+                duration: const Duration(seconds: 1),
+                builder: (_, progress, child) => GestureDetector(
                   onTapDown: _handleTapDown,
                   onTapUp: _handleTapUp,
                   onTapCancel: _handleTapCancel,
@@ -97,22 +95,19 @@ class _CustomButtonState extends State<CustomButton>
                     color: widget.color,
                     label: widget.label,
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
-        ),
-      ],
-    );
-  }
+        ],
+      );
 }
 
 class AnimatedBorderPainter extends CustomPainter {
-  final Color color;
-  final Animation<double> animation;
-
   AnimatedBorderPainter({required this.animation, required this.color})
       : super(repaint: animation);
+  final Color color;
+  final Animation<double> animation;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -156,7 +151,9 @@ class AnimatedBorderPainter extends CustomPainter {
         final remainingLength = length - (currentLength - offset);
         final extractLength = remainingLength.clamp(0, metric.length - start);
         path.addPath(
-            metric.extractPath(start, start + extractLength), Offset.zero);
+          metric.extractPath(start, start + extractLength),
+          Offset.zero,
+        );
         break;
       }
       currentLength += metric.length;
@@ -169,41 +166,42 @@ class AnimatedBorderPainter extends CustomPainter {
 }
 
 class ProgressButton extends StatelessWidget {
+  const ProgressButton({
+    required this.size,
+    required this.progress,
+    required this.color,
+    required this.label,
+    super.key,
+  });
   final Size size;
   final double progress;
   final Color color;
   final String label;
-  const ProgressButton(
-      {super.key,
-      required this.size,
-      required this.progress,
-      required this.color,
-      required this.label});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: size.height,
-      width: size.width,
-      decoration: BoxDecoration(
+  Widget build(BuildContext context) => Container(
+        height: size.height,
+        width: size.width,
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: color.withOpacity(0.3)),
-      child: Stack(
-        children: <Widget>[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              color: color,
-              width: size.width * progress,
+          color: color.withValues(alpha: (0.3 * 255)),
+        ),
+        child: Stack(
+          children: <Widget>[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: color,
+                width: size.width * progress,
+              ),
             ),
-          ),
-          Center(
+            Center(
               child: Text(
-            label,
-            style: const TextStyle(color: Colors.black, fontSize: 14),
-          ))
-        ],
-      ),
-    );
-  }
+                label,
+                style: const TextStyle(color: Colors.black, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+      );
 }

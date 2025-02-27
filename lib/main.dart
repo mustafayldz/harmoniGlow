@@ -19,35 +19,33 @@ class HarmoniGlow extends StatelessWidget {
   const HarmoniGlow({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        // Provide BluetoothBloc
-        BlocProvider<BluetoothBloc>(
-          create: (context) => BluetoothBloc(),
+  Widget build(BuildContext context) => MultiBlocProvider(
+        providers: [
+          // Provide BluetoothBloc
+          BlocProvider<BluetoothBloc>(
+            create: (context) => BluetoothBloc(),
+          ),
+          BlocProvider<DeviceBloc>(
+            create: (context) => DeviceBloc(),
+          ),
+          RepositoryProvider<StorageService>(
+            create: (context) => StorageService(),
+          ),
+        ],
+        child: MaterialApp(
+          color: Colors.lightBlue,
+          debugShowCheckedModeBanner: false,
+          home: StreamBuilder<BluetoothAdapterState>(
+            stream: FlutterBluePlus.adapterState,
+            initialData: BluetoothAdapterState.unknown,
+            builder: (context, snapshot) {
+              final state = snapshot.data;
+              if (state == BluetoothAdapterState.on) {
+                return const FindDevicesScreen();
+              }
+              return BluetoothOffScreen(state: state);
+            },
+          ),
         ),
-        BlocProvider<DeviceBloc>(
-          create: (context) => DeviceBloc(),
-        ),
-        RepositoryProvider<StorageService>(
-          create: (context) => StorageService(),
-        ),
-      ],
-      child: MaterialApp(
-        color: Colors.lightBlue,
-        debugShowCheckedModeBanner: false,
-        home: StreamBuilder<BluetoothAdapterState>(
-          stream: FlutterBluePlus.adapterState,
-          initialData: BluetoothAdapterState.unknown,
-          builder: (context, snapshot) {
-            final state = snapshot.data;
-            if (state == BluetoothAdapterState.on) {
-              return const FindDevicesScreen();
-            }
-            return BluetoothOffScreen(state: state);
-          },
-        ),
-      ),
-    );
-  }
+      );
 }
