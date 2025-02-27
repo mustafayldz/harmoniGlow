@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -56,17 +57,13 @@ class _ShuffleModeState extends State<ShuffleMode>
   @override
   Widget build(BuildContext context) {
     final deviceBloc = context.read<DeviceBloc>();
-    return GestureDetector(
-      onTap: () {
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
-      behavior:
-          HitTestBehavior.opaque, // Ensure it captures taps on empty spaces
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Shuffle Mode'),
-        ),
-        body: SingleChildScrollView(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Shuffle Mode'),
+      ),
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -125,11 +122,11 @@ class _ShuffleModeState extends State<ShuffleMode>
                     duration: const Duration(milliseconds: 500),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: (0.8 * 255)),
+                        color: Colors.white.withValues(alpha: (0.8)),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: (0.1 * 255)),
+                            color: Colors.black.withValues(alpha: (0.1)),
                             blurRadius: 5,
                             spreadRadius: 2,
                           ),
@@ -206,8 +203,7 @@ class _ShuffleModeState extends State<ShuffleMode>
                                     _controller.stop();
                                   } else {
                                     await startShuffle(context, deviceBloc);
-
-                                    await _controller.repeat();
+                                    unawaited(_controller.repeat());
                                   }
                                   setState(() {
                                     isPlaying = !isPlaying;
@@ -302,7 +298,7 @@ class _PulsePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = Color(int.parse(selectedShuffleModel.color!))
-          .withValues(alpha: (1 - progress * 255))
+          .withValues(alpha: ((1 - progress)))
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0;
 

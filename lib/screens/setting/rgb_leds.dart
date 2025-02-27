@@ -46,7 +46,7 @@ class RgbLedsScreenState extends State<RgbLedsScreen> {
             children: [
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.deepPurpleAccent.withValues(alpha: (0.1 * 255)),
+                  color: Colors.deepPurpleAccent.withValues(alpha: (0.1)),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 padding: const EdgeInsets.all(16),

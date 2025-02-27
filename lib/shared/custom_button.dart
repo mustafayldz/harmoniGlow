@@ -184,7 +184,7 @@ class ProgressButton extends StatelessWidget {
         width: size.width,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: color.withValues(alpha: (0.3 * 255)),
+          color: color.withValues(alpha: (0.3)),
         ),
         child: Stack(
           children: <Widget>[
