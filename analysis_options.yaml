@@ -3,7 +3,6 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - "**.g.dart" # Otomatik oluşturulan dosyaları analizden hariç tut
-    - "**.freezed.dart" # Freezed için otomatik dosyaları hariç tut
 
 linter:
   rules:
