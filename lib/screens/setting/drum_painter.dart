@@ -1,128 +1,137 @@
 import 'package:flutter/material.dart';
+import 'package:harmoniglow/models/drum_model.dart';
 
 class DrumPainter extends CustomPainter {
   DrumPainter({
     required this.onTapPart,
     required this.imageSize,
+    required this.partColors,
     this.tapPosition,
   });
 
   final Offset? tapPosition;
   final Function(String) onTapPart;
   final Size imageSize;
+  final List<DrumModel>? partColors; // Dynamic colors for each drum part
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()..color = Colors.transparent;
+    final Paint paint = Paint();
 
     // Define base positions relative to a reference image size
     const Size referenceSize = Size(400, 400); // Reference image size
     final double scaleX = imageSize.width / referenceSize.width;
     final double scaleY = imageSize.height / referenceSize.height;
 
-    // Dynamic drum part positions with colors
+    // Dynamic drum part positions
     final List<Map<String, dynamic>> drumParts = [
       {
         'name': 'Hi-Hat',
-        'center': Offset(68 * scaleX, 300 * scaleY),
-        'radius': 43.0 * scaleX,
-        'color': Colors.blue.withValues(alpha: 0.3),
+        'center': Offset(78 * scaleX, 480 * scaleY),
+        'radius': 50.0 * scaleX,
       },
       {
         'name': 'Crash Cymbal',
-        'center': Offset(156 * scaleX, 128 * scaleY),
-        'radius': 50.0 * scaleX,
-        'color': Colors.amber.withValues(alpha: 0.3),
+        'center': Offset(175 * scaleX, 207 * scaleY),
+        'radius': 55.0 * scaleX,
       },
       {
         'name': 'Ride Cymbal',
-        'center': Offset(365 * scaleX, 155 * scaleY),
-        'radius': 48.0 * scaleX,
-        'color': Colors.orange.withValues(alpha: 0.3),
+        'center': Offset(416 * scaleX, 250 * scaleY),
+        'radius': 55.0 * scaleX,
       },
       {
         'name': 'Snare Drum',
-        'center': Offset(174 * scaleX, 345 * scaleY),
-        'radius': 35.0 * scaleX,
-        'color': Colors.teal.withValues(alpha: 0.3),
+        'center': Offset(197 * scaleX, 550 * scaleY),
+        'radius': 37.0 * scaleX,
       },
       {
         'name': 'Tom 1',
-        'center': Offset(206 * scaleX, 221 * scaleY),
-        'radius': 33.0 * scaleX,
-        'color': Colors.red.withValues(alpha: 0.3),
+        'center': Offset(235 * scaleX, 355 * scaleY),
+        'radius': 36.0 * scaleX,
       },
       {
         'name': 'Tom 2',
-        'center': Offset(279 * scaleX, 221 * scaleY),
-        'radius': 33.0 * scaleX,
-        'color': Colors.green.withValues(alpha: 0.3),
+        'center': Offset(318 * scaleX, 355 * scaleY),
+        'radius': 36.0 * scaleX,
       },
       {
         'name': 'Tom 3',
-        'center': Offset(348 * scaleX, 333 * scaleY),
-        'radius': 32.0 * scaleX,
-        'color': Colors.purple.withValues(alpha: 0.3),
+        'center': Offset(396 * scaleX, 535 * scaleY),
+        'radius': 36.0 * scaleX,
       },
       {
         'name': 'Kick Drum',
-        'center': Offset(240 * scaleX, 295 * scaleY),
-        'radius': 25.0 * scaleX,
-        'color': Colors.yellow.withValues(alpha: 0.3),
+        'center': Offset(270 * scaleX, 480 * scaleY),
+        'radius': 30.0 * scaleX,
       },
     ];
 
-    // Draw each drum part with its specific color
+    // Draw each drum part with its assigned color
     for (var part in drumParts) {
-      paint.color = part['color'];
+      final DrumModel drumModel = (partColors ?? []).firstWhere(
+        (element) => element.name == part['name'],
+        orElse: () =>
+            DrumModel(rgb: [255, 255, 255]), // Default to white if not found
+      );
+
+      // Convert RGB list to Flutter Color
+      final Color partColor = Color.fromARGB(
+        150,
+        drumModel.rgb?[0] ?? 255,
+        drumModel.rgb?[1] ?? 255,
+        drumModel.rgb?[2] ?? 255,
+      );
+
+      paint.color = partColor;
       canvas.drawCircle(part['center'], part['radius'], paint);
     }
   }
 
   bool detectTap(Offset position) {
-    final double scaleX = imageSize.width / 350;
-    final double scaleY = imageSize.height / 250;
+    final double scaleX = imageSize.width / 400;
+    final double scaleY = imageSize.height / 400;
 
     final List<Map<String, dynamic>> drumParts = [
       {
         'name': 'Hi-Hat',
-        'center': Offset(68 * scaleX, 300 * scaleY),
-        'radius': 43.0 * scaleX,
-      },
-      {
-        'name': 'Crash Cymbal',
-        'center': Offset(156 * scaleX, 128 * scaleY),
+        'center': Offset(78 * scaleX, 480 * scaleY),
         'radius': 50.0 * scaleX,
       },
       {
+        'name': 'Crash Cymbal',
+        'center': Offset(175 * scaleX, 207 * scaleY),
+        'radius': 55.0 * scaleX,
+      },
+      {
         'name': 'Ride Cymbal',
-        'center': Offset(365 * scaleX, 155 * scaleY),
-        'radius': 48.0 * scaleX,
+        'center': Offset(416 * scaleX, 250 * scaleY),
+        'radius': 55.0 * scaleX,
       },
       {
         'name': 'Snare Drum',
-        'center': Offset(174 * scaleX, 345 * scaleY),
-        'radius': 35.0 * scaleX,
+        'center': Offset(197 * scaleX, 550 * scaleY),
+        'radius': 37.0 * scaleX,
       },
       {
         'name': 'Tom 1',
-        'center': Offset(206 * scaleX, 221 * scaleY),
-        'radius': 33.0 * scaleX,
+        'center': Offset(235 * scaleX, 355 * scaleY),
+        'radius': 36.0 * scaleX,
       },
       {
         'name': 'Tom 2',
-        'center': Offset(279 * scaleX, 221 * scaleY),
-        'radius': 33.0 * scaleX,
+        'center': Offset(318 * scaleX, 355 * scaleY),
+        'radius': 36.0 * scaleX,
       },
       {
         'name': 'Tom 3',
-        'center': Offset(348 * scaleX, 333 * scaleY),
-        'radius': 32.0 * scaleX,
+        'center': Offset(396 * scaleX, 535 * scaleY),
+        'radius': 36.0 * scaleX,
       },
       {
         'name': 'Kick Drum',
-        'center': Offset(240 * scaleX, 295 * scaleY),
-        'radius': 25.0 * scaleX,
+        'center': Offset(270 * scaleX, 480 * scaleY),
+        'radius': 30.0 * scaleX,
       },
     ];
 

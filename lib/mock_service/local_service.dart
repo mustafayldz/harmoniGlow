@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/models/drum_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,19 +43,6 @@ class StorageService {
   //// Drum Parts
   ///
   ///
-  /// Save all drum parts in bulk when the app starts, if they haven't been saved yet
-  static Future<void> initializeDrumParts() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? savedData = prefs.getString(drumPartsKey);
-
-    if (savedData == null) {
-      // Save the predefined drum parts
-      await saveDrumPartsBulk(
-        DrumParts.drumParts.values.map((e) => DrumModel.fromJson(e)).toList(),
-      );
-    }
-  }
-
   /// Save all drum parts in bulk
   static Future<void> saveDrumPartsBulk(List<DrumModel> drumParts) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
