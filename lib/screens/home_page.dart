@@ -2,7 +2,6 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
 import 'package:harmoniglow/main.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
@@ -65,17 +64,12 @@ class _HomePageState extends State<HomePage> {
   Widget _buildConnectionStatus(BuildContext context, BluetoothStateC state) =>
       InkWell(
         onTap: () {
-          if (state.isConnected) {
-            context
-                .read<BluetoothBloc>()
-                .add(DisconnectFromDeviceEvent(state.connectedDevice!));
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const FindDevicesScreen(),
-              ),
-            );
-          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const FindDevicesScreen(),
+            ),
+          );
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

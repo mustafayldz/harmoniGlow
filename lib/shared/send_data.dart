@@ -29,4 +29,22 @@ class SendData {
       }
     }
   }
+
+  Future<void> sendHexData(BluetoothBloc bloc, List<int> data) async {
+    final device = bloc.state.connectedDevice;
+    final characteristic = bloc.state.characteristic;
+
+    if (device == null || characteristic == null) {
+      debugPrint('Error: No connected device or characteristic is null.');
+      return;
+    }
+
+    try {
+      await characteristic.write(data,
+          withoutResponse: characteristic.properties.writeWithoutResponse);
+      debugPrint('Data sent successfully.');
+    } catch (error) {
+      debugPrint('Error sending data: $error');
+    }
+  }
 }
