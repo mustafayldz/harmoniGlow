@@ -38,6 +38,8 @@ linter:
     prefer_final_locals: true # Yerel değişkenlerin mümkünse final olmasını teşvik et
     prefer_for_elements_to_map_fromIterable: true # `for` kullanımı, `map()` yerine teşvik edilir
     avoid_classes_with_only_static_members: true # Sadece statik metodları olan sınıfları engeller (utility sınıfları için `abstract` kullan)
+    use_build_context_synchronously: false # BuildContext'in senkron kullanımını zorunlu kılar
+    avoid_redundant_argument_values: true # Gereksiz argüman değerlerini engeller
 
     # 🛠 Flutter ile ilgili öneriler
     use_key_in_widget_constructors: true # Stateful widget'larda key kullanımı önerilir

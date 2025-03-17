@@ -6,7 +6,6 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/home_page.dart';
-import 'package:harmoniglow/screens/intro/intro_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FindDevicesScreen extends StatefulWidget {
@@ -17,21 +16,42 @@ class FindDevicesScreen extends StatefulWidget {
 }
 
 class FindDevicesScreenState extends State<FindDevicesScreen> {
+  bool hasNavigated = false; // ✅ Prevents multiple navigations
   List<ScanResult> filteredResults = [];
   final _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
-    _startBluetoothScan();
+
+    // ✅ Start scan only if navigation hasn't happened yet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !hasNavigated) {
+        _startBluetoothScan();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    Future.microtask(() {
+      if (mounted) {
+        context.read<BluetoothBloc>().add(StopScanEvent());
+      }
+    });
+    super.dispose();
   }
 
   void _startBluetoothScan() {
-    context.read<BluetoothBloc>().add(StartScanEvent());
+    if (mounted) {
+      context.read<BluetoothBloc>().add(StartScanEvent());
+    }
   }
 
   void _stopBluetoothScan() {
-    context.read<BluetoothBloc>().add(StopScanEvent());
+    if (mounted) {
+      context.read<BluetoothBloc>().add(StopScanEvent());
+    }
   }
 
   @override
@@ -232,29 +252,13 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
   }
 
   void _navigateToDeviceScreen(BluetoothDevice device) async {
-    final skipIntro = await StorageService.skipIntroPage();
     if (!mounted) return;
 
-    if (skipIntro) {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const HomePage(),
-        ),
-      );
-    } else {
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const IntroPage(),
-        ),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _stopBluetoothScan();
-    super.dispose();
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const HomePage(),
+      ),
+    );
   }
 }

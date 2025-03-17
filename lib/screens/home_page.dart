@@ -1,37 +1,61 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
+import 'package:harmoniglow/main.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
-import 'package:harmoniglow/screens/setting/rgb_leds.dart';
+import 'package:harmoniglow/screens/setting/drum_adjustment.dart';
 import 'package:harmoniglow/screens/shuffle/shuffle_mode.dart';
 import 'package:harmoniglow/screens/songs/songs.dart';
 import 'package:harmoniglow/screens/training/traning_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return Scaffold(
-      body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
-        builder: (context, bluetoothState) => SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * 0.05,
-            vertical: screenHeight * 0.02,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: screenHeight * 0.05),
-              _buildConnectionStatus(context, bluetoothState),
-              SizedBox(height: screenHeight * 0.02),
-              _buildNavigationCards(context, screenHeight),
-            ],
+    return BlocListener<BluetoothBloc, BluetoothStateC>(
+      listener: (context, bluetoothState) {
+        if (!bluetoothState.isConnected) {
+          debugPrint('Navigating to FindDevicesScreen due to disconnection.');
+
+          Future.microtask(() {
+            if (navigatorKey.currentContext != null) {
+              navigatorKey.currentState?.pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const FindDevicesScreen(),
+                ),
+              );
+            }
+          });
+        }
+      },
+      child: Scaffold(
+        body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
+          builder: (context, bluetoothState) => SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: screenWidth * 0.05,
+              vertical: screenHeight * 0.02,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: screenHeight * 0.05),
+                _buildConnectionStatus(context, bluetoothState),
+                SizedBox(height: screenHeight * 0.02),
+                _buildNavigationCards(context, screenHeight),
+              ],
+            ),
           ),
         ),
       ),
@@ -106,7 +130,7 @@ class HomePage extends StatelessWidget {
             'Settings',
             '',
             screenHeight,
-            const RgbLedsScreen(),
+            const DrumAdjustment(),
           ),
         ],
       );
@@ -122,10 +146,17 @@ class HomePage extends StatelessWidget {
         elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => destination),
-          ),
+          onTap: () {
+            FirebaseAnalytics.instance.logEvent(
+              name: title,
+              parameters: {'$title page': 'User clicked on $title'},
+            );
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => destination),
+            );
+          },
           child: Container(
             padding: EdgeInsets.all(screenHeight * 0.02),
             width: double.infinity,

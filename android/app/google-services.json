@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "846406380683",
+    "project_id": "harmoni-glow",
+    "storage_bucket": "harmoni-glow.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:846406380683:android:ede5625de77fc48f31788e",
+        "android_client_info": {
+          "package_name": "com.example.harmoniglow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRWyQSBFq93wkWK_mhDoshAbN1gJJTe-8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

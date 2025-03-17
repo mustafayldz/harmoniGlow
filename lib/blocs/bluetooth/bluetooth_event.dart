@@ -4,6 +4,8 @@ abstract class BluetoothEvent {}
 
 class StartScanEvent extends BluetoothEvent {}
 
+class ForceNavigationEvent extends BluetoothEvent {}
+
 class StopScanEvent extends BluetoothEvent {}
 
 class ConnectToDeviceEvent extends BluetoothEvent {

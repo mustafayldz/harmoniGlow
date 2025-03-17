@@ -1,6 +1,32 @@
 import 'package:harmoniglow/models/shuffle_model.dart';
 import 'package:harmoniglow/models/traning_model.dart';
 
+class ApiService {
+  // Future<void> sendSignInLink(BuildContext context, String email) async {
+  //   final FirebaseAuth auth = FirebaseAuth.instance;
+  //   final ActionCodeSettings actionCodeSettings = ActionCodeSettings(
+  //     url: 'https://yourapp.page.link/login', // Change to your dynamic link
+  //     handleCodeInApp: true,
+  //     androidInstallApp: true,
+  //     androidMinimumVersion: '21',
+  //   );
+
+  //   try {
+  //     await auth.sendSignInLinkToEmail(
+  //       email: email.trim(),
+  //       actionCodeSettings: actionCodeSettings,
+  //     );
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Email link sent! Check your inbox.')),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to send email link: $e')),
+  //     );
+  //   }
+  // }
+}
+
 class MockApiService {
   /// Fetches beat data based on the beat index or retrieves a default generated notes set.
   Future<TraningModel> fetchBeatData({int? beatIndex}) async {

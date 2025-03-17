@@ -41,7 +41,7 @@ class StorageService {
     await prefs.remove('paired_device_name');
   }
 
-  ////--------------------------------- Drum Parts ---------------------------------////
+  //// Drum Parts
   ///
   ///
   /// Save all drum parts in bulk when the app starts, if they haven't been saved yet
@@ -141,17 +141,31 @@ class StorageService {
     }
   }
 
-  /// Skip the intro page
+  // /// Intro
+  // ///
+  // /// Returns true if the intro page should be skipped
+  // static Future<bool> skipIntroPage() async {
+  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   return prefs.getBool('skip_intro') ?? false;
+  // }
+
+  // /// Set the skip intro page flag
+  // static Future<void> setSkipIntroPage(bool skip) async {
+  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   await prefs.setBool('skip_intro', skip);
+  // }
+
+  /// Firebase
   ///
-  /// Returns true if the intro page should be skipped
-  static Future<bool> skipIntroPage() async {
+  /// Save the Firebase token
+  static Future<void> saveFirebaseToken(String token) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('skip_intro') ?? false;
+    await prefs.setString('firebase_token', token);
   }
 
-  /// Set the skip intro page flag
-  static Future<void> setSkipIntroPage(bool skip) async {
+  /// Get the saved Firebase token
+  static Future<String?> getFirebaseToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('skip_intro', skip);
+    return prefs.getString('firebase_token');
   }
 }

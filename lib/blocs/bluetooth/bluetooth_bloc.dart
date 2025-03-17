@@ -12,6 +12,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     on<StopScanEvent>(_onStopScan);
     on<ConnectToDeviceEvent>(_onConnectToDevice);
     on<DisconnectFromDeviceEvent>(_onDisconnectFromDevice);
+    on<ForceNavigationEvent>(_onForceNavigation);
   }
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   BluetoothCharacteristic? characteristic;
@@ -21,7 +22,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     Emitter<BluetoothStateC> emit,
   ) async {
     try {
-      // Check if already scanning to avoid multiple scans
       if (state.isScanning) {
         debugPrint('Scan is already in progress. Ignoring new scan request.');
         return;
@@ -30,16 +30,12 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       debugPrint('Starting Bluetooth scan...');
       emit(state.copyWith(isScanning: true));
 
-      // Start the scan with a timeout
       await FlutterBluePlus.startScan(
         withNames: ['BT05'],
         withServices: [],
         timeout: const Duration(seconds: 3),
       );
 
-      debugPrint('Bluetooth scan started.');
-
-      // Listen for scan results and handle them properly
       _scanSubscription = FlutterBluePlus.scanResults.listen(
         (results) {
           if (results.isEmpty) {
@@ -58,10 +54,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         },
       );
 
-      // Await the scan to complete before proceeding (using the timeout provided)
       await Future.delayed(const Duration(seconds: 3));
 
-      // Stop the scan after timeout
       await _stopScanning(emit);
     } catch (e) {
       debugPrint('Error during Bluetooth scan: $e');
@@ -106,8 +100,17 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     Emitter<BluetoothStateC> emit,
   ) async {
     try {
-      // Connect to the device
       await event.device.connect();
+
+      // Listen for connection state changes
+      event.device.connectionState.listen((state) {
+        debugPrint('Bluetooth Connection State: $state');
+
+        if (state == BluetoothConnectionState.disconnected) {
+          debugPrint('Device disconnected! Navigating to another page.');
+          add(ForceNavigationEvent()); // Trigger navigation event
+        }
+      });
 
       // Discover services
       final List<BluetoothService> services =
@@ -120,10 +123,9 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
             'Service UUID: ${service.uuid}, Characteristic UUID: ${c.uuid}, Properties: ${c.properties}',
           );
 
-          // Check if the service UUID and characteristic UUID match the target
           if (service.uuid.toString().toLowerCase() == 'ffe0' &&
               c.uuid.toString().toLowerCase() == 'ffe1' &&
-              (c.properties.write)) {
+              c.properties.write) {
             characteristic = c;
             emit(
               state.copyWith(
@@ -137,7 +139,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         }
       }
 
-      // If no writable characteristic found
       emit(
         state.copyWith(
           isConnected: true,
@@ -162,8 +163,10 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     Emitter<BluetoothStateC> emit,
   ) async {
     try {
-      // Await the disconnection to make sure the device disconnects before the handler completes
       await event.device.disconnect();
+
+      // ✅ Tarama otomatik olarak durdurulsun
+      await FlutterBluePlus.stopScan();
 
       emit(
         state.copyWith(
@@ -173,12 +176,9 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         ),
       );
     } catch (e) {
-      // Handle any errors that occur during disconnection
       if (!emit.isDone) {
         emit(
-          state.copyWith(
-            errorMessage: 'Failed to disconnect from device: $e',
-          ),
+          state.copyWith(errorMessage: 'Failed to disconnect from device: $e'),
         );
       }
     }
@@ -192,6 +192,13 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     } catch (e) {
       return false;
     }
+  }
+
+  Future<void> _onForceNavigation(
+    ForceNavigationEvent event,
+    Emitter<BluetoothStateC> emit,
+  ) async {
+    emit(state.copyWith(isConnected: false));
   }
 
   @override

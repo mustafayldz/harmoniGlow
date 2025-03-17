@@ -19,34 +19,34 @@ class DrumParts {
     }, // Yellow
     '2': {
       'led': 2,
-      'name': 'Snare Drum',
-      'rgb': [7, 219, 2],
-    }, // Red
-    '3': {
-      'led': 3,
-      'name': 'Tom 1',
-      'rgb': [0, 212, 154],
-    }, // Green
-    '4': {
-      'led': 4,
-      'name': 'Tom 2',
-      'rgb': [21, 25, 207],
-    }, // Light Blue
-    '5': {
-      'led': 5,
-      'name': 'Tom 3',
-      'rgb': [235, 0, 255],
-    }, // Blue
-    '6': {
-      'led': 6,
       'name': 'Crash Cymbal',
       'rgb': [208, 151, 154],
     }, // Orange Red
-    '7': {
-      'led': 7,
+    '3': {
+      'led': 3,
       'name': 'Ride Cymbal',
       'rgb': [255, 125, 0],
     }, // Dark Orange
+    '4': {
+      'led': 4,
+      'name': 'Snare Drum',
+      'rgb': [7, 219, 2],
+    }, // Red
+    '5': {
+      'led': 5,
+      'name': 'Tom 1',
+      'rgb': [0, 212, 154],
+    }, // Green
+    '6': {
+      'led': 6,
+      'name': 'Tom 2',
+      'rgb': [21, 25, 207],
+    }, // Light Blue
+    '7': {
+      'led': 7,
+      'name': 'Tom 3',
+      'rgb': [235, 0, 255],
+    }, // Blue
     '8': {
       'led': 8,
       'name': 'Kick Drum',
