@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
+// import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -94,26 +94,16 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
   ) async {
     final bluetoothBloc = event.context.read<BluetoothBloc>();
 
-    final Map<String, dynamic> batchMessage = {
-      'notes': [99],
-      'rgb': [
-        [0, 0, 0],
-      ],
-    };
-
-    final String jsonString = '${jsonEncode(batchMessage)}\n';
-    final List<int> data = utf8.encode(jsonString);
+    await SendData().sendHexData(bluetoothBloc, [0x00, 0x00, 0x00, 0x00]);
 
     emit(
       state.copyWith(
         playbackState: PlaybackState.stopped,
-        isSending: state.isSending,
+        isSending: false,
         startIndex: 0,
         trainModel: state.trainModel,
       ),
     );
-
-    await SendData().sendLongData(bluetoothBloc, data);
   }
 
   Future<void> _sendMessage(
@@ -123,8 +113,10 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
     final bluetoothBloc = event.context.read<BluetoothBloc>();
 
     final int bpm = state.trainModel?.bpm ?? 60;
-    final int timeInterval = (60000 ~/ bpm);
-    int startIndex = (state.startIndex != 0) ? state.startIndex : 0;
+    final int timeInterval = (60000 ~/ bpm); // her vuruş arası süre
+    int startIndex = state.startIndex != 0 ? state.startIndex : 0;
+
+    await SendData().sendHexData(bluetoothBloc, [0xFD, bpm, 0x00, 0x00]);
 
     do {
       for (int index = startIndex;
@@ -135,28 +127,22 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
         }
 
         final note = state.trainModel!.notes![index];
-        final List<List<int>> rgbValues = [];
+        final List<int> data = [];
 
-        // Iterate through each drum part in the current note
         for (int drumPart in note) {
-          if (drumPart == 99) {
-            // If the note is 99, set RGB to [0, 0, 0] (turn off the light)
-            rgbValues.add([0, 0, 0]);
-          } else {
-            final DrumModel? drumParta =
-                await StorageService.getDrumPart(drumPart.toString());
-            final List<int> rgb = drumParta?.rgb ?? [0, 0, 0];
-            rgbValues.add(rgb);
-          }
+          if (drumPart <= 0 || drumPart > 8) continue;
+
+          final DrumModel? drum =
+              await StorageService.getDrumPart(drumPart.toString());
+          if (drum == null || drum.led == null || drum.rgb == null) continue;
+
+          data.add(drum.led!);
+          data.addAll(drum.rgb!);
         }
 
-        final Map<String, dynamic> batchMessage = {
-          'notes': note,
-          'rgb': rgbValues,
-        };
-
-        final String jsonString = '${jsonEncode(batchMessage)}\n';
-        final List<int> data = utf8.encode(jsonString);
+        if (data.isNotEmpty) {
+          await SendData().sendHexData(bluetoothBloc, data);
+        }
 
         emit(
           state.copyWith(
@@ -167,31 +153,19 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
           ),
         );
 
-        final startTime = DateTime.now();
-        await SendData().sendLongData(bluetoothBloc, data);
-        final elapsedTime = DateTime.now().difference(startTime).inMilliseconds;
-
-        if (elapsedTime < timeInterval) {
-          await Future.delayed(
-            Duration(milliseconds: timeInterval - elapsedTime),
-          );
-        }
+        await Future.delayed(Duration(milliseconds: timeInterval));
       }
 
-      startIndex = 0; // Reset startIndex for next iteration
+      startIndex = 0;
     } while (event.isTest);
 
-    final Map<String, dynamic> finishData = {
-      'notes': [99],
-      'rgb': [
-        [0, 0, 0],
-      ],
-    };
-
-    final String jsonString = '${jsonEncode(finishData)}\n';
-    final List<int> data = utf8.encode(jsonString);
-
-    await SendData().sendLongData(bluetoothBloc, data);
+    // Son olarak tüm LED'leri kapat
+    final List<int> offData = [];
+    for (int i = 1; i <= 8; i++) {
+      offData.add(i);
+      offData.addAll([0x00, 0x00, 0x00]);
+    }
+    await SendData().sendHexData(bluetoothBloc, offData);
 
     emit(
       state.copyWith(
