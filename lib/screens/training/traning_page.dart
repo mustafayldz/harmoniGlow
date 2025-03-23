@@ -225,8 +225,11 @@ class TrainingPageState extends State<TrainingPage> {
                                     ElevatedButton.icon(
                                       onPressed: () {
                                         if (!isLighting) {
-                                          deviceBloc.add(UpdateBeatDataEvent(
-                                              beats![index]));
+                                          deviceBloc.add(
+                                            UpdateBeatDataEvent(
+                                              beats![index],
+                                            ),
+                                          );
                                           startLigthning(context, deviceBloc);
                                         } else {
                                           stopLigthning(context, deviceBloc);

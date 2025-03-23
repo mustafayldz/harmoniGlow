@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _CardData(
       title: 'Training',
       subtitle: 'Train with your own music',
-      backgroundColor: Colors.lightGreenAccent,
+      backgroundColor: Colors.greenAccent,
       emoji: '🎧',
       destination: TrainingPage(),
     ),
@@ -198,7 +198,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withAlpha((0.05 * 255).round()),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -217,6 +217,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                     if (subtitle.isNotEmpty)

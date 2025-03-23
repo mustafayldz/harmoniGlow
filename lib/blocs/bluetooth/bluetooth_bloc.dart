@@ -26,10 +26,12 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       final adapterState = await FlutterBluePlus.adapterState.first;
       if (adapterState != BluetoothAdapterState.on) {
         debugPrint('Bluetooth is not ON. Current state: $adapterState');
-        emit(state.copyWith(
-          isScanning: false,
-          errorMessage: 'Bluetooth is turned off. Please turn it on.',
-        ));
+        emit(
+          state.copyWith(
+            isScanning: false,
+            errorMessage: 'Bluetooth is turned off. Please turn it on.',
+          ),
+        );
         return;
       }
 
