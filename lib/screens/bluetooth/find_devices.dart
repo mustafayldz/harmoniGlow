@@ -53,79 +53,164 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: RefreshIndicator(
-          onRefresh: () async {
-            _startBluetoothScan();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 30),
-            child: Column(
-              children: [
-                Expanded(
-                  child: BlocBuilder<BluetoothBloc, BluetoothStateC>(
-                    builder: (context, state) {
-                      if (state.isScanning) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
+        body: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () async {
+                _startBluetoothScan();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 30),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: BlocBuilder<BluetoothBloc, BluetoothStateC>(
+                        builder: (context, state) {
+                          if (state.isScanning) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
 
-                      filteredResults = state.scanResults
-                          .where((result) => result.device.advName.isNotEmpty)
-                          .toList();
-
-                      if (filteredResults.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Padding(
+                          if (state.isConnected &&
+                              state.connectedDevice != null) {
+                            return Center(
+                              child: Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 20),
-                                child: Text(
-                                  'No devices found. Please ensure Bluetooth is enabled.',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  _startBluetoothScan();
-                                },
-                                icon: const Icon(Icons.refresh),
-                                label: const Text('Refresh'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Already connected to ${state.connectedDevice!.advName}.',
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton.icon(
+                                      onPressed: () async {
+                                        // Disconnect and restart scan
+                                        context.read<BluetoothBloc>().add(
+                                              DisconnectFromDeviceEvent(
+                                                  state.connectedDevice!),
+                                            );
 
-                      return ListView.builder(
-                        itemCount: filteredResults.length,
-                        itemBuilder: (context, index) {
-                          final result = filteredResults[index];
-                          return _buildDeviceCard(
-                            context,
-                            result.device,
-                            result,
+                                        await _storageService.clearDevice();
+
+                                        // Delay slightly before starting scan again
+                                        Future.delayed(
+                                            const Duration(milliseconds: 300),
+                                            () {
+                                          _startBluetoothScan();
+                                        });
+                                      },
+                                      icon: const Icon(Icons.restart_alt),
+                                      label: const Text(
+                                          'Disconnect and Scan Again'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 24, vertical: 14),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          filteredResults = state.scanResults
+                              .where(
+                                  (result) => result.device.advName.isNotEmpty)
+                              .toList();
+
+                          if (filteredResults.isEmpty) {
+                            return Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                    child: Text(
+                                      'No devices found. Please ensure Bluetooth is enabled.',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.grey[600],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      _startBluetoothScan();
+                                    },
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Refresh'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            itemCount: filteredResults.length,
+                            itemBuilder: (context, index) {
+                              final result = filteredResults[index];
+                              return _buildDeviceCard(
+                                context,
+                                result.device,
+                                result,
+                              );
+                            },
                           );
                         },
-                      );
-                    },
+                      ),
+                    ),
+                    _buildPurchaseCard(),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 50,
+              right: 16,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomePage()),
+                    (route) => false,
+                  );
+                },
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.tealAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: const Icon(
+                    Icons.double_arrow_outlined,
+                    size: 36,
+                    color: Colors.white,
                   ),
                 ),
-                _buildPurchaseCard(),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       );
 
