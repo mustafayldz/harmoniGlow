@@ -149,8 +149,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     } catch (e) {
       emit(
         state.copyWith(
-          characteristic: null,
-          connectedDevice: null,
           isConnected: false,
           errorMessage: 'Failed to connect to device: $e',
         ),
@@ -170,8 +168,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
       emit(
         state.copyWith(
-          characteristic: null,
-          connectedDevice: null,
           isConnected: false,
         ),
       );

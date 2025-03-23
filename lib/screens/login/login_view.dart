@@ -69,24 +69,24 @@ class LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text('Login')),
+        appBar: AppBar(title: const Text('Login')),
         body: Padding(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
                 controller: emailController,
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: const InputDecoration(labelText: 'Email'),
               ),
               TextField(
                 controller: passwordController,
-                decoration: InputDecoration(labelText: 'Password'),
+                decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
-              SizedBox(height: 20),
-              ElevatedButton(onPressed: login, child: Text('Login')),
-              TextButton(onPressed: register, child: Text('Register')),
+              const SizedBox(height: 20),
+              ElevatedButton(onPressed: login, child: const Text('Login')),
+              TextButton(onPressed: register, child: const Text('Register')),
             ],
           ),
         ),

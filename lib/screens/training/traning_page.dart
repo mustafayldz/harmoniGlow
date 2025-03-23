@@ -253,7 +253,6 @@ class TrainingPageState extends State<TrainingPage> {
                                           return Column(
                                             children: [
                                               Slider(
-                                                min: 0,
                                                 thumbColor: Colors.white,
                                                 max: duration.inMilliseconds
                                                     .toDouble(),

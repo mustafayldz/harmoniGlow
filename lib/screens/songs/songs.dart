@@ -34,7 +34,6 @@ class SongPageState extends State<SongPage> {
       initialVideoId: 'sqoNLQxTuz8',
       flags: const YoutubePlayerFlags(
         autoPlay: false,
-        mute: false,
         disableDragSeek: true,
         enableCaption: false,
         hideControls: true,
@@ -242,7 +241,7 @@ class SongPageState extends State<SongPage> {
                     playbackState == PlaybackState.paused
                 ? () {
                     setState(() {
-                      _controller?.seekTo(const Duration(seconds: 0));
+                      _controller?.seekTo(const Duration());
                       _controller?.pause();
                       playbackState = PlaybackState.stopped;
                     });

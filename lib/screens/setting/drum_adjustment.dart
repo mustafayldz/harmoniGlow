@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -60,231 +62,299 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: Center(
-        child: GestureDetector(
-          onTap: () => setState(() {
-            currentDrumPart = null;
-          }),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final double imageWidth = constraints.maxWidth * 0.8;
-              final double imageHeight = imageWidth * 0.6;
-              return Column(
-                children: [
-                  GestureDetector(
-                    onTapUp: (TapUpDetails details) {
-                      final RenderBox renderBox =
-                          context.findRenderObject() as RenderBox;
-                      final Offset localPosition =
-                          renderBox.globalToLocal(details.globalPosition);
+      body: GestureDetector(
+        onTap: () => setState(() {
+          currentDrumPart = null;
+        }),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final double imageWidth = constraints.maxWidth * 0.8;
+            final double imageHeight = imageWidth * 0.6;
+            return Column(
+              children: [
+                GestureDetector(
+                  onTapUp: (TapUpDetails details) {
+                    final RenderBox renderBox =
+                        context.findRenderObject() as RenderBox;
+                    final Offset localPosition =
+                        renderBox.globalToLocal(details.globalPosition);
 
-                      setState(() {
-                        _tapPosition = localPosition;
-                      });
-                      DrumPainter(
-                        tapPosition: _tapPosition,
-                        onTapPart: onPartClicked,
-                        imageSize: Size(imageWidth, imageHeight),
-                        partColors: drumParts,
-                      ).detectTap(localPosition);
-                    },
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          child: Image.asset(
-                            drumImagePath,
-                          ),
-                        ),
-                        CustomPaint(
-                          painter: DrumPainter(
-                            tapPosition: _tapPosition,
-                            onTapPart: onPartClicked,
-                            imageSize: Size(imageWidth, imageHeight),
-                            partColors: drumParts,
-                          ),
-                          child: SizedBox(
-                            width: imageWidth,
-                            height: imageHeight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    setState(() {
+                      _tapPosition = localPosition;
+                    });
+                    DrumPainter(
+                      tapPosition: _tapPosition,
+                      onTapPart: onPartClicked,
+                      imageSize: Size(imageWidth, imageHeight),
+                      partColors: drumParts,
+                    ).detectTap(localPosition);
+                  },
+                  child: Stack(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(3.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (currentDrumPart != null)
-                              Column(
-                                children: [
-                                  SizedBox(
-                                    height: 30,
-                                    width: double.infinity,
-                                    child: Stack(
-                                      alignment: Alignment.center,
-                                      children: [
-                                        Text(
-                                          '${currentDrumPart!.name}',
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Positioned(
-                                          right: 0,
-                                          child: IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                currentDrumPart = null;
-                                              });
-                                            },
-                                            icon: const Icon(
-                                              Icons.close_rounded,
-                                              size: 30,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  ColorPicker(
-                                    onColorChanged: (Color color) async {
-                                      setState(() {
-                                        currentDrumPart!.rgb = [
-                                          color.red8bit,
-                                          color.green8bit,
-                                          color.blue8bit,
-                                        ];
-                                      });
-                                      await StorageService.saveDrumPart(
-                                        currentDrumPart!.led.toString(),
-                                        currentDrumPart!,
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            if (currentDrumPart == null)
-                              Column(
-                                children: [
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      sendTestLights(bluetoothBloc);
-                                    },
-                                    child:
-                                        const Text('Test Lights individually'),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      sendTestLightsInPairs(bluetoothBloc, 2);
-                                    },
-                                    child:
-                                        const Text('Test Lights 2 at a time'),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      sendTestLightsInPairs(bluetoothBloc, 3);
-                                    },
-                                    child:
-                                        const Text('Test Lights 3 at a time'),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      sendTestLightsInPairs(bluetoothBloc, 4);
-                                    },
-                                    child:
-                                        const Text('Test Lights 4 at a time'),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      sendTestLightsInPairs(bluetoothBloc, 5);
-                                    },
-                                    child:
-                                        const Text('Test Lights 5 at a time'),
-                                  ),
-                                ],
-                              ),
-                          ],
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        child: Image.asset(
+                          drumImagePath,
+                        ),
+                      ),
+                      CustomPaint(
+                        painter: DrumPainter(
+                          tapPosition: _tapPosition,
+                          onTapPart: onPartClicked,
+                          imageSize: Size(imageWidth, imageHeight),
+                          partColors: drumParts,
+                        ),
+                        child: SizedBox(
+                          width: imageWidth,
+                          height: imageHeight,
                         ),
                       ),
                     ],
                   ),
-                ],
-              );
-            },
-          ),
+                ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.4,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(3.0),
+                      child: currentDrumPart != null
+                          ? Column(
+                              children: [
+                                SizedBox(
+                                  height: 30,
+                                  width: double.infinity,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Text(
+                                        '${currentDrumPart!.name}',
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        child: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              currentDrumPart = null;
+                                            });
+                                          },
+                                          icon: const Icon(
+                                            Icons.close_rounded,
+                                            size: 30,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                ColorPicker(
+                                  onColorChanged: (Color color) async {
+                                    setState(() {
+                                      currentDrumPart!.rgb = [
+                                        color.red8bit,
+                                        color.green8bit,
+                                        color.blue8bit,
+                                      ];
+                                    });
+                                    await StorageService.saveDrumPart(
+                                      currentDrumPart!.led.toString(),
+                                      currentDrumPart!,
+                                    );
+                                  },
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    sendLightsIndividually(bluetoothBloc);
+                                  },
+                                  child:
+                                      const Text('Test Each LED Individually'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    sendTestLightsInGroups(bluetoothBloc, 2);
+                                  },
+                                  child: const Text('Test 2 LEDs at a Time'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    turnOffAllLights(bluetoothBloc);
+                                  },
+                                  child: const Text('Turn Off All Lights'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setAllLightsWhite(bluetoothBloc);
+                                  },
+                                  child: const Text('Turn All Lights White'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    startCustomAnimation(bluetoothBloc);
+                                  },
+                                  child: const Text('Run Custom Animation'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    triggerFullFlashAnimation(bluetoothBloc);
+                                  },
+                                  child: const Text('Flashing Animation'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setBrightness(bluetoothBloc, 1);
+                                  },
+                                  child: const Text('Set Brightness to 1'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setBrightness(bluetoothBloc, 2);
+                                  },
+                                  child: const Text('Set Brightness to 2'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setBrightness(bluetoothBloc, 3);
+                                  },
+                                  child: const Text('Set Brightness to 3'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setBrightness(bluetoothBloc, 4);
+                                  },
+                                  child: const Text('Set Brightness to 4'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setBrightness(bluetoothBloc, 5);
+                                  },
+                                  child: const Text('Set Brightness to 5'),
+                                ),
+                                const SizedBox(height: 10),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    yesil(bluetoothBloc);
+                                  },
+                                  child: const Text('yesil'),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  void sendTestLights(BluetoothBloc bluetoothBloc) async {
-    debugPrint('--------------------Test Lights start-------------------');
+  // Fonksiyonlar:
 
-    for (var i = 0; i < 8; i++) {
+  Future<void> sendLightsIndividually(BluetoothBloc bluetoothBloc) async {
+    for (int i = 1; i < 9; i++) {
       final DrumModel drumPart = drumParts!.firstWhere(
         (element) => element.led == i,
         orElse: () => DrumModel(name: 'Unknown', led: i, rgb: [0, 0, 0]),
       );
 
-      final List<int> data = [
-        i,
-        drumPart.rgb![0],
-        drumPart.rgb![1],
-        drumPart.rgb![2],
-      ];
-
-      debugPrint('Sending Data: $data');
-
+      final List<int> data = [i, ...drumPart.rgb!];
       await SendData().sendHexData(bluetoothBloc, data);
-
-      // Wait for 2 seconds before sending the next set of data
       await Future.delayed(const Duration(seconds: 2));
     }
-
-    debugPrint('--------------------Test Lights completed-------------------');
   }
 
-  void sendTestLightsInPairs(
+  Future<void> sendTestLightsInGroups(
     BluetoothBloc bluetoothBloc,
-    int numberofPair,
+    int groupSize,
   ) async {
-    debugPrint('--------------------Test Lights start-------------------');
+    final List<DrumModel> parts = drumParts ?? [];
 
-    for (var i = 0; i < 8; i += numberofPair) {
+    for (int i = 0; i < parts.length; i += groupSize) {
       final List<int> data = [];
 
-      for (var j = 0; j < numberofPair; j++) {
-        if (i + j >= 8) break; // Prevent out-of-bounds errors
+      for (int j = 0; j < groupSize; j++) {
+        if (i + j >= parts.length) break;
 
-        final DrumModel drumPart = drumParts!.firstWhere(
-          (element) => element.led == (i + j),
-          orElse: () =>
-              DrumModel(name: 'Unknown', led: (i + j), rgb: [0, 0, 0]),
-        );
+        final DrumModel drumPart = parts[i + j];
 
-        data.add((i + j));
+        data.add(drumPart.led!);
         data.addAll(drumPart.rgb!);
       }
 
-      debugPrint('Sending Data: $data');
-
       await SendData().sendHexData(bluetoothBloc, data);
-
-      // Wait for 2 seconds before sending the next pair
       await Future.delayed(const Duration(seconds: 2));
     }
+  }
 
-    debugPrint('--------------------Test Lights completed-------------------');
+  Future<void> turnOffAllLights(BluetoothBloc bloc) async {
+    await SendData().sendHexData(bloc, [0x00, 0x00, 0x00, 0x00]);
+  }
+
+  Future<void> setAllLightsWhite(BluetoothBloc bloc) async {
+    await SendData().sendHexData(bloc, [0x01, 0xFF, 0xFF, 0xFF]);
+  }
+
+  Future<void> startCustomAnimation(BluetoothBloc bloc) async {
+    await SendData().sendHexData(bloc, [0xFB, 0x00, 0x00, 0x00]);
+  }
+
+  Future<void> yesil(BluetoothBloc bloc) async {
+    await SendData().sendHexData(bloc, [0x0C, 0x00, 0xFF, 0x00]);
+  }
+
+  Future<void> triggerFullFlashAnimation(BluetoothBloc bloc) async {
+    final random = Random();
+    final ledCount = 8;
+
+    // 1️⃣ Rastgele renklerle tüm LED'leri yak
+    final activeLeds = <List<int>>[];
+    for (int i = 1; i <= ledCount; i++) {
+      final r = random.nextInt(256);
+      final g = random.nextInt(256);
+      final b = random.nextInt(256);
+      final cmd = [i, r, g, b];
+      activeLeds.add(cmd);
+      await SendData().sendHexData(bloc, cmd);
+    }
+
+    // 2️⃣ 5 saniye bekle
+    await Future.delayed(const Duration(seconds: 5));
+
+    // 3️⃣ Sırayla her LED’i flash animasyonla kapat
+    for (final cmd in activeLeds) {
+      final ledId = cmd[0];
+      final r = cmd[1], g = cmd[2], b = cmd[3];
+
+      for (int j = 0; j < 3; j++) {
+        await SendData().sendHexData(bloc, [ledId, r, g, b]); // Aç
+        await Future.delayed(const Duration(milliseconds: 100));
+        await SendData().sendHexData(bloc, [ledId, 0x00, 0x00, 0x00]); // Kapat
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+  }
+
+  Future<void> setBrightness(BluetoothBloc bloc, int level) async {
+    if (level < 1) level = 1;
+    if (level > 5) level = 5;
+    await SendData().sendHexData(bloc, [0xFE, level, 0x00, 0x00]);
   }
 }
