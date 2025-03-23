@@ -22,6 +22,17 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     Emitter<BluetoothStateC> emit,
   ) async {
     try {
+      // Bluetooth açık mı kontrol et
+      final adapterState = await FlutterBluePlus.adapterState.first;
+      if (adapterState != BluetoothAdapterState.on) {
+        debugPrint('Bluetooth is not ON. Current state: $adapterState');
+        emit(state.copyWith(
+          isScanning: false,
+          errorMessage: 'Bluetooth is turned off. Please turn it on.',
+        ));
+        return;
+      }
+
       if (state.isScanning) {
         debugPrint('Scan is already in progress. Ignoring new scan request.');
         return;
@@ -33,7 +44,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       await FlutterBluePlus.startScan(
         withNames: ['BT05'],
         withServices: [],
-        timeout: const Duration(seconds: 3),
+        timeout: const Duration(seconds: 10),
       );
 
       _scanSubscription = FlutterBluePlus.scanResults.listen(
@@ -48,21 +59,21 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
           emit(
             state.copyWith(
               isScanning: false,
-              errorMessage: 'Failed to start scanning: $error',
+              errorMessage: 'Failed to scan: $error',
             ),
           );
         },
       );
 
+      // İsteğe bağlı: 3 saniye sonra taramayı durdur
       await Future.delayed(const Duration(seconds: 3));
-
       await _stopScanning(emit);
     } catch (e) {
       debugPrint('Error during Bluetooth scan: $e');
       emit(
         state.copyWith(
           isScanning: false,
-          errorMessage: 'Failed to start scanning: $e',
+          errorMessage: 'Unexpected error: $e',
         ),
       );
     }

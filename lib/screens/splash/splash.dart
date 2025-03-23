@@ -36,11 +36,11 @@ class SplashViewState extends State<SplashView>
   }
 
   Future<void> _navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 5));
     final token = await StorageService.getFirebaseToken();
 
     if (token != null && token.isNotEmpty) {
-      await Navigator.pushReplacementNamed(context, '/home');
+      await Navigator.pushReplacementNamed(context, '/findDevices');
     } else {
       await Navigator.pushReplacementNamed(context, '/login');
     }

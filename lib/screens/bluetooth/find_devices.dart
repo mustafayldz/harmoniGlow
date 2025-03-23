@@ -27,6 +27,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     // ✅ Start scan only if navigation hasn't happened yet
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && !hasNavigated) {
+        print('Starting Bluetooth scan from FindDevicesScreen initState');
         _startBluetoothScan();
       }
     });
@@ -34,6 +35,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
 
   @override
   void dispose() {
+    print('Stopping Bluetooth scan from FindDevicesScreen dispose');
     Future.microtask(() {
       if (mounted) {
         context.read<BluetoothBloc>().add(StopScanEvent());
@@ -44,13 +46,8 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
 
   void _startBluetoothScan() {
     if (mounted) {
+      print('Starting Bluetooth scan from _startBluetoothScan');
       context.read<BluetoothBloc>().add(StartScanEvent());
-    }
-  }
-
-  void _stopBluetoothScan() {
-    if (mounted) {
-      context.read<BluetoothBloc>().add(StopScanEvent());
     }
   }
 
@@ -230,6 +227,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     BuildContext context,
     BluetoothDevice device,
   ) async {
+    print('Disconnecting from device: ${device.advName}');
     final bluetoothBloc = context.read<BluetoothBloc>();
 
     // Await the event dispatch to handle any asynchronous operation in the bloc
@@ -243,15 +241,16 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     BuildContext context,
     BluetoothDevice device,
   ) async {
+    print('Connecting to device: ${device.advName}');
     final bluetoothBloc = context.read<BluetoothBloc>();
     bluetoothBloc.add(ConnectToDeviceEvent(device));
     await _storageService.saveDevice(device);
-    _stopBluetoothScan();
 
     _navigateToDeviceScreen(device);
   }
 
   void _navigateToDeviceScreen(BluetoothDevice device) async {
+    print('Navigating to DeviceScreen _navigateToDeviceScreen');
     if (!mounted) return;
 
     await Navigator.push(

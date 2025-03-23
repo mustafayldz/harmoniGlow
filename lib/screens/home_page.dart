@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
-import 'package:harmoniglow/main.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
 import 'package:harmoniglow/screens/setting/drum_adjustment.dart';
 import 'package:harmoniglow/screens/shuffle/shuffle_mode.dart';
@@ -23,38 +22,21 @@ class _HomePageState extends State<HomePage> {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    return BlocListener<BluetoothBloc, BluetoothStateC>(
-      listener: (context, bluetoothState) {
-        if (!bluetoothState.isConnected) {
-          debugPrint('Navigating to FindDevicesScreen due to disconnection.');
-
-          Future.microtask(() {
-            if (navigatorKey.currentContext != null) {
-              navigatorKey.currentState?.pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const FindDevicesScreen(),
-                ),
-              );
-            }
-          });
-        }
-      },
-      child: Scaffold(
-        body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
-          builder: (context, bluetoothState) => SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: screenWidth * 0.05,
-              vertical: screenHeight * 0.02,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: screenHeight * 0.05),
-                _buildConnectionStatus(context, bluetoothState),
-                SizedBox(height: screenHeight * 0.02),
-                _buildNavigationCards(context, screenHeight),
-              ],
-            ),
+    return Scaffold(
+      body: BlocBuilder<BluetoothBloc, BluetoothStateC>(
+        builder: (context, bluetoothState) => SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * 0.05,
+            vertical: screenHeight * 0.02,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: screenHeight * 0.05),
+              _buildConnectionStatus(context, bluetoothState),
+              SizedBox(height: screenHeight * 0.02),
+              _buildNavigationCards(context, screenHeight),
+            ],
           ),
         ),
       ),
@@ -64,6 +46,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildConnectionStatus(BuildContext context, BluetoothStateC state) =>
       InkWell(
         onTap: () {
+          print(
+              '------------------------------Navigating to FindDevicesScreen from home.dart------------------------------');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
