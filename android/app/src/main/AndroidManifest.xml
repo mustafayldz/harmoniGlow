@@ -10,7 +10,7 @@
 
 
     <application
-        android:label="harmoni glow"
+        android:label="Harmoni Glow"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
