@@ -44,8 +44,10 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
     }
   }
 
-  void onPartClicked(String partName) {
+  void onPartClicked(BluetoothBloc bluetoothBloc, String partName) {
     debugPrint('$partName ---------------------clicked!');
+
+    sendLightsIndividually(bluetoothBloc, partName: partName);
 
     if (drumParts != null) {
       currentDrumPart = drumParts!.firstWhere(
@@ -83,10 +85,11 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                       _tapPosition = localPosition;
                     });
                     DrumPainter(
-                      tapPosition: _tapPosition,
+                      bluetoothBloc: bluetoothBloc,
                       onTapPart: onPartClicked,
                       imageSize: Size(imageWidth, imageHeight),
                       partColors: drumParts,
+                      tapPosition: _tapPosition,
                     ).detectTap(localPosition);
                   },
                   child: Stack(
@@ -103,6 +106,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                           onTapPart: onPartClicked,
                           imageSize: Size(imageWidth, imageHeight),
                           partColors: drumParts,
+                          bluetoothBloc: bluetoothBloc,
                         ),
                         child: SizedBox(
                           width: imageWidth,
@@ -335,16 +339,33 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
 
   // Fonksiyonlar:
 
-  Future<void> sendLightsIndividually(BluetoothBloc bluetoothBloc) async {
-    for (int i = 1; i < 9; i++) {
-      final DrumModel drumPart = drumParts!.firstWhere(
-        (element) => element.led == i,
-        orElse: () => DrumModel(name: 'Unknown', led: i, rgb: [0, 0, 0]),
+  Future<void> sendLightsIndividually(
+    BluetoothBloc bluetoothBloc, {
+    String? partName,
+  }) async {
+    if (partName != null) {
+      final DrumModel? drumPart = drumParts?.firstWhere(
+        (element) => element.name == partName,
+        orElse: () => DrumModel(name: partName, led: 0, rgb: [0, 0, 0]),
       );
 
-      final List<int> data = [i, ...drumPart.rgb!];
-      await SendData().sendHexData(bluetoothBloc, data);
-      await Future.delayed(const Duration(seconds: 2));
+      if (drumPart != null && drumPart.led != 0) {
+        final List<int> data = [drumPart.led!, ...drumPart.rgb!];
+        await SendData().sendHexData(bluetoothBloc, data);
+      } else {
+        debugPrint('Drum part "$partName" not found or invalid LED');
+      }
+    } else {
+      for (int i = 1; i < 9; i++) {
+        final DrumModel drumPart = drumParts!.firstWhere(
+          (element) => element.led == i,
+          orElse: () => DrumModel(name: 'Unknown', led: i, rgb: [0, 0, 0]),
+        );
+
+        final List<int> data = [i, ...drumPart.rgb!];
+        await SendData().sendHexData(bluetoothBloc, data);
+        await Future.delayed(const Duration(seconds: 2));
+      }
     }
   }
 

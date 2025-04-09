@@ -24,7 +24,8 @@ class LoginViewState extends State<LoginView> {
       )
           .then((value) async {
         if (value.user != null) {
-          await StorageService.saveFirebaseToken(value.user!.refreshToken!);
+          final idToken = await value.user!.getIdToken();
+          await StorageService.saveFirebaseToken(idToken!);
 
           await Navigator.push(
             context,

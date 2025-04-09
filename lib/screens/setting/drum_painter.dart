@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/models/drum_model.dart';
 
 class DrumPainter extends CustomPainter {
   DrumPainter({
+    required this.bluetoothBloc,
     required this.onTapPart,
     required this.imageSize,
     required this.partColors,
     this.tapPosition,
   });
 
+  final BluetoothBloc bluetoothBloc;
   final Offset? tapPosition;
-  final Function(String) onTapPart;
+  final void Function(BluetoothBloc, String) onTapPart;
   final Size imageSize;
-  final List<DrumModel>? partColors; // Dynamic colors for each drum part
+  final List<DrumModel>? partColors;
 
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint();
 
-    // Define base positions relative to a reference image size
-    const Size referenceSize = Size(400, 400); // Reference image size
+    const Size referenceSize = Size(400, 400);
     final double scaleX = imageSize.width / referenceSize.width;
     final double scaleY = imageSize.height / referenceSize.height;
 
-    // Dynamic drum part positions
     final List<Map<String, dynamic>> drumParts = [
       {
         'name': 'Hi-Hat',
@@ -67,15 +68,12 @@ class DrumPainter extends CustomPainter {
       },
     ];
 
-    // Draw each drum part with its assigned color
     for (var part in drumParts) {
       final DrumModel drumModel = (partColors ?? []).firstWhere(
         (element) => element.name == part['name'],
-        orElse: () =>
-            DrumModel(rgb: [255, 255, 255]), // Default to white if not found
+        orElse: () => DrumModel(rgb: [255, 255, 255]),
       );
 
-      // Convert RGB list to Flutter Color
       final Color partColor = Color.fromARGB(
         150,
         drumModel.rgb?[0] ?? 255,
@@ -141,7 +139,7 @@ class DrumPainter extends CustomPainter {
 
       final double distance = (position - center).distance;
       if (distance <= radius) {
-        onTapPart(part['name']);
+        onTapPart(bluetoothBloc, part['name']);
         return true;
       }
     }

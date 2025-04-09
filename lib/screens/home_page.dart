@@ -2,6 +2,9 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:harmoniglow/constants.dart';
+import 'package:harmoniglow/mock_service/local_service.dart';
+import 'package:harmoniglow/models/drum_model.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
 import 'package:harmoniglow/screens/setting/drum_adjustment.dart';
 import 'package:harmoniglow/screens/shuffle/shuffle_mode.dart';
@@ -39,12 +42,25 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
 
     _controller.forward();
+
+    checkLocalStorage();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  checkLocalStorage() async {
+    final savedData = await StorageService.getDrumPartsBulk();
+    if (savedData == null) {
+      await StorageService.saveDrumPartsBulk(
+        DrumParts.drumParts.entries
+            .map((e) => DrumModel.fromJson(e.value))
+            .toList(),
+      );
+    }
   }
 
   final List<_CardData> _cards = const [
