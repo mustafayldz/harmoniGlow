@@ -153,21 +153,6 @@ class TrainingPageState extends State<TrainingPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        trailing: IconButton(
-                          onPressed: () async => await _togglePlayStop(index),
-                          icon: Icon(
-                            isPlayingIndex == index && isPlaying
-                                ? Icons.stop
-                                : Icons.play_arrow,
-                            color: Colors.white,
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor:
-                                isPlayingIndex == index && isPlaying
-                                    ? Colors.red
-                                    : Colors.green,
-                          ),
-                        ),
                         onTap: () async {
                           if (currentBeatIndex == index) {
                             isExpanded = !isExpanded;
@@ -230,9 +215,17 @@ class TrainingPageState extends State<TrainingPage> {
                                               beats![index],
                                             ),
                                           );
-                                          startLigthning(context, deviceBloc);
+                                          startLigthning(
+                                            context,
+                                            deviceBloc,
+                                            index,
+                                          );
                                         } else {
-                                          stopLigthning(context, deviceBloc);
+                                          stopLigthning(
+                                            context,
+                                            deviceBloc,
+                                            index,
+                                          );
                                         }
 
                                         setState(() {
@@ -285,25 +278,39 @@ class TrainingPageState extends State<TrainingPage> {
     debugPrint('🎵 Playing beat: ${beats![index].name}');
 
     if (isPlayingIndex == index && isPlaying) {
+      // Eğer şu an çalmakta olan beat'e tekrar tıklandıysa durdur
       setState(() {
         isPlaying = false;
         isPlayingIndex = -1;
       });
       await player.stop();
     } else {
+      // Yeni bir beat'e tıklandıysa veya daha önce durdurulmuşsa
       setState(() {
         isPlaying = true;
         isPlayingIndex = index;
       });
+
       await player.setUrl(beats![index].url!);
-      await player.setLoopMode(LoopMode.all); // sürekli çalsın
+      await player.setLoopMode(LoopMode.off); // sadece bir kere çal
       await player.play();
+
+      // Beat bittikten sonra durumu sıfırla
+      player.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed) {
+          setState(() {
+            isPlaying = false;
+            isPlayingIndex = -1;
+          });
+        }
+      });
     }
   }
 
   Future<void> startLigthning(
     BuildContext context,
     DeviceBloc deviceBloc,
+    int index,
   ) async {
     await showDialog(
       context: context,
@@ -312,12 +319,15 @@ class TrainingPageState extends State<TrainingPage> {
     );
 
     deviceBloc.add(StartSendingEvent(context, true));
+    await _togglePlayStop(index);
   }
 
   void stopLigthning(
     BuildContext context,
     DeviceBloc deviceBloc,
-  ) {
+    int index,
+  ) async {
     deviceBloc.add(StopSendingEvent(context));
+    await _togglePlayStop(index);
   }
 }

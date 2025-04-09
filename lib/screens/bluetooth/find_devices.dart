@@ -4,6 +4,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
+import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/home_page.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -139,7 +140,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
                                 },
                                 child: Container(
                                   decoration: const BoxDecoration(
-                                    color: Colors.tealAccent,
+                                    color: AppColors.primaryColor,
                                     shape: BoxShape.circle,
                                   ),
                                   padding: const EdgeInsets.all(16),
@@ -303,12 +304,17 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.primaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Buy on Amazon'),
+            child: const Text(
+              'Buy on Amazon',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
       );

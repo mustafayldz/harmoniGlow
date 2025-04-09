@@ -6,8 +6,7 @@ class Constants {
 }
 
 class AppColors {
-  static const emeraldGreen = Color(0xFF008000);
-  static const brickRed = Color(0xFFC0392B);
+  static const Color primaryColor = Color(0xFF00c9f1);
 }
 
 class DrumParts {
