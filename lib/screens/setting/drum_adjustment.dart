@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -174,6 +172,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                             )
                           : SizedBox(
                               child: Column(
+                                spacing: 10,
                                 children: [
                                   SizedBox(
                                     width: double.infinity,
@@ -182,11 +181,10 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                         sendLightsIndividually(bluetoothBloc);
                                       },
                                       child: const Text(
-                                        'Test Each LED Individually',
+                                        'Test individual LEDs',
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
@@ -196,132 +194,70 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                           2,
                                         );
                                       },
-                                      child:
-                                          const Text('Test 2 LEDs at a Time'),
+                                      child: const Text('Test (2 LEDs)'),
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        turnOnAllLightsRainbow(
+                                          bluetoothBloc,
+                                        );
+                                      },
+                                      child: const Text(
+                                        'Rainbow',
+                                      ),
+                                    ),
+                                  ),
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
                                       onPressed: () {
                                         turnOffAllLights(bluetoothBloc);
                                       },
-                                      child: const Text('Turn Off All Lights'),
+                                      child: const Text(
+                                        'Turn Off All Lights',
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setAllLightsWhite(
-                                          bluetoothBloc,
-                                          [0xFF, 0xFF, 0xFF],
-                                        );
-                                      },
-                                      child:
-                                          const Text('Turn All Lights White'),
-                                    ),
+                                  const Text(
+                                    'Brightness Levels',
                                   ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setAllLightsWhite(
-                                          bluetoothBloc,
-                                          [0xFF, 0x00, 0x00],
-                                        );
-                                      },
-                                      child: const Text('Turn All Lights Red'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setAllLightsWhite(
-                                          bluetoothBloc,
-                                          [0x00, 0xFF, 0x00],
-                                        );
-                                      },
-                                      child:
-                                          const Text('Turn All Lights Green'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        startCustomAnimation(bluetoothBloc);
-                                      },
-                                      child: const Text('Run Custom Animation'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        triggerFullFlashAnimation(
-                                          bluetoothBloc,
-                                        );
-                                      },
-                                      child: const Text('Flashing Animation'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setBrightness(bluetoothBloc, 1);
-                                      },
-                                      child: const Text('Set Brightness to 1'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setBrightness(bluetoothBloc, 2);
-                                      },
-                                      child: const Text('Set Brightness to 2'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setBrightness(bluetoothBloc, 3);
-                                      },
-                                      child: const Text('Set Brightness to 3'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setBrightness(bluetoothBloc, 4);
-                                      },
-                                      child: const Text('Set Brightness to 4'),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setBrightness(bluetoothBloc, 5);
-                                      },
-                                      child: const Text('Set Brightness to 5'),
-                                    ),
+                                  Row(
+                                    spacing: 5,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          setBrightness(bluetoothBloc, 1);
+                                        },
+                                        child: const Text('1'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          setBrightness(bluetoothBloc, 2);
+                                        },
+                                        child: const Text('2'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          setBrightness(bluetoothBloc, 3);
+                                        },
+                                        child: const Text('3'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          setBrightness(bluetoothBloc, 4);
+                                        },
+                                        child: const Text('4'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          setBrightness(bluetoothBloc, 5);
+                                        },
+                                        child: const Text('5'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -393,56 +329,16 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
   }
 
   Future<void> turnOffAllLights(BluetoothBloc bloc) async {
-    await SendData().sendHexData(bloc, [0x00, 0x00, 0x00, 0x00]);
+    await SendData().sendHexData(bloc, [0x00]);
   }
 
-  Future<void> setAllLightsWhite(BluetoothBloc bloc, List<int> color) async {
-    await SendData().sendHexData(bloc, [0x0C, color[0], color[1], color[2]]);
-  }
-
-  Future<void> startCustomAnimation(BluetoothBloc bloc) async {
-    await SendData().sendHexData(bloc, [0xFB, 0x00, 0x00, 0x00]);
-  }
-
-  Future<void> yesil(BluetoothBloc bloc) async {
-    await SendData().sendHexData(bloc, [0x0C, 0x00, 0xFF, 0x00]);
-  }
-
-  Future<void> triggerFullFlashAnimation(BluetoothBloc bloc) async {
-    final random = Random();
-    final ledCount = 8;
-
-    // 1️⃣ Rastgele renklerle tüm LED'leri yak
-    final activeLeds = <List<int>>[];
-    for (int i = 1; i <= ledCount; i++) {
-      final r = random.nextInt(256);
-      final g = random.nextInt(256);
-      final b = random.nextInt(256);
-      final cmd = [i, r, g, b];
-      activeLeds.add(cmd);
-      await SendData().sendHexData(bloc, cmd);
-    }
-
-    // 2️⃣ 5 saniye bekle
-    await Future.delayed(const Duration(seconds: 5));
-
-    // 3️⃣ Sırayla her LED’i flash animasyonla kapat
-    for (final cmd in activeLeds) {
-      final ledId = cmd[0];
-      final r = cmd[1], g = cmd[2], b = cmd[3];
-
-      for (int j = 0; j < 3; j++) {
-        await SendData().sendHexData(bloc, [ledId, r, g, b]); // Aç
-        await Future.delayed(const Duration(milliseconds: 100));
-        await SendData().sendHexData(bloc, [ledId, 0x00, 0x00, 0x00]); // Kapat
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-    }
+  Future<void> turnOnAllLightsRainbow(BluetoothBloc bloc) async {
+    await SendData().sendHexData(bloc, [0xFD]);
   }
 
   Future<void> setBrightness(BluetoothBloc bloc, int level) async {
     if (level < 1) level = 1;
     if (level > 5) level = 5;
-    await SendData().sendHexData(bloc, [0xFE, level, 0x00, 0x00]);
+    await SendData().sendHexData(bloc, [0xFE, level]);
   }
 }

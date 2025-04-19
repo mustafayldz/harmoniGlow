@@ -76,14 +76,14 @@ class MockApiService {
       'url':
           'https://drumeoblog.s3.amazonaws.com/beat/wp-content/uploads/2021/10/15085321/1.-Bread-n-Butter-92bpm.wav',
       'notes': [
-        [1, 8],
-        [99],
-        [1, 2],
-        [1],
-        [1, 8],
-        [1, 8],
-        [1, 2],
-        [1],
+        [1, 8], // Beat 1: Hi-Hat + Kick
+        [1], // Beat 2: Hi-Hat
+        [1, 4], // Beat 3: Hi-Hat + Snare
+        [1], // Beat 4: Hi-Hat
+        [1, 8], // Beat 5: Hi-Hat + Kick
+        [1], // Beat 6: Hi-Hat
+        [1, 4], // Beat 7: Hi-Hat + Snare
+        [1], // Beat 8: Hi-Hat
       ],
     },
     {

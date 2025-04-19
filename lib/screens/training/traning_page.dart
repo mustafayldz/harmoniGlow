@@ -20,6 +20,7 @@ class TrainingPageState extends State<TrainingPage> {
   final MockApiService apiService = MockApiService();
   final AudioPlayer player = AudioPlayer();
   List<TraningModel>? beats = [];
+  List<TraningModel>? beatsOriginal = [];
   TraningModel? currentBeat;
   int currentBeatIndex = -1;
   List<String>? beatGenres;
@@ -38,6 +39,7 @@ class TrainingPageState extends State<TrainingPage> {
 
   Future<void> setBeat() async {
     beats = await apiService.fetchAllBeats();
+    beatsOriginal = beats;
     beatGenres = apiService.fetchAllBeatGenres();
     setState(() {});
   }
@@ -179,30 +181,45 @@ class TrainingPageState extends State<TrainingPage> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          'BPM: ${beats![index].bpm!.toInt()}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              beats![index].bpm = 60;
+                                            });
+                                            deviceBloc.add(
+                                              UpdateBeatDataEvent(
+                                                beats![index],
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Easy'),
                                         ),
-                                        Expanded(
-                                          child: Slider(
-                                            value:
-                                                beats![index].bpm!.toDouble(),
-                                            min: 50,
-                                            max: 250,
-                                            onChanged: (value) {
-                                              setState(() {
-                                                beats![index].bpm =
-                                                    value.toInt();
-                                              });
-                                              deviceBloc.add(
-                                                UpdateBeatDataEvent(
-                                                  beats![index],
-                                                ),
-                                              );
-                                            },
-                                          ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              beats![index].bpm =
+                                                  beatsOriginal![index].bpm;
+                                            });
+                                            deviceBloc.add(
+                                              UpdateBeatDataEvent(
+                                                beats![index],
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Normal'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              beats![index].bpm = 120;
+                                            });
+                                            deviceBloc.add(
+                                              UpdateBeatDataEvent(
+                                                beats![index],
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Hard'),
                                         ),
                                       ],
                                     ),

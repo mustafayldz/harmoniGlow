@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 
 class SendData {
-  // Güncellenmiş Bluetooth gönderim fonksiyonu:
-  Future<void> sendHexData(BluetoothBloc bloc, List<int> data) async {
+  Future<void> sendHexData(BluetoothBloc bloc, List<int> payload) async {
     final device = bloc.state.connectedDevice;
     final characteristic = bloc.state.characteristic;
 
@@ -13,11 +12,14 @@ class SendData {
     }
 
     try {
-      final hexString = data
+      final fullPacket = [payload.length, ...payload]; // ✅ başa uzunluk eklendi
+
+      final hexString = fullPacket
           .map((e) => '0x${e.toRadixString(16).padLeft(2, '0').toUpperCase()}')
           .toList();
       debugPrint('📤 Sending data: $hexString');
-      await characteristic.write(data);
+
+      await characteristic.write(fullPacket);
       debugPrint('✅ Data sent successfully.');
     } catch (error) {
       debugPrint('❗ Error sending data: $error');

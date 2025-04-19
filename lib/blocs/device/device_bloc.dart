@@ -94,7 +94,7 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
   ) async {
     final bluetoothBloc = event.context.read<BluetoothBloc>();
 
-    await SendData().sendHexData(bluetoothBloc, [0x00, 0x00, 0x00, 0x00]);
+    await SendData().sendHexData(bluetoothBloc, [0x00]);
 
     emit(
       state.copyWith(
@@ -115,8 +115,6 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
     final int bpm = state.trainModel?.bpm ?? 60;
     final int timeInterval = (60000 ~/ bpm); // her vuruş arası süre
     int startIndex = state.startIndex != 0 ? state.startIndex : 0;
-
-    await SendData().sendHexData(bluetoothBloc, [0xFD, bpm, 0x00, 0x00]);
 
     do {
       for (int index = startIndex;
@@ -159,13 +157,7 @@ class DeviceBloc extends Bloc<DeviceEvent, DeviceState> {
       startIndex = 0;
     } while (event.isTest);
 
-    // Son olarak tüm LED'leri kapat
-    final List<int> offData = [];
-    for (int i = 1; i <= 8; i++) {
-      offData.add(i);
-      offData.addAll([0x00, 0x00, 0x00]);
-    }
-    await SendData().sendHexData(bluetoothBloc, offData);
+    await SendData().sendHexData(bluetoothBloc, [0x00]);
 
     emit(
       state.copyWith(
