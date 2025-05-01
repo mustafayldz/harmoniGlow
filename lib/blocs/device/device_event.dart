@@ -1,7 +1,7 @@
 // Base event class
 
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/models/traning_model.dart';
+import 'package:harmoniglow/screens/songs/songs_model.dart';
 
 abstract class DeviceEvent {}
 
@@ -23,5 +23,5 @@ class StopSendingEvent extends DeviceEvent {
 
 class UpdateBeatDataEvent extends DeviceEvent {
   UpdateBeatDataEvent(this.beatData);
-  final TraningModel beatData;
+  final SongModel beatData;
 }

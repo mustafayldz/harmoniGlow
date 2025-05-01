@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/models/drum_model.dart';
+import 'package:harmoniglow/screens/setting/drum_model.dart';
 import 'package:harmoniglow/screens/setting/drum_painter.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 

@@ -4,11 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/models/drum_model.dart';
+import 'package:harmoniglow/screens/setting/drum_model.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
 import 'package:harmoniglow/screens/setting/drum_adjustment.dart';
 import 'package:harmoniglow/screens/shuffle/shuffle_mode.dart';
-import 'package:harmoniglow/screens/songs/songs.dart';
+import 'package:harmoniglow/screens/songs/songs_view.dart';
 import 'package:harmoniglow/screens/training/traning_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -76,7 +76,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       subtitle: 'Discover and train with your favorite songs',
       backgroundColor: Colors.pinkAccent,
       emoji: '🎵',
-      destination: SongPage(),
+      destination: SongView(),
     ),
     _CardData(
       title: 'Shuffle Mode',

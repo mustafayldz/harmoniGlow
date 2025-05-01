@@ -12,8 +12,7 @@ class SendData {
     }
 
     try {
-      final fullPacket = [payload.length, ...payload]; // ✅ başa uzunluk eklendi
-
+      final fullPacket = [payload.length, ...payload];
       final hexString = fullPacket
           .map((e) => '0x${e.toRadixString(16).padLeft(2, '0').toUpperCase()}')
           .toList();

@@ -1,0 +1,149 @@
+import 'package:flutter/material.dart';
+import 'package:harmoniglow/blocs/device/device_bloc.dart';
+import 'package:harmoniglow/blocs/device/device_event.dart';
+import 'package:harmoniglow/enums.dart';
+import 'package:harmoniglow/screens/player/player.dart';
+import 'package:harmoniglow/screens/songs/songs_viewmodel.dart';
+import 'package:provider/provider.dart';
+
+/// A modern, card-based list of songs
+class SongView extends StatefulWidget {
+  const SongView({super.key});
+
+  @override
+  State<SongView> createState() => _SongViewState();
+}
+
+class _SongViewState extends State<SongView> {
+  late final SongViewModel vm;
+  PlaybackState playbackState = PlaybackState.stopped;
+
+  @override
+  void initState() {
+    super.initState();
+    vm = SongViewModel();
+    vm.fetchSongs();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final deviceBloc = context.read<DeviceBloc>();
+
+    return ChangeNotifierProvider<SongViewModel>.value(
+      value: vm,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Songs'),
+        ),
+        body: Consumer<SongViewModel>(
+          builder: (context, vm, _) {
+            final songs = vm.songList;
+            return ListView.separated(
+              padding: const EdgeInsets.all(16),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemCount: songs.length,
+              itemBuilder: (context, index) {
+                final song = songs[index];
+                return Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 2,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      vm.selectBeat(deviceBloc, index);
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        // give the sheet a rounded top
+                        shape: const RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (context) => FractionallySizedBox(
+                          // set height to 95% of screen
+                          heightFactor: 0.95,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                            child: DraggableScrollableSheet(
+                              initialChildSize: 1.0,
+                              minChildSize: 0.3,
+                              expand: false,
+                              builder: (context, scrollCtrl) => PlayerView(
+                                song,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ).whenComplete(() {
+                        stop(context, deviceBloc);
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${song.artist ?? 'Unknown Artist'} - ${song.title ?? 'Unknown Title'}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    if (song.bpm != null) ...[
+                                      Chip(
+                                        label: Text('${song.bpm} BPM'),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    if (song.durationSeconds != null) ...[
+                                      Chip(
+                                        label: Text(
+                                          vm.formatDuration(
+                                            song.durationSeconds,
+                                          ),
+                                        ),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void stop(
+    BuildContext context,
+    DeviceBloc deviceBloc,
+  ) {
+    playbackState = PlaybackState.stopped;
+    deviceBloc.add(StopSendingEvent(context));
+  }
+}

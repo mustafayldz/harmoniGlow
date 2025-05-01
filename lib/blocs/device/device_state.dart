@@ -1,5 +1,5 @@
 import 'package:harmoniglow/enums.dart';
-import 'package:harmoniglow/models/traning_model.dart';
+import 'package:harmoniglow/screens/songs/songs_model.dart';
 
 class DeviceState {
   DeviceState({
@@ -11,14 +11,14 @@ class DeviceState {
   final PlaybackState playbackState;
   final int startIndex;
   final bool isSending;
-  final TraningModel? trainModel;
+  final SongModel? trainModel;
 
   DeviceState copyWith({
     bool? connected,
     PlaybackState? playbackState,
     int? startIndex,
     bool? isSending,
-    TraningModel? trainModel,
+    SongModel? trainModel,
   }) =>
       DeviceState(
         playbackState: playbackState ?? this.playbackState,

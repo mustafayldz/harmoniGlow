@@ -6,8 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/device/device_bloc.dart';
 import 'package:harmoniglow/blocs/device/device_event.dart';
 import 'package:harmoniglow/mock_service/api_service.dart';
-import 'package:harmoniglow/models/shuffle_model.dart';
-import 'package:harmoniglow/models/traning_model.dart';
+import 'package:harmoniglow/screens/shuffle/shuffle_model.dart';
+import 'package:harmoniglow/screens/songs/songs_model.dart';
 import 'package:harmoniglow/shared/countdown.dart';
 
 class ShuffleMode extends StatefulWidget {
@@ -245,11 +245,11 @@ class _ShuffleModeState extends State<ShuffleMode>
       notes = generateRandomList(totalBeats);
     }
 
-    final TraningModel shuffleModel = TraningModel(
+    final SongModel shuffleModel = SongModel(
       bpm: bpm!.toInt(),
-      name: 'Shuffle',
+      title: 'Shuffle',
       rhythm: '4/4',
-      totalTime: duration! * 60,
+      durationSeconds: duration! * 60,
       notes: notes,
     );
 

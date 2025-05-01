@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/device/device_bloc.dart';
 import 'package:harmoniglow/blocs/device/device_event.dart';
 import 'package:harmoniglow/mock_service/api_service.dart';
-import 'package:harmoniglow/models/traning_model.dart';
+import 'package:harmoniglow/screens/songs/songs_model.dart';
 import 'package:harmoniglow/shared/countdown.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -19,9 +19,9 @@ class TrainingPage extends StatefulWidget {
 class TrainingPageState extends State<TrainingPage> {
   final MockApiService apiService = MockApiService();
   final AudioPlayer player = AudioPlayer();
-  List<TraningModel>? beats = [];
-  List<TraningModel>? beatsOriginal = [];
-  TraningModel? currentBeat;
+  List<SongModel>? beats = [];
+  List<SongModel>? beatsOriginal = [];
+  SongModel? currentBeat;
   int currentBeatIndex = -1;
   List<String>? beatGenres;
   int selectedBeatGenreIndex = 0;
@@ -149,7 +149,7 @@ class TrainingPageState extends State<TrainingPage> {
                         contentPadding:
                             const EdgeInsets.symmetric(horizontal: 16),
                         title: Text(
-                          beats![index].name!,
+                          beats![index].title!,
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -292,7 +292,7 @@ class TrainingPageState extends State<TrainingPage> {
   }
 
   Future<void> _togglePlayStop(int index) async {
-    debugPrint('🎵 Playing beat: ${beats![index].name}');
+    debugPrint('🎵 Playing beat: ${beats![index].title}');
 
     if (isPlayingIndex == index && isPlaying) {
       // Eğer şu an çalmakta olan beat'e tekrar tıklandıysa durdur
@@ -308,7 +308,7 @@ class TrainingPageState extends State<TrainingPage> {
         isPlayingIndex = index;
       });
 
-      await player.setUrl(beats![index].url!);
+      await player.setUrl(beats![index].fileUrl!);
       await player.setLoopMode(LoopMode.off); // sadece bir kere çal
       await player.play();
 

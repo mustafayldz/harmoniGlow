@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/enums.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/models/drum_model.dart';
+import 'package:harmoniglow/screens/setting/drum_model.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 
 import 'package:harmoniglow/blocs/device/device_event.dart';
