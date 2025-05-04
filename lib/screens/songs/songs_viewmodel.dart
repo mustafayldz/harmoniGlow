@@ -1,37 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/blocs/device/device_bloc.dart';
-import 'package:harmoniglow/blocs/device/device_event.dart';
 import 'package:harmoniglow/mock_service/api_service.dart';
 import 'package:harmoniglow/screens/songs/songs_model.dart';
 
 /// ViewModel following MVVM, holds state and business logic
 class SongViewModel extends ChangeNotifier {
   List<SongModel> songList = [];
-  List<SongModelNew> songListNew = [];
+  List<SongModel> songListNew = [];
 
   final MockApiService _apiService = MockApiService();
 
   Future<void> fetchSongs() async {
     try {
-      songList = await _apiService.fetchSongData();
-      songListNew = await _apiService.fetchSongDataNew();
+      songListNew = await _apiService.fetchSongData();
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching songs: $e');
-    }
-  }
-
-  Future<void> selectBeat(DeviceBloc deviceBloc, int index) async {
-    if (songList.isNotEmpty) {
-      try {
-        deviceBloc.add(UpdateBeatDataEvent(songList[index]));
-        notifyListeners();
-      } catch (e, stack) {
-        debugPrint('Error fetching beat: $e');
-        debugPrint('$stack');
-      }
-    } else {
-      debugPrint('No songs available to select.');
     }
   }
 

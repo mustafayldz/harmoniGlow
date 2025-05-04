@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/app_routes.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/blocs/device/device_bloc.dart';
 import 'package:harmoniglow/locator.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 
@@ -29,9 +28,6 @@ class HarmoniGlow extends StatelessWidget {
           // Provide BluetoothBloc
           BlocProvider<BluetoothBloc>(
             create: (context) => BluetoothBloc(),
-          ),
-          BlocProvider<DeviceBloc>(
-            create: (context) => DeviceBloc(),
           ),
           RepositoryProvider<StorageService>(
             create: (context) => StorageService(),

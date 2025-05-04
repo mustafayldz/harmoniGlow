@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/blocs/device/device_bloc.dart';
-import 'package:harmoniglow/blocs/device/device_event.dart';
-import 'package:harmoniglow/enums.dart';
+import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/screens/player/player_new.dart';
 import 'package:harmoniglow/screens/songs/songs_viewmodel.dart';
+import 'package:harmoniglow/shared/send_data.dart';
 import 'package:provider/provider.dart';
 
 /// A modern, card-based list of songs
-class SongViewNew extends StatefulWidget {
-  const SongViewNew({super.key});
+class SongView extends StatefulWidget {
+  const SongView({super.key});
 
   @override
-  State<SongViewNew> createState() => _SongViewState();
+  State<SongView> createState() => _SongViewState();
 }
 
-class _SongViewState extends State<SongViewNew> {
+class _SongViewState extends State<SongView> {
   late final SongViewModel vm;
-  PlaybackState playbackState = PlaybackState.stopped;
 
   @override
   void initState() {
@@ -27,13 +25,12 @@ class _SongViewState extends State<SongViewNew> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceBloc = context.read<DeviceBloc>();
-
+    final bluetoothBloc = context.read<BluetoothBloc>();
     return ChangeNotifierProvider<SongViewModel>.value(
       value: vm,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Songs New'),
+          title: const Text('Songs'),
         ),
         body: Consumer<SongViewModel>(
           builder: (context, vm, _) {
@@ -73,14 +70,14 @@ class _SongViewState extends State<SongViewNew> {
                               initialChildSize: 1.0,
                               minChildSize: 0.3,
                               expand: false,
-                              builder: (context, scrollCtrl) => PlayerViewNew(
+                              builder: (context, scrollCtrl) => PlayerView(
                                 song,
                               ),
                             ),
                           ),
                         ),
-                      ).whenComplete(() {
-                        stop(context, deviceBloc);
+                      ).whenComplete(() async {
+                        await SendData().sendHexData(bluetoothBloc, [0]);
                       });
                     },
                     child: Padding(
@@ -137,13 +134,5 @@ class _SongViewState extends State<SongViewNew> {
         ),
       ),
     );
-  }
-
-  void stop(
-    BuildContext context,
-    DeviceBloc deviceBloc,
-  ) {
-    playbackState = PlaybackState.stopped;
-    deviceBloc.add(StopSendingEvent(context));
   }
 }

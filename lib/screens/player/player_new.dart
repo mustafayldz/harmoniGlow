@@ -10,15 +10,15 @@ import 'package:harmoniglow/shared/countdown.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 import 'package:just_audio/just_audio.dart';
 
-class PlayerViewNew extends StatefulWidget {
-  const PlayerViewNew(this.songModel, {super.key});
-  final SongModelNew songModel;
+class PlayerView extends StatefulWidget {
+  const PlayerView(this.songModel, {super.key});
+  final SongModel songModel;
 
   @override
-  State<PlayerViewNew> createState() => _PlayerViewState();
+  State<PlayerView> createState() => _PlayerViewState();
 }
 
-class _PlayerViewState extends State<PlayerViewNew> {
+class _PlayerViewState extends State<PlayerView> {
   final AudioPlayer _player = AudioPlayer();
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
@@ -37,6 +37,7 @@ class _PlayerViewState extends State<PlayerViewNew> {
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initAudio(context);
     });
@@ -70,7 +71,10 @@ class _PlayerViewState extends State<PlayerViewNew> {
         // ➊ Her 50ms’de bir pozisyon al
         .createPositionStream(minPeriod: const Duration(milliseconds: 50))
         .listen((pos) async {
-      if (!mounted) return;
+      if (!mounted) {
+        print('❌ PlayerView dispose edildi');
+        return;
+      }
 
       for (var note in widget.songModel.notes!) {
         final idx = note.i;
@@ -108,7 +112,6 @@ class _PlayerViewState extends State<PlayerViewNew> {
   @override
   void dispose() {
     _playerStateSub.cancel();
-    // _positionSub.cancel();
     _player.stop();
     super.dispose();
   }
