@@ -2,38 +2,47 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:harmoniglow/blocs/device/device_bloc.dart';
-import 'package:harmoniglow/blocs/device/device_event.dart';
+import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/enums.dart';
+import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/songs/songs_model.dart';
 import 'package:harmoniglow/shared/countdown.dart';
+import 'package:harmoniglow/shared/send_data.dart';
 import 'package:just_audio/just_audio.dart';
 
-class PlayerView extends StatefulWidget {
-  const PlayerView(this.songModel, {super.key});
-  final SongModel songModel;
+class PlayerViewNew extends StatefulWidget {
+  const PlayerViewNew(this.songModel, {super.key});
+  final SongModelNew songModel;
 
   @override
-  State<PlayerView> createState() => _PlayerViewState();
+  State<PlayerViewNew> createState() => _PlayerViewState();
 }
 
-class _PlayerViewState extends State<PlayerView> {
+class _PlayerViewState extends State<PlayerViewNew> {
   final AudioPlayer _player = AudioPlayer();
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  double playerSpeed = 1.0;
 
   late final StreamSubscription<PlayerState> _playerStateSub;
-  late final StreamSubscription<Duration> _positionSub;
+  // late final StreamSubscription<Duration> _positionSub;
 
   PlaybackState playbackState = PlaybackState.stopped;
+
+  List<int> curretnData = [];
+
+  // ➊ Gönderilen not indekslerini tutacak set
+  final Set<int> _sentNoteIndices = {};
 
   @override
   void initState() {
     super.initState();
-    _initAudio();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initAudio(context);
+    });
   }
 
-  Future<void> _initAudio() async {
+  Future<void> _initAudio(BuildContext context) async {
     try {
       // 1) PlayerState akışını dinle
       _playerStateSub = _player.playerStateStream.listen((state) {
@@ -47,23 +56,59 @@ class _PlayerViewState extends State<PlayerView> {
       if (mounted) setState(() {});
 
       // 3) Position akışını dinle
-      _positionSub = _player.positionStream.listen((pos) {
-        if (!mounted) return;
-        print('position: $pos');
-        setState(() {
-          // position’a bağlı UI güncellemesi
-          _position = pos;
-        });
-      });
+      _listenPosition();
     } catch (e, stack) {
       debugPrint('Audio load hata: $e\n$stack');
     }
   }
 
+  void _listenPosition() {
+    final bluetoothBloc = context.read<BluetoothBloc>();
+    Duration prevPos = Duration.zero;
+
+    _player
+        // ➊ Her 50ms’de bir pozisyon al
+        .createPositionStream(minPeriod: const Duration(milliseconds: 50))
+        .listen((pos) async {
+      if (!mounted) return;
+
+      for (var note in widget.songModel.notes!) {
+        final idx = note.i;
+        final start = Duration(milliseconds: note.sM);
+
+        // ➋ Önceki pozisyon < start ≤ güncel pozisyon ve daha önce tetiklenmemişse
+        if (prevPos < start &&
+            pos >= start &&
+            !_sentNoteIndices.contains(idx)) {
+          // ➌ Bu not artık gönderildi
+          _sentNoteIndices.add(idx);
+
+          // ➍ curretnData’yı hazırla
+          curretnData.clear();
+          for (int drumPart in note.led) {
+            if (drumPart <= 0 || drumPart > 8) continue;
+            final drum = await StorageService.getDrumPart(drumPart.toString());
+            if (drum?.led == null || drum?.rgb == null) continue;
+            curretnData.add(drum!.led!);
+            curretnData.addAll(drum.rgb!);
+          }
+
+          // ➎ Veriyi Bluetooth üzerinden gönder
+          print('► Note $idx tetiklendi: $curretnData');
+          await SendData().sendHexData(bluetoothBloc, curretnData);
+        }
+      }
+
+      // ➏ PrevPos’u güncelle ve UI’ı yenile
+      prevPos = pos;
+      setState(() => _position = pos);
+    });
+  }
+
   @override
   void dispose() {
     _playerStateSub.cancel();
-    _positionSub.cancel();
+    // _positionSub.cancel();
     _player.stop();
     super.dispose();
   }
@@ -95,7 +140,7 @@ class _PlayerViewState extends State<PlayerView> {
 
   @override
   Widget build(BuildContext context) {
-    final deviceBloc = context.read<DeviceBloc>();
+    final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
@@ -164,48 +209,52 @@ class _PlayerViewState extends State<PlayerView> {
               ),
             ),
             const Spacer(),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 40),
-              child: _controlButton(
-                  _player.playing ? Icons.pause : Icons.play_arrow, () async {
-                if (_player.playing) {
-                  await _player.pause();
-                  pause(deviceBloc);
-                } else {
-                  await showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (_) => const Countdown(),
-                  ).whenComplete(() {
-                    if (mounted) {
-                      _player.play();
-                      play(context, deviceBloc);
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: _controlButton(Icons.fast_rewind, () async {
+                    if (playerSpeed < 0.5) playerSpeed = 0.5;
+                    playerSpeed -= 0.5;
+                    await _player.setSpeed(playerSpeed);
+                  }),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: _controlButton(
+                      _player.playing ? Icons.pause : Icons.play_arrow,
+                      () async {
+                    if (_player.playing) {
+                      await _player.pause();
+                      await SendData().sendHexData(bluetoothBloc, [0]);
+                    } else {
+                      await showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const Countdown(),
+                      ).whenComplete(() async {
+                        if (mounted) {
+                          await _player.play();
+                        }
+                      });
                     }
-                  });
-                }
-              }),
+                  }),
+                ),
+                const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: _controlButton(Icons.fast_forward, () async {
+                    if (playerSpeed > 2.0) playerSpeed = 2.0;
+                    playerSpeed += 0.5;
+                    await _player.setSpeed(playerSpeed);
+                  }),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future<void> play(
-    BuildContext context,
-    DeviceBloc deviceBloc,
-  ) async {
-    if (widget.songModel.notes!.isEmpty) return;
-    playbackState = PlaybackState.playing;
-    deviceBloc.add(StartSendingEvent(context, false));
-  }
-
-  void pause(
-    DeviceBloc deviceBloc,
-  ) {
-    if (playbackState == PlaybackState.playing) {
-      playbackState = PlaybackState.paused;
-      deviceBloc.add(PauseSendingEvent());
-    }
   }
 }

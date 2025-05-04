@@ -7,12 +7,14 @@ import 'package:harmoniglow/screens/songs/songs_model.dart';
 /// ViewModel following MVVM, holds state and business logic
 class SongViewModel extends ChangeNotifier {
   List<SongModel> songList = [];
+  List<SongModelNew> songListNew = [];
 
   final MockApiService _apiService = MockApiService();
 
   Future<void> fetchSongs() async {
     try {
       songList = await _apiService.fetchSongData();
+      songListNew = await _apiService.fetchSongDataNew();
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching songs: $e');

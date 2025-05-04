@@ -132,9 +132,9 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       // Find the correct characteristic
       for (BluetoothService service in services) {
         for (BluetoothCharacteristic c in service.characteristics) {
-          debugPrint(
-            'Service UUID: ${service.uuid}, Characteristic UUID: ${c.uuid}, Properties: ${c.properties}',
-          );
+          // debugPrint(
+          //   'Service UUID: ${service.uuid}, Characteristic UUID: ${c.uuid}, Properties: ${c.properties}',
+          // );
 
           if (service.uuid.toString().toLowerCase() == 'ffe0' &&
               c.uuid.toString().toLowerCase() == 'ffe1' &&
