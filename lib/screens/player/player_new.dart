@@ -72,7 +72,7 @@ class _PlayerViewState extends State<PlayerView> {
         .createPositionStream(minPeriod: const Duration(milliseconds: 50))
         .listen((pos) async {
       if (!mounted) {
-        print('❌ PlayerView dispose edildi');
+        debugPrint('❌ PlayerView dispose edildi');
         return;
       }
 
@@ -98,7 +98,7 @@ class _PlayerViewState extends State<PlayerView> {
           }
 
           // ➎ Veriyi Bluetooth üzerinden gönder
-          print('► Note $idx tetiklendi: $curretnData');
+          debugPrint('► Note $idx tetiklendi: $curretnData');
           await SendData().sendHexData(bluetoothBloc, curretnData);
         }
       }

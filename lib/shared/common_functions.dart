@@ -20,3 +20,10 @@ String formatWithCommas(int number) => number.toString().replaceAllMapped(
 Future<void> delay(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
 }
+
+/// Splits an integer into two bytes (8 bits each).
+List<int> splitToBytes(int value) {
+  final low = value & 0xFF; // Alt 8 bit
+  final high = (value >> 8) & 0xFF; // Üst 8 bit
+  return [252, low, high];
+}

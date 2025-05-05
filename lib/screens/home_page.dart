@@ -67,14 +67,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       title: 'Training',
       subtitle: 'Train with your own music',
       backgroundColor: Colors.greenAccent,
-      emoji: '🎧',
+      emoji: '🥁',
       destination: TrainingView(),
     ),
     _CardData(
       title: 'Songs',
       subtitle: 'Discover and train with your favorite songs',
       backgroundColor: Colors.pinkAccent,
-      emoji: '🎵',
+      emoji: '🎤',
       destination: SongView(),
     ),
     _CardData(

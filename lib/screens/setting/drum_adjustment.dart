@@ -5,6 +5,7 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/setting/drum_model.dart';
 import 'package:harmoniglow/screens/setting/drum_painter.dart';
+import 'package:harmoniglow/shared/common_functions.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 
 class DrumAdjustment extends StatefulWidget {
@@ -174,6 +175,20 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                               child: Column(
                                 spacing: 10,
                                 children: [
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        await SendData().sendHexData(
+                                          bluetoothBloc,
+                                          splitToBytes(100),
+                                        );
+                                      },
+                                      child: const Text(
+                                        'Set duration',
+                                      ),
+                                    ),
+                                  ),
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
