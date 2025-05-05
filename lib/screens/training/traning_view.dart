@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/screens/player/player_new.dart';
 import 'package:harmoniglow/screens/training/traning_viewmodel.dart';
+import 'package:harmoniglow/shared/common_functions.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 import 'package:provider/provider.dart';
 
@@ -93,8 +94,12 @@ class _TrainingBodyState extends State<_TrainingBody> {
                     elevation: 2,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () {
-                        showModalBottomSheet(
+                      onTap: () async {
+                        await SendData().sendHexData(
+                          bluetoothBloc,
+                          splitToBytes(100),
+                        );
+                        await showModalBottomSheet(
                           context: context,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
@@ -112,8 +117,10 @@ class _TrainingBodyState extends State<_TrainingBody> {
                                 initialChildSize: 1.0,
                                 minChildSize: 0.3,
                                 expand: false,
-                                builder: (context, scrollCtrl) =>
-                                    PlayerView(beat),
+                                builder: (context, scrollCtrl) => PlayerView(
+                                  beat,
+                                  isTraning: true,
+                                ),
                               ),
                             ),
                           ),

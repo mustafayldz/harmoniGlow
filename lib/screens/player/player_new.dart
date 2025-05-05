@@ -6,12 +6,14 @@ import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/enums.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/screens/songs/songs_model.dart';
+import 'package:harmoniglow/shared/common_functions.dart';
 import 'package:harmoniglow/shared/countdown.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 import 'package:just_audio/just_audio.dart';
 
 class PlayerView extends StatefulWidget {
-  const PlayerView(this.songModel, {super.key});
+  const PlayerView(this.songModel, {super.key, this.isTraning = false});
+  final bool isTraning;
   final SongModel songModel;
 
   @override
@@ -33,6 +35,10 @@ class _PlayerViewState extends State<PlayerView> {
 
   // ➊ Gönderilen not indekslerini tutacak set
   final Set<int> _sentNoteIndices = {};
+
+  // ➋ ledlerin yanma suresini tutacak değişken
+  int ledDuration = 100;
+  static const int baseLedDuration = 100; // ms at 1× speed
 
   @override
   void initState() {
@@ -58,6 +64,20 @@ class _PlayerViewState extends State<PlayerView> {
 
       // 3) Position akışını dinle
       _listenPosition();
+
+      // 4) proccessing state’i dinle
+      _player.processingStateStream.listen((state) async {
+        if (state == ProcessingState.completed) {
+          if (widget.isTraning) {
+            // Şarkı bitti — başa sar ve yeniden başlat
+            await _player.seek(Duration.zero);
+            await _player.play();
+          } else {
+            await _player.seek(Duration.zero);
+            await _player.stop();
+          }
+        }
+      });
     } catch (e, stack) {
       debugPrint('Audio load hata: $e\n$stack');
     }
@@ -69,7 +89,7 @@ class _PlayerViewState extends State<PlayerView> {
 
     _player
         // ➊ Her 50ms’de bir pozisyon al
-        .createPositionStream(minPeriod: const Duration(milliseconds: 50))
+        .createPositionStream(minPeriod: const Duration(milliseconds: 10))
         .listen((pos) async {
       if (!mounted) {
         debugPrint('❌ PlayerView dispose edildi');
@@ -213,16 +233,15 @@ class _PlayerViewState extends State<PlayerView> {
             ),
             const Spacer(),
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: _controlButton(Icons.fast_rewind, () async {
-                    if (playerSpeed < 0.5) playerSpeed = 0.5;
-                    playerSpeed -= 0.5;
-                    await _player.setSpeed(playerSpeed);
+                  child: _controlButton(Icons.remove_circle_outline, () async {
+                    playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
+                    await _applySpeedAndReset(bluetoothBloc, playerSpeed);
                   }),
                 ),
-                const Spacer(),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40),
                   child: _controlButton(
@@ -244,13 +263,11 @@ class _PlayerViewState extends State<PlayerView> {
                     }
                   }),
                 ),
-                const Spacer(),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: _controlButton(Icons.fast_forward, () async {
-                    if (playerSpeed > 2.0) playerSpeed = 2.0;
-                    playerSpeed += 0.5;
-                    await _player.setSpeed(playerSpeed);
+                  child: _controlButton(Icons.add_circle, () async {
+                    playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
+                    await _applySpeedAndReset(bluetoothBloc, playerSpeed);
                   }),
                 ),
               ],
@@ -259,5 +276,17 @@ class _PlayerViewState extends State<PlayerView> {
         ),
       ),
     );
+  }
+
+  Future<void> _applySpeedAndReset(
+    BluetoothBloc bluetoothBloc,
+    double newSpeed,
+  ) async {
+    await _player.stop();
+
+    await _player.setSpeed(newSpeed);
+
+    final int ledDuration = (baseLedDuration / newSpeed).round();
+    await SendData().sendHexData(bluetoothBloc, splitToBytes(ledDuration));
   }
 }

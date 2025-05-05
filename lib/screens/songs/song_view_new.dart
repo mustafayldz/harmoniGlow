@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/screens/player/player_new.dart';
 import 'package:harmoniglow/screens/songs/songs_viewmodel.dart';
+import 'package:harmoniglow/shared/common_functions.dart';
 import 'package:harmoniglow/shared/send_data.dart';
 import 'package:provider/provider.dart';
 
@@ -48,9 +49,12 @@ class _SongViewState extends State<SongView> {
                   elevation: 2,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      // vm.selectBeat(deviceBloc, index);
-                      showModalBottomSheet(
+                    onTap: () async {
+                      await SendData().sendHexData(
+                        bluetoothBloc,
+                        splitToBytes(100),
+                      );
+                      await showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
