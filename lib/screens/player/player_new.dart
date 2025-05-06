@@ -81,6 +81,12 @@ class _PlayerViewState extends State<PlayerView> {
           } else {
             await _player.seek(Duration.zero);
             await _player.stop();
+            setState(() {
+              prevPos = Duration.zero;
+              start = Duration.zero;
+              _sentNoteIndices = {};
+              sentDrumParts.clear();
+            });
           }
         }
       });
@@ -131,7 +137,9 @@ class _PlayerViewState extends State<PlayerView> {
 
       // ➏ PrevPos’u güncelle ve UI’ı yenile
       prevPos = pos;
-      setState(() => _position = pos);
+      if (mounted) {
+        setState(() => _position = pos);
+      }
     });
   }
 
