@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
+import 'package:harmoniglow/screens/player/volume.dart';
 import 'package:harmoniglow/screens/songs/songs_model.dart';
 import 'package:harmoniglow/shared/common_functions.dart';
 import 'package:harmoniglow/shared/countdown.dart';
@@ -37,6 +39,7 @@ class _PlayerViewState extends State<PlayerView> {
 
   // ➌ gönderilen notların drum part’larını tutacak liste
   final List<String> sentDrumParts = [];
+  Color rondomColor = Colors.black;
 
   // ➍ önceki pozisyonu tutacak değişken
   Duration prevPos = Duration.zero;
@@ -127,6 +130,7 @@ class _PlayerViewState extends State<PlayerView> {
             sentDrumParts.add(drum!.name!);
             curretnData.add(drum.led!);
             curretnData.addAll(drum.rgb!);
+            rondomColor = getRandomDarkColor();
           }
 
           // ➎ Veriyi Bluetooth üzerinden gönder
@@ -156,7 +160,12 @@ class _PlayerViewState extends State<PlayerView> {
     return '$minutes:$seconds';
   }
 
-  Widget _controlButton(IconData icon, VoidCallback onPressed) => Container(
+  Widget _controlButton(
+    IconData icon,
+    VoidCallback onPressed, {
+    double iconSize = 32,
+  }) =>
+      Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: const BoxDecoration(
           color: Colors.white,
@@ -170,13 +179,14 @@ class _PlayerViewState extends State<PlayerView> {
           ],
         ),
         child: IconButton(
-          icon: Icon(icon, size: 32),
+          icon: Icon(icon, size: iconSize),
           onPressed: onPressed,
         ),
       );
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
     final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -184,13 +194,18 @@ class _PlayerViewState extends State<PlayerView> {
         child: Column(
           children: [
             const Spacer(),
-            Center(
+            SizedBox(
+              height: size.height * 0.3,
               child: sentDrumParts.isNotEmpty
-                  ? Text(
-                      sentDrumParts.join(', '),
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                  ? Center(
+                      child: Text(
+                        sentDrumParts.join(', '),
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: rondomColor,
+                        ),
+                        textAlign: TextAlign.justify,
                       ),
                     )
                   : Container(
@@ -228,7 +243,7 @@ class _PlayerViewState extends State<PlayerView> {
                 color: Colors.grey[600],
               ),
             ),
-            const Spacer(),
+            const Spacer(flex: 3),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -253,9 +268,9 @@ class _PlayerViewState extends State<PlayerView> {
                 ],
               ),
             ),
-            const Spacer(),
+            const SizedBox(height: 20),
             Padding(
-              padding: const EdgeInsets.only(bottom: 40),
+              padding: const EdgeInsets.only(bottom: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -264,23 +279,25 @@ class _PlayerViewState extends State<PlayerView> {
                     await _applySpeedAndReset(bluetoothBloc, playerSpeed);
                   }),
                   _controlButton(
-                      _player.playing ? Icons.pause : Icons.play_arrow,
-                      () async {
-                    if (_player.playing) {
-                      await _player.pause();
-                      await SendData().sendHexData(bluetoothBloc, [0]);
-                    } else {
-                      await showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => const Countdown(),
-                      ).whenComplete(() async {
-                        if (mounted) {
-                          await _player.play();
-                        }
-                      });
-                    }
-                  }),
+                    _player.playing ? Icons.pause : Icons.play_arrow,
+                    () async {
+                      if (_player.playing) {
+                        await _player.pause();
+                        await SendData().sendHexData(bluetoothBloc, [0]);
+                      } else {
+                        await showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => const Countdown(),
+                        ).whenComplete(() async {
+                          if (mounted) {
+                            await _player.play();
+                          }
+                        });
+                      }
+                    },
+                    iconSize: 52,
+                  ),
                   _controlButton(Icons.add_circle, () async {
                     playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
                     await _applySpeedAndReset(bluetoothBloc, playerSpeed);
@@ -288,6 +305,7 @@ class _PlayerViewState extends State<PlayerView> {
                 ],
               ),
             ),
+            ModernVolumeButtons(player: _player),
           ],
         ),
       ),
@@ -304,5 +322,18 @@ class _PlayerViewState extends State<PlayerView> {
 
     final int ledDuration = (baseLedDuration / newSpeed).round();
     await SendData().sendHexData(bluetoothBloc, splitToBytes(ledDuration));
+  }
+
+  Color getRandomDarkColor() {
+    Color color;
+    do {
+      color = Color.fromARGB(
+        255,
+        Random().nextInt(256), // Red 0–255
+        Random().nextInt(256), // Green 0–255
+        Random().nextInt(256), // Blue 0–255
+      );
+    } while (color.computeLuminance() > 0.3);
+    return color;
   }
 }
