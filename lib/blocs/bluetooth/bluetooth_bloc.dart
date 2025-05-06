@@ -16,33 +16,40 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     on<ForceNavigationEvent>(_onForceNavigation);
 
     // Kick off auto‑connect as soon as the Bloc is instantiated
-    _autoConnectToLastDevice();
+    _initializeConnection();
   }
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   BluetoothCharacteristic? characteristic;
 
-  Future<void> _autoConnectToLastDevice() async {
+  Future<void> _initializeConnection() async {
     final lastId = await StorageService().getSavedDeviceId();
+    debugPrint('Last saved device ID: $lastId');
 
-    debugPrint('----------------------------Last saved device ID: $lastId');
+    if (lastId != null) {
+      // 1) Check any already‑connected devices
+      final connected = FlutterBluePlus.connectedDevices;
+      final already = connected.where((d) => d.remoteId.str == lastId);
 
-    if (lastId == null) return;
-
-    // Wait for Bluetooth to be ON
-    final state = await FlutterBluePlus.adapterState.first;
-    if (state != BluetoothAdapterState.on) return;
-
-    // Scan briefly for the remembered device
-    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
-
-    _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-      final candidates = results.where((r) => r.device.remoteId.str == lastId);
-      if (candidates.isNotEmpty) {
-        final match = candidates.first;
-        add(ConnectToDeviceEvent(match.device));
-        add(StopScanEvent());
+      if (already.isNotEmpty) {
+        add(ConnectToDeviceEvent(already.first));
+        return;
       }
-    });
+
+      // 2) If none are connected yet, scan briefly to find it
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
+      _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+        final candidates =
+            results.where((r) => r.device.remoteId.str == lastId);
+        if (candidates.isNotEmpty) {
+          add(ConnectToDeviceEvent(candidates.first.device));
+          add(StopScanEvent());
+        }
+      });
+    } else {
+      // No saved device → 5s scan
+      add(StartScanEvent());
+      Future.delayed(const Duration(seconds: 5), () => add(StopScanEvent()));
+    }
   }
 
   Future<void> _onStartScan(
@@ -208,9 +215,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   ) async {
     try {
       await event.device.disconnect();
-
-      // ✅ Tarama otomatik olarak durdurulsun
-      await FlutterBluePlus.stopScan();
+      await StorageService().clearSavedDeviceId();
 
       emit(
         state.copyWith(

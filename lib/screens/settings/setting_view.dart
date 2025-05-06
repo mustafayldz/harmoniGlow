@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:harmoniglow/mock_service/local_service.dart';
 import 'package:harmoniglow/provider/app_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +12,8 @@ class SettingView extends StatefulWidget {
 
 class SettingViewState extends State<SettingView> {
   AppProvider appProvider = AppProvider();
+  StorageService storageService = StorageService();
+  late bool isDarkMode = false;
 
   @override
   void initState() {
@@ -39,9 +42,9 @@ class SettingViewState extends State<SettingView> {
                     style: TextStyle(fontSize: 18),
                   ),
                   Switch(
-                    value: context.watch<AppProvider>().isDarkMode,
-                    onChanged: (value) {
-                      appProvider.setDarkMode(value);
+                    value: appProvider.isDarkMode,
+                    onChanged: (value) async {
+                      await appProvider.toggleTheme();
                     },
                   ),
                 ],

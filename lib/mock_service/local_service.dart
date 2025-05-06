@@ -11,28 +11,29 @@ class StorageService {
 
   /// Singleton instance
   static final StorageService _instance = StorageService._internal();
-
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   static const String drumPartsKey = 'drumParts';
-  static const bool skipIntro = false;
+  static const themeKey = 'darkMode';
+  static const String deviceIdKey = 'paired_device_id';
 
   /// Save the paired device ID
   Future<void> saveDeviceId(BluetoothDevice device) async {
     final prefs = await _prefs;
-    await prefs.setString('paired_device_id', device.remoteId.toString());
+    await prefs.setString(deviceIdKey, device.remoteId.toString());
   }
 
   /// Get the saved paired device ID
   Future<String?> getSavedDeviceId() async {
     final prefs = await _prefs;
-    return prefs.getString('paired_device_id');
+    return prefs.getString(deviceIdKey);
   }
 
   /// Clear the paired device ID
   Future<void> clearSavedDeviceId() async {
+    print("------Clearing saved device ID");
     final prefs = await _prefs;
-    await prefs.remove('paired_device_id');
+    await prefs.remove(deviceIdKey);
   }
 
   //// Drum Parts
@@ -122,20 +123,6 @@ class StorageService {
     }
   }
 
-  // /// Intro
-  // ///
-  // /// Returns true if the intro page should be skipped
-  // static Future<bool> skipIntroPage() async {
-  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   return prefs.getBool('skip_intro') ?? false;
-  // }
-
-  // /// Set the skip intro page flag
-  // static Future<void> setSkipIntroPage(bool skip) async {
-  //   final SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   await prefs.setBool('skip_intro', skip);
-  // }
-
   /// Firebase
   ///
   /// Save the Firebase token
@@ -148,5 +135,25 @@ class StorageService {
   static Future<String?> getFirebaseToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('firebase_token');
+  }
+
+  /// Clear the Firebase token
+  static Future<void> clearFirebaseToken() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('firebase_token');
+  }
+
+  /// Theme
+  ///
+  /// Save the theme mode
+  static Future<void> saveThemeMode(bool isDarkMode) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(themeKey, isDarkMode);
+  }
+
+  /// Get the saved theme mode
+  static Future<bool> getThemeMode() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(themeKey) ?? false;
   }
 }

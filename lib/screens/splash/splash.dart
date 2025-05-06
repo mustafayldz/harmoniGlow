@@ -78,7 +78,7 @@ class SplashViewState extends State<SplashView>
     final token = await StorageService.getFirebaseToken();
 
     if (token != null && token.isNotEmpty) {
-      await Navigator.pushReplacementNamed(context, '/findDevices');
+      await Navigator.pushReplacementNamed(context, '/home');
     } else {
       await Navigator.pushReplacementNamed(context, '/login');
     }

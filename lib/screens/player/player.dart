@@ -179,7 +179,7 @@ class _PlayerViewState extends State<PlayerView> {
           ],
         ),
         child: IconButton(
-          icon: Icon(icon, size: iconSize),
+          icon: Icon(icon, size: iconSize, color: Colors.black),
           onPressed: onPressed,
         ),
       );
@@ -189,7 +189,6 @@ class _PlayerViewState extends State<PlayerView> {
     final Size size = MediaQuery.of(context).size;
     final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
         child: Column(
           children: [
@@ -238,9 +237,8 @@ class _PlayerViewState extends State<PlayerView> {
             const SizedBox(height: 8),
             Text(
               widget.songModel.artist ?? 'Unknown Artist',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
               ),
             ),
             const Spacer(flex: 3),

@@ -45,7 +45,7 @@ class ModernVolumeButtonsState extends State<ModernVolumeButtons> {
               ),
             ],
           ),
-          child: Icon(icon, size: 32),
+          child: Icon(icon, size: 32, color: Colors.black),
         ),
       );
 

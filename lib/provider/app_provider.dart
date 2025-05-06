@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:harmoniglow/mock_service/local_service.dart';
 
 class AppProvider with ChangeNotifier {
+  AppProvider() {
+    _loadTheme();
+  }
   // app data
   int? _countdownValue;
-  bool _isDarkMode = false;
+  bool isDarkMode = false;
 
   // Getter for app data
   int get countdownValue => _countdownValue ?? 3;
-  bool get isDarkMode => _isDarkMode;
 
   // Setter for app data
   void setCountdownValue(bool isIncrement) {
@@ -19,8 +22,14 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setDarkMode(bool isDarkMode) {
-    _isDarkMode = isDarkMode;
+  Future<void> _loadTheme() async {
+    isDarkMode = await StorageService.getThemeMode();
     notifyListeners();
+  }
+
+  Future<void> toggleTheme() async {
+    isDarkMode = !isDarkMode;
+    notifyListeners();
+    await StorageService.saveThemeMode(isDarkMode);
   }
 }
