@@ -4,9 +4,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/constants.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/screens/setting/drum_model.dart';
+import 'package:harmoniglow/screens/myDrum/drum_model.dart';
 import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
-import 'package:harmoniglow/screens/setting/drum_adjustment.dart';
+import 'package:harmoniglow/screens/myDrum/drum_adjustment.dart';
+import 'package:harmoniglow/screens/settings/setting_view.dart';
 import 'package:harmoniglow/screens/songs/song_view_new.dart';
 import 'package:harmoniglow/screens/training/traning_view.dart';
 
@@ -78,11 +79,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       destination: SongView(),
     ),
     _CardData(
+      title: 'MY DRUM',
+      subtitle: 'Adjust your drum settings',
+      backgroundColor: Colors.blueAccent,
+      emoji: '🥁',
+      destination: DrumAdjustment(),
+    ),
+    _CardData(
       title: 'Settings',
       subtitle: '',
       backgroundColor: Colors.blueAccent,
       emoji: '⚙️',
-      destination: DrumAdjustment(),
+      destination: SettingView(),
     ),
   ];
 

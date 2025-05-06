@@ -95,7 +95,8 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
                                               ),
                                             );
 
-                                        await _storageService.clearDevice();
+                                        await _storageService
+                                            .clearSavedDeviceId();
 
                                         // Delay slightly before starting scan again
                                         Future.delayed(
@@ -329,7 +330,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     bluetoothBloc.add(DisconnectFromDeviceEvent(device));
 
     // Assuming _storageService.clearDevice() could be async
-    await _storageService.clearDevice();
+    await _storageService.clearSavedDeviceId();
   }
 
   Future<void> _connectToDevice(
@@ -338,7 +339,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
   ) async {
     final bluetoothBloc = context.read<BluetoothBloc>();
     bluetoothBloc.add(ConnectToDeviceEvent(device));
-    await _storageService.saveDevice(device);
+    await _storageService.saveDeviceId(device);
 
     _navigateToDeviceScreen(device);
   }

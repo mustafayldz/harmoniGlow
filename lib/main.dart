@@ -6,6 +6,9 @@ import 'package:harmoniglow/app_routes.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:harmoniglow/locator.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
+import 'package:harmoniglow/provider/app_provider.dart';
+import 'package:harmoniglow/provider/user_provider.dart';
+import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,6 +35,8 @@ class HarmoniGlow extends StatelessWidget {
           RepositoryProvider<StorageService>(
             create: (context) => StorageService(),
           ),
+          ChangeNotifierProvider(create: (_) => UserProvider()),
+          ChangeNotifierProvider(create: (_) => AppProvider()),
         ],
         child: MaterialApp(
           navigatorKey: navigatorKey,

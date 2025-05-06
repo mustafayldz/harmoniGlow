@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:harmoniglow/mock_service/local_service.dart';
+import 'package:harmoniglow/models/device_model.dart';
+import 'package:harmoniglow/models/user_model.dart';
+import 'package:harmoniglow/provider/user_provider.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -31,8 +34,43 @@ class SplashViewState extends State<SplashView>
     // Start animation
     _controller.forward();
 
+    // fetch user data
+    _fetchUserData();
+
     // Navigate to the next screen after animation
     _navigateToNextScreen();
+  }
+
+  Future<void> _fetchUserData() async {
+    final userModel = UserModel(
+      userId: '1',
+      name: 'mustafa',
+      email: 'mstf.yildiz92@gmail.com',
+      createdAt: DateTime.now()
+          .subtract(const Duration(hours: 24))
+          .millisecondsSinceEpoch,
+      lastLogin: DateTime.now()
+          .subtract(const Duration(hours: 5))
+          .millisecondsSinceEpoch,
+      devices: [
+        DeviceModel(
+          deviceId: '1',
+          model: 'Model A',
+          serialNumber: '123456789',
+          firmwareVersion: '1.0.0',
+          hardwareVersion: '1.0.0',
+          lastConnectedAt: DateTime.now()
+              .subtract(const Duration(hours: 6))
+              .millisecondsSinceEpoch,
+          pairedAt: DateTime.now()
+              .subtract(const Duration(hours: 5))
+              .millisecondsSinceEpoch,
+          isActive: 1,
+        ),
+      ],
+    );
+
+    UserProvider().setUser(userModel);
   }
 
   Future<void> _navigateToNextScreen() async {

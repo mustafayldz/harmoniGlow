@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
+import 'package:harmoniglow/mock_service/local_service.dart';
 
 class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   BluetoothBloc() : super(BluetoothStateC()) {
@@ -13,9 +14,36 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     on<ConnectToDeviceEvent>(_onConnectToDevice);
     on<DisconnectFromDeviceEvent>(_onDisconnectFromDevice);
     on<ForceNavigationEvent>(_onForceNavigation);
+
+    // Kick off auto‑connect as soon as the Bloc is instantiated
+    _autoConnectToLastDevice();
   }
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   BluetoothCharacteristic? characteristic;
+
+  Future<void> _autoConnectToLastDevice() async {
+    final lastId = await StorageService().getSavedDeviceId();
+
+    debugPrint('----------------------------Last saved device ID: $lastId');
+
+    if (lastId == null) return;
+
+    // Wait for Bluetooth to be ON
+    final state = await FlutterBluePlus.adapterState.first;
+    if (state != BluetoothAdapterState.on) return;
+
+    // Scan briefly for the remembered device
+    await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
+
+    _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+      final candidates = results.where((r) => r.device.remoteId.str == lastId);
+      if (candidates.isNotEmpty) {
+        final match = candidates.first;
+        add(ConnectToDeviceEvent(match.device));
+        add(StopScanEvent());
+      }
+    });
+  }
 
   Future<void> _onStartScan(
     StartScanEvent event,
@@ -23,8 +51,13 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   ) async {
     try {
       // Bluetooth açık mı kontrol et
-      final adapterState = await FlutterBluePlus.adapterState.first;
-      if (adapterState != BluetoothAdapterState.on) {
+      final adapterState = await FlutterBluePlus.adapterState.firstWhere(
+        (s) => s == BluetoothAdapterState.on || s == BluetoothAdapterState.off,
+      );
+
+      debugPrint('Bluetooth Adapter State: $adapterState');
+
+      if (adapterState == BluetoothAdapterState.off) {
         debugPrint('Bluetooth is not ON. Current state: $adapterState');
         emit(
           state.copyWith(

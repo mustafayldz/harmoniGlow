@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:harmoniglow/provider/app_provider.dart';
 
 class Countdown extends StatefulWidget {
   const Countdown({super.key});
@@ -10,12 +12,13 @@ class Countdown extends StatefulWidget {
 }
 
 class CountdownState extends State<Countdown> {
-  int _counter = 3;
+  late int _counter;
   late Timer _timer;
 
   @override
   void initState() {
     super.initState();
+    _counter = context.read<AppProvider>().countdownValue;
     _startCountdown();
   }
 

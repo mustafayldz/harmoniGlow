@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/screens/setting/drum_model.dart';
+import 'package:harmoniglow/screens/myDrum/drum_model.dart';
 
 class DrumPainter extends CustomPainter {
   DrumPainter({

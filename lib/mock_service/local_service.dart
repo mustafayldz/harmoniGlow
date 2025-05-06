@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:harmoniglow/screens/setting/drum_model.dart';
+import 'package:harmoniglow/screens/myDrum/drum_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
@@ -17,27 +17,22 @@ class StorageService {
   static const String drumPartsKey = 'drumParts';
   static const bool skipIntro = false;
 
-  /// Save the paired device ID and device name
-  Future<void> saveDevice(BluetoothDevice device) async {
+  /// Save the paired device ID
+  Future<void> saveDeviceId(BluetoothDevice device) async {
     final prefs = await _prefs;
     await prefs.setString('paired_device_id', device.remoteId.toString());
-    await prefs.setString('paired_device_name', device.advName);
   }
 
-  /// Get the saved paired device ID and device name
-  Future<Map<String, String?>> getSavedDevice() async {
+  /// Get the saved paired device ID
+  Future<String?> getSavedDeviceId() async {
     final prefs = await _prefs;
-    return {
-      'deviceId': prefs.getString('paired_device_id'),
-      'deviceName': prefs.getString('paired_device_name'),
-    };
+    return prefs.getString('paired_device_id');
   }
 
-  /// Clear the paired device ID and device name
-  Future<void> clearDevice() async {
+  /// Clear the paired device ID
+  Future<void> clearSavedDeviceId() async {
     final prefs = await _prefs;
     await prefs.remove('paired_device_id');
-    await prefs.remove('paired_device_name');
   }
 
   //// Drum Parts
