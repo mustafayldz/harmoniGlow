@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.harmoniglow"
+    namespace = "com.drumly.mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.harmoniglow"
+        applicationId = "com.drumly.mobile"
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

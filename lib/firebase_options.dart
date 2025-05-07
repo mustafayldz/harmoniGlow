@@ -50,19 +50,20 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBRWyQSBFq93wkWK_mhDoshAbN1gJJTe-8',
-    appId: '1:846406380683:android:ede5625de77fc48f31788e',
-    messagingSenderId: '846406380683',
-    projectId: 'harmoni-glow',
-    storageBucket: 'harmoni-glow.firebasestorage.app',
+    apiKey: 'AIzaSyAYqPjlG6-TTDyAVUfRFcpeDuSM1vf7ms0',
+    appId: '1:914876532693:android:cb07e77c172303d2d81f5c',
+    messagingSenderId: '914876532693',
+    projectId: 'drumly-mobile',
+    storageBucket: 'drumly-mobile.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDmDUPoUj_uGx74dLd0ivKTH1fBDRL6BnY',
-    appId: '1:846406380683:ios:cfb3904bbb9302c131788e',
-    messagingSenderId: '846406380683',
-    projectId: 'harmoni-glow',
-    storageBucket: 'harmoni-glow.firebasestorage.app',
-    iosBundleId: 'com.example.harmoniglow',
+    apiKey: 'AIzaSyAsDhQ1SC-LR73PpiF_afbI-ZhuR28xltg',
+    appId: '1:914876532693:ios:1c510bbac560f531d81f5c',
+    messagingSenderId: '914876532693',
+    projectId: 'drumly-mobile',
+    storageBucket: 'drumly-mobile.firebasestorage.app',
+    iosBundleId: 'com.drumly.mobile',
   );
+
 }

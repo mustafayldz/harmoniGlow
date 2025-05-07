@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/mock_service/api_service.dart';
-import 'package:harmoniglow/screens/songs/songs_model.dart';
+import 'package:drumly/mock_service/api_service.dart';
+import 'package:drumly/screens/songs/songs_model.dart';
 
 /// ViewModel following MVVM, holds state and business logic
 class SongViewModel extends ChangeNotifier {

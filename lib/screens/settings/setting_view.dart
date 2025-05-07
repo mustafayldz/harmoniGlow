@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/provider/app_provider.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/provider/app_provider.dart';
 import 'package:provider/provider.dart';
 
 class SettingView extends StatefulWidget {

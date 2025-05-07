@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/models/device_model.dart';
-import 'package:harmoniglow/models/user_model.dart';
-import 'package:harmoniglow/provider/user_provider.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/models/device_model.dart';
+import 'package:drumly/models/user_model.dart';
+import 'package:drumly/provider/user_provider.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -96,7 +96,7 @@ class SplashViewState extends State<SplashView>
           child: FadeTransition(
             opacity: _animation,
             child: const Text(
-              'Welcome to HarmoniGlow',
+              'Welcome to Drumly',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),

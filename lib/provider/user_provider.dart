@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/models/user_model.dart';
+import 'package:drumly/models/user_model.dart';
 
 class UserProvider with ChangeNotifier {
   // User data

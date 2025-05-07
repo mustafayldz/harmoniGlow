@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:harmoniglow/models/device_model.dart';
+import 'package:drumly/models/device_model.dart';
 
 UserModel userModelFromJson(String str) => UserModel.fromJson(json.decode(str));
 

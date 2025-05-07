@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
+import 'package:drumly/mock_service/local_service.dart';
 
 class AppProvider with ChangeNotifier {
   AppProvider() {

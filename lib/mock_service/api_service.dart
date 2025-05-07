@@ -1,4 +1,4 @@
-import 'package:harmoniglow/screens/songs/songs_model.dart';
+import 'package:drumly/screens/songs/songs_model.dart';
 
 class MockApiService {
   Future<List<SongModel>> fetchSongData() async => _getSongs();

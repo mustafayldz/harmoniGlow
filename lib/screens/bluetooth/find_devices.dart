@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_event.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_state.dart';
-import 'package:harmoniglow/constants.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/screens/home_page.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_event.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
+import 'package:drumly/constants.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/screens/home_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FindDevicesScreen extends StatefulWidget {

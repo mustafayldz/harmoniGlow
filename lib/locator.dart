@@ -1,8 +1,8 @@
+import 'package:drumly/mock_service/api_service.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/provider/app_provider.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:get_it/get_it.dart';
-import 'package:harmoniglow/mock_service/api_service.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/provider/app_provider.dart';
-import 'package:harmoniglow/provider/user_provider.dart';
 
 final getIt = GetIt.instance;
 

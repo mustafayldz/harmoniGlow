@@ -1,15 +1,15 @@
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/constants.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/screens/bluetooth/find_devices.dart';
+import 'package:drumly/screens/myDrum/drum_adjustment.dart';
+import 'package:drumly/screens/myDrum/drum_model.dart';
+import 'package:drumly/screens/settings/setting_view.dart';
+import 'package:drumly/screens/songs/song_view_new.dart';
+import 'package:drumly/screens/training/traning_view.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/constants.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/screens/myDrum/drum_model.dart';
-import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
-import 'package:harmoniglow/screens/myDrum/drum_adjustment.dart';
-import 'package:harmoniglow/screens/settings/setting_view.dart';
-import 'package:harmoniglow/screens/songs/song_view_new.dart';
-import 'package:harmoniglow/screens/training/traning_view.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

@@ -1,8 +1,8 @@
+import 'package:drumly/screens/bluetooth/find_devices.dart';
+import 'package:drumly/screens/home_page.dart';
+import 'package:drumly/screens/login/login_view.dart';
+import 'package:drumly/screens/splash/splash.dart';
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
-import 'package:harmoniglow/screens/home_page.dart';
-import 'package:harmoniglow/screens/login/login_view.dart';
-import 'package:harmoniglow/screens/splash/splash.dart';
 
 class AppRoute {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

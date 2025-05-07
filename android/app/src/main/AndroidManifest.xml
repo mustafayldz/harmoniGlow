@@ -10,7 +10,7 @@
 
 
     <application
-        android:label="Harmoni Glow"
+        android:label="Drumly"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

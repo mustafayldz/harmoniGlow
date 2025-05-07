@@ -3,13 +3,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/screens/player/volume.dart';
-import 'package:harmoniglow/screens/songs/songs_model.dart';
-import 'package:harmoniglow/shared/common_functions.dart';
-import 'package:harmoniglow/shared/countdown.dart';
-import 'package:harmoniglow/shared/send_data.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/screens/player/volume.dart';
+import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/shared/common_functions.dart';
+import 'package:drumly/shared/countdown.dart';
+import 'package:drumly/shared/send_data.dart';
 import 'package:just_audio/just_audio.dart';
 
 class PlayerView extends StatefulWidget {

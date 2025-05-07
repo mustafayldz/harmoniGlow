@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/screens/bluetooth/find_devices.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/screens/bluetooth/find_devices.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});

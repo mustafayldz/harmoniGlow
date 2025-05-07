@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/screens/player/player.dart';
-import 'package:harmoniglow/screens/songs/songs_viewmodel.dart';
-import 'package:harmoniglow/shared/common_functions.dart';
-import 'package:harmoniglow/shared/send_data.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/screens/player/player.dart';
+import 'package:drumly/screens/songs/songs_viewmodel.dart';
+import 'package:drumly/shared/common_functions.dart';
+import 'package:drumly/shared/send_data.dart';
 import 'package:provider/provider.dart';
 
 /// A modern, card-based list of songs

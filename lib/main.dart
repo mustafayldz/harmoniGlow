@@ -1,15 +1,14 @@
+import 'package:drumly/app_routes.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/locator.dart';
+import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/provider/app_provider.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
-
-import 'package:harmoniglow/app_routes.dart';
-import 'package:harmoniglow/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:harmoniglow/locator.dart';
-import 'package:harmoniglow/mock_service/local_service.dart';
-import 'package:harmoniglow/provider/app_provider.dart';
-import 'package:harmoniglow/provider/user_provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -33,14 +32,14 @@ void main() async {
             create: (_) => StorageService(),
           ),
         ],
-        child: const HarmoniGlow(),
+        child: const Drumly(),
       ),
     ),
   );
 }
 
-class HarmoniGlow extends StatelessWidget {
-  const HarmoniGlow({super.key});
+class Drumly extends StatelessWidget {
+  const Drumly({super.key});
 
   static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   static FirebaseAnalyticsObserver observer =
