@@ -207,23 +207,9 @@ class _PlayerViewState extends State<PlayerView> {
                         textAlign: TextAlign.justify,
                       ),
                     )
-                  : Container(
-                      width: 200,
-                      height: 200,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/logo.png'),
-                          fit: BoxFit.cover,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 20,
-                            offset: Offset(0, 10),
-                          ),
-                        ],
-                      ),
+                  : Image.asset(
+                      'assets/images/drumly_logo.png',
+                      fit: BoxFit.cover,
                     ),
             ),
             const Spacer(),
