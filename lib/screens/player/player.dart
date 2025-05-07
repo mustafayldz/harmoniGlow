@@ -200,15 +200,18 @@ class _PlayerViewState extends State<PlayerView> {
             SizedBox(
               height: size.height * 0.3,
               child: sentDrumParts.isNotEmpty
-                  ? Center(
-                      child: Text(
-                        sentDrumParts.join(', '),
-                        style: TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          color: rondomColor,
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Center(
+                        child: Text(
+                          sentDrumParts.join(', '),
+                          style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.bold,
+                            color: rondomColor,
+                          ),
+                          textAlign: TextAlign.justify,
                         ),
-                        textAlign: TextAlign.justify,
                       ),
                     )
                   : Image.asset(
@@ -217,21 +220,24 @@ class _PlayerViewState extends State<PlayerView> {
                     ),
             ),
             const Spacer(),
-            Text(
-              widget.songModel.title ?? 'Unknown Title',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+            Column(
+              spacing: 8,
+              children: [
+                Text(
+                  widget.songModel.title ?? 'Unknown Title',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  widget.songModel.artist ?? 'Unknown Artist',
+                  style: const TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              widget.songModel.artist ?? 'Unknown Artist',
-              style: const TextStyle(
-                fontSize: 16,
-              ),
-            ),
-            const Spacer(flex: 3),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(

@@ -23,7 +23,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
   Future<void> _initializeConnection() async {
     final lastId = await StorageService().getSavedDeviceId();
-    debugPrint('Last saved device ID: $lastId');
 
     // ─── 0) Wait for Bluetooth to be powered ON ────────────────────────
     // Bluetooth açık mı kontrol et
@@ -40,7 +39,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       // ─── 1) Check already‑connected devices ───────────────────────────
       final connected = FlutterBluePlus.connectedDevices;
       final already = connected.where((d) => d.remoteId.str == lastId);
-
       if (already.isNotEmpty) {
         add(ConnectToDeviceEvent(already.first));
         return;
@@ -49,7 +47,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       // ─── 2) Scan briefly for your saved device ─────────────────────────
       await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
       _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-        final candidates = results.where((r) => r.device.remoteId.id == lastId);
+        final candidates =
+            results.where((r) => r.device.remoteId.str == lastId);
         if (candidates.isNotEmpty) {
           add(ConnectToDeviceEvent(candidates.first.device));
           add(StopScanEvent());
@@ -72,10 +71,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         (s) => s == BluetoothAdapterState.on || s == BluetoothAdapterState.off,
       );
 
-      debugPrint('Bluetooth Adapter State: $adapterState');
-
       if (adapterState == BluetoothAdapterState.off) {
-        debugPrint('Bluetooth is not ON. Current state: $adapterState');
         emit(
           state.copyWith(
             isScanning: false,
@@ -90,7 +86,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         return;
       }
 
-      debugPrint('Starting Bluetooth scan...');
       emit(state.copyWith(isScanning: true));
 
       await FlutterBluePlus.startScan(
