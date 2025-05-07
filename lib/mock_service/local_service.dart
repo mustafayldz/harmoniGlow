@@ -31,7 +31,6 @@ class StorageService {
 
   /// Clear the paired device ID
   Future<void> clearSavedDeviceId() async {
-    print("------Clearing saved device ID");
     final prefs = await _prefs;
     await prefs.remove(deviceIdKey);
   }

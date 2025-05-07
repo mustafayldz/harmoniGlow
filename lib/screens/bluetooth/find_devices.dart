@@ -112,7 +112,8 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
                               Center(
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 20),
+                                    horizontal: 20,
+                                  ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [

@@ -114,7 +114,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const FindDevicesScreen()),
+                      builder: (_) => const FindDevicesScreen(),
+                    ),
                   );
                 },
                 child: Container(
