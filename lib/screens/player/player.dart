@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
@@ -56,6 +57,9 @@ class _PlayerViewState extends State<PlayerView> {
 
   Future<void> _initAudio(BuildContext context) async {
     try {
+      // ➊ Firebase Analytics
+      await FirebaseAnalytics.instance.logEvent(name: widget.songModel.title!);
+
       // 1) PlayerState akışını dinle
       _playerStateSub = _player.playerStateStream.listen((state) {
         if (!mounted) return;
