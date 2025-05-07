@@ -23,6 +23,7 @@ dependencies:
   firebase_auth: ^5.5.1
   firebase_analytics: ^11.4.4
   flutter_launcher_icons: ^0.14.3
+  google_mobile_ads: ^6.0.0
 
 flutter_launcher_icons:
   android: "launcher_icon"
