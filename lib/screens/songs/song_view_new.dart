@@ -131,7 +131,7 @@ class _SongViewState extends State<SongView> {
                               ? const Icon(
                                   Icons.lock,
                                   size: 32,
-                                  color: Colors.blue,
+                                  color: Colors.black,
                                 )
                               : const SizedBox(),
                         ],
