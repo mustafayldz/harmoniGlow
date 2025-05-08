@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:drumly/adMob/ad_helper.dart';
 
-/// Sayfa açıldığında interstitial reklamı yükleyip gösterir,
-/// reklama tıklayıp kapatınca child'ı ekrana getirir.
+/// Bu widget’ı, reklam göstermek istediğiniz her sayfanın en üstünde wrap edin.
+/// initState’te reklamı yükler, gösterir. Reklam kapatılınca veya hata olursa
+/// child’ı gösterir ve widget dispose’unda tüm kaynakları temizler.
 class InterstitialAdWrapper extends StatefulWidget {
   const InterstitialAdWrapper({
+    required this.adUnitId,
+    required this.child,
     super.key,
+    this.onAdComplete,
   });
+
+  /// AdMob’dan aldığınız Interstitial Ad Unit ID
+  final String adUnitId;
+
+  /// Reklam gösterimi tamamlandığında veya hata durumunda asıl gösterilecek sayfa
+  final Widget child;
+
+  /// Reklam kapandığında ekstra bir şey yapmak isterseniz buraya callback ekleyebilirsiniz
+  final VoidCallback? onAdComplete;
 
   @override
   InterstitialAdWrapperState createState() => InterstitialAdWrapperState();
@@ -15,46 +27,54 @@ class InterstitialAdWrapper extends StatefulWidget {
 
 class InterstitialAdWrapperState extends State<InterstitialAdWrapper> {
   InterstitialAd? _ad;
-  bool _adDismissed = false;
+  bool _showChild = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAndShowAd();
+    // Reklamı gerçekten "sayfa açıldıktan sonra" yükleyip göstermek için
+    // bir frame sonrası tetikleyelim:
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAndShowAd();
+    });
   }
 
   void _loadAndShowAd() {
+    print("-> Interstitial yükleniyor");
     InterstitialAd.load(
-      adUnitId: AdHelper().interstitialAdUnitId,
+      adUnitId: widget.adUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
+          print("-> Interstitial yüklendi, gösteriliyor");
           _ad = ad;
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
+              print("-> Interstitial kapatıldı");
               ad.dispose();
-              setState(() {
-                _adDismissed = true;
-              });
+              _complete();
             },
             onAdFailedToShowFullScreenContent: (ad, err) {
+              print("-> Gösterim hatası: ${err.message}");
               ad.dispose();
-              setState(() {
-                _adDismissed = true;
-              });
+              _complete();
             },
           );
           ad.show();
         },
         onAdFailedToLoad: (err) {
-          debugPrint('Interstitial load failed: ${err.message}');
-          // Yükleme başarısızsa child’ı hemen göster
-          setState(() {
-            _adDismissed = true;
-          });
+          print("-> Yükleme hatası: ${err.message}");
+          _complete();
         },
       ),
     );
+  }
+
+  void _complete() {
+    if (mounted) {
+      setState(() => _showChild = true);
+      widget.onAdComplete?.call();
+    }
   }
 
   @override
@@ -65,14 +85,11 @@ class InterstitialAdWrapperState extends State<InterstitialAdWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    // Reklam kapatıldıysa veya yükleme başarısızsa child'ı göster
-    if (_adDismissed) {
-      return const Center(
-        child: Text('Reklam kapatıldı veya yükleme başarısız oldu'),
-      );
+    if (_showChild) {
+      // Reklam bitti ya da hata verince asıl içeriği göster
+      return widget.child;
     }
-
-    // Aksi halde yüklenme/sunulma sırasında bir bekleme gösterebilirsin
+    // Reklam yüklenirken ya da gösterilirken bekletme ekranı
     return const Scaffold(
       body: Center(child: CircularProgressIndicator()),
     );

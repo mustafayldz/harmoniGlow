@@ -1,3 +1,4 @@
+import 'package:drumly/adMob/ad_service.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/mock_service/local_service.dart';
@@ -69,29 +70,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       subtitle: 'Train with your own music',
       backgroundColor: Colors.greenAccent,
       emoji: '🥁',
-      // destination: TrainingView(),
     ),
     _CardData(
       title: 'Songs',
       subtitle: 'Discover and train with your favorite songs',
       backgroundColor: Colors.pinkAccent,
       emoji: '🎤',
-      // destination: SongView(),
     ),
     _CardData(
       title: 'MY DRUM',
       subtitle: 'Adjust your drum settings',
       backgroundColor: Colors.blueAccent,
       emoji: '🥁',
-      // destination:
-      //     isConnected ? const DrumAdjustment() : const FindDevicesScreen(),
     ),
     _CardData(
       title: 'Settings',
       subtitle: '',
       backgroundColor: Colors.blueAccent,
       emoji: '⚙️',
-      // destination: SettingView(),
     ),
   ];
 
@@ -175,6 +171,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       child: _buildHabitCard(
                         context,
+                        isConnected,
                         title: card.title,
                         subtitle: card.subtitle,
                         backgroundColor: card.backgroundColor,
@@ -211,7 +208,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildHabitCard(
-    BuildContext context, {
+    BuildContext context,
+    bool isConnected, {
     required String title,
     required String subtitle,
     required Color backgroundColor,
@@ -219,12 +217,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     required Widget destination,
   }) =>
       GestureDetector(
-        onTap: () {
-          FirebaseAnalytics.instance.logEvent(name: title);
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => destination),
-          );
+        onTap: () async {
+          debugPrint('Tıklandı: $title');
+
+          await FirebaseAnalytics.instance.logEvent(name: title);
+
+          // if (isConnected) {
+          //   await Navigator.push(
+          //     context,
+          //     MaterialPageRoute(builder: (_) => destination),
+          //   );
+          // } else {
+          await AdService.instance.showInterstitialAd().whenComplete(() async {
+            // Reklam gösterimi tamamlandıktan sonra yönlendirme yap
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => destination),
+            );
+          });
+
+          // }
         },
         child: Container(
           margin: const EdgeInsets.only(bottom: 24),
