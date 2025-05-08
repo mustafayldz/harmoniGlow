@@ -45,6 +45,7 @@ class SongModel {
     this.bpm,
     this.songtypeId,
     this.genre,
+    this.isLocked = false,
   });
 
   factory SongModel.fromJson(Map<String, dynamic> json) => SongModel(
@@ -62,6 +63,7 @@ class SongModel {
         bpm: json['bpm'] as int?,
         songtypeId: json['songtypeId'] as int?,
         genre: json['genre'] as String?,
+        isLocked: json['isLocked'] as bool? ?? false,
       );
 
   int? songId;
@@ -74,6 +76,7 @@ class SongModel {
   int? bpm;
   int? songtypeId;
   String? genre;
+  bool isLocked;
 
   Map<String, dynamic> toJson() => {
         'songId': songId,
@@ -86,5 +89,6 @@ class SongModel {
         'bpm': bpm,
         'songtypeId': songtypeId,
         'genre': genre,
+        'isLocked': isLocked,
       };
 }

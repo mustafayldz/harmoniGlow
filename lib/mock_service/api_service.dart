@@ -1326,6 +1326,7 @@ class MockApiService {
         'genre': 'Nu Metal',
         'songtypeId': 1,
         'songId': 1,
+        'isLocked': false,
         'fileUrl':
             'https://ia801705.us.archive.org/25/items/LinkinParkBySen/08%20In%20the%20End.mp3',
         'notes': [
@@ -3614,6 +3615,7 @@ class MockApiService {
         'genre': 'Rock',
         'songtypeId': 1,
         'songId': 2,
+        'isLocked': true,
         'fileUrl':
             'https://ia600102.us.archive.org/25/items/QueenWeWillRockYou/quenn__we_will_rock_you22.mp3',
         'notes': [

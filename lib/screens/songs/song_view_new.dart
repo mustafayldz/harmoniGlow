@@ -127,6 +127,13 @@ class _SongViewState extends State<SongView> {
                               ],
                             ),
                           ),
+                          song.isLocked
+                              ? const Icon(
+                                  Icons.lock,
+                                  size: 32,
+                                  color: Colors.blue,
+                                )
+                              : const SizedBox(),
                         ],
                       ),
                     ),
