@@ -1,0 +1,2 @@
+/Users/mustafayildiz/project/drumly/android/app/.cxx/Debug/6e4x4f35/x86_64/CMakeFiles/edit_cache.dir
+/Users/mustafayildiz/project/drumly/android/app/.cxx/Debug/6e4x4f35/x86_64/CMakeFiles/rebuild_cache.dir
