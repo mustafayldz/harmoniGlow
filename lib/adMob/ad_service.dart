@@ -14,14 +14,16 @@ class AdService {
   Future<void> showInterstitialAd() {
     if (_isLoading) {
       debugPrint(
-          '[AdService] showInterstitialAd: Zaten yükleniyor, hemen tamamlanıyor.');
+        '[AdService] showInterstitialAd: Zaten yükleniyor, hemen tamamlanıyor.',
+      );
       return Future.value();
     }
     _isLoading = true;
     final completer = Completer<void>();
 
     debugPrint(
-        '[AdService] Interstitial load başlıyor. UnitID=${AdHelper().interstitialAdUnitId}');
+      '[AdService] Interstitial load başlıyor. UnitID=${AdHelper().interstitialAdUnitId}',
+    );
     InterstitialAd.load(
       adUnitId: AdHelper().interstitialAdUnitId,
       request: const AdRequest(),
@@ -31,14 +33,16 @@ class AdService {
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
               debugPrint(
-                  '[AdService] onAdDismissedFullScreenContent: Reklam kapatıldı.');
+                '[AdService] onAdDismissedFullScreenContent: Reklam kapatıldı.',
+              );
               ad.dispose();
               _isLoading = false;
               completer.complete();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               debugPrint(
-                  '[AdService] onAdFailedToShowFullScreenContent: Hata gösterme sırasında: ${error.message}');
+                '[AdService] onAdFailedToShowFullScreenContent: Hata gösterme sırasında: ${error.message}',
+              );
               ad.dispose();
               _isLoading = false;
               completer.complete();
@@ -49,7 +53,8 @@ class AdService {
         },
         onAdFailedToLoad: (LoadAdError error) {
           debugPrint(
-              '[AdService] onAdFailedToLoad: Yükleme hatası: ${error.message}');
+            '[AdService] onAdFailedToLoad: Yükleme hatası: ${error.message}',
+          );
           _isLoading = false;
           completer.complete();
         },
