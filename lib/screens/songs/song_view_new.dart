@@ -1,9 +1,11 @@
+import 'package:drumly/hive/db_service.dart';
+import 'package:drumly/screens/player/player.dart';
 import 'package:flutter/material.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/screens/player/player.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
 /// A modern, card-based list of songs
@@ -16,132 +18,150 @@ class SongView extends StatefulWidget {
 
 class _SongViewState extends State<SongView> {
   late final SongViewModel vm;
+  final _box = Hive.box('recordsBox');
 
   @override
   void initState() {
     super.initState();
     vm = SongViewModel();
     vm.fetchSongs();
+    // Temizlik işlemi
+    cleanExpiredRecords();
   }
 
   @override
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
-    return ChangeNotifierProvider<SongViewModel>.value(
+
+    return ChangeNotifierProvider.value(
       value: vm,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Songs'),
-        ),
-        body: Consumer<SongViewModel>(
-          builder: (context, vm, _) {
-            final songs = vm.songListNew;
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                final song = songs[index];
-                return Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () async {
-                      await SendData().sendHexData(
-                        bluetoothBloc,
-                        splitToBytes(100),
-                      );
-                      await showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        // give the sheet a rounded top
-                        shape: const RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        builder: (context) => FractionallySizedBox(
-                          // set height to 95% of screen
-                          heightFactor: 0.95,
-                          child: ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                            child: DraggableScrollableSheet(
-                              initialChildSize: 1.0,
-                              minChildSize: 0.3,
-                              expand: false,
-                              builder: (context, scrollCtrl) => PlayerView(
-                                song,
+        appBar: AppBar(title: const Text('Songs')),
+        // Hive box’ı dinleyip UI’yı yenile
+        body: ValueListenableBuilder(
+          valueListenable: _box.listenable(),
+          builder: (_, Box box, __) => Consumer<SongViewModel>(
+            builder: (context, vm, _) {
+              final songs = vm.songListNew;
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemCount: songs.length,
+                itemBuilder: (_, index) {
+                  final song = songs[index];
+                  final isUnlocked = box.containsKey(song.songId.toString());
+                  final showLock = song.isLocked && !isUnlocked;
+
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () async {
+                        if (showLock) {
+                          // Reklam sonrası kaydetmek için callback al
+                          showAdConsentSnackBar(
+                            context,
+                            song.songId!,
+                          );
+                        } else {
+                          // normal akış
+                          await SendData().sendHexData(
+                            bluetoothBloc,
+                            splitToBytes(100),
+                          );
+                          await showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            // give the sheet a rounded top
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
                               ),
                             ),
-                          ),
-                        ),
-                      ).whenComplete(() async {
-                        await SendData().sendHexData(bluetoothBloc, [0]);
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${song.artist ?? 'Unknown Artist'} - ${song.title ?? 'Unknown Title'}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                            builder: (context) => FractionallySizedBox(
+                              // set height to 95% of screen
+                              heightFactor: 0.95,
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(20),
+                                ),
+                                child: DraggableScrollableSheet(
+                                  initialChildSize: 1.0,
+                                  minChildSize: 0.3,
+                                  expand: false,
+                                  builder: (context, scrollCtrl) => PlayerView(
+                                    song,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    if (song.bpm != null) ...[
-                                      Chip(
-                                        label: Text('${song.bpm} BPM'),
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                      const SizedBox(width: 8),
-                                    ],
-                                    if (song.durationSeconds != null) ...[
-                                      Chip(
-                                        label: Text(
-                                          vm.formatDuration(
-                                            song.durationSeconds,
-                                          ),
-                                        ),
-                                        visualDensity: VisualDensity.compact,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                          song.isLocked
-                              ? const Icon(
-                                  Icons.lock,
-                                  size: 32,
-                                  color: Colors.black,
-                                )
-                              : const SizedBox(),
-                        ],
+                          ).whenComplete(() async {
+                            await SendData().sendHexData(bluetoothBloc, [0]);
+                          });
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${song.artist ?? 'Unknown'} – ${song.title ?? '—'}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      if (song.bpm != null) ...[
+                                        Chip(
+                                          label: Text('${song.bpm} BPM'),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        const SizedBox(width: 8),
+                                      ],
+                                      if (song.durationSeconds != null) ...[
+                                        Chip(
+                                          label: Text(
+                                            vm.formatDuration(
+                                              song.durationSeconds,
+                                            ),
+                                          ),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (showLock)
+                              const Icon(
+                                Icons.lock,
+                                size: 32,
+                                color: Colors.black,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
-            );
-          },
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );

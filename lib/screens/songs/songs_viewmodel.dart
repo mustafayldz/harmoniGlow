@@ -4,10 +4,10 @@ import 'package:drumly/screens/songs/songs_model.dart';
 
 /// ViewModel following MVVM, holds state and business logic
 class SongViewModel extends ChangeNotifier {
+  final MockApiService _apiService = MockApiService();
+
   List<SongModel> songList = [];
   List<SongModel> songListNew = [];
-
-  final MockApiService _apiService = MockApiService();
 
   Future<void> fetchSongs() async {
     try {
