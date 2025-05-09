@@ -72,8 +72,6 @@ void showAdConsentSnackBar(BuildContext context, int songId) {
                   // Reklam gösterme fonksiyonunu çağır
                   final bool earned = await AdServiceReward().showRewardedAd();
 
-                  print('Ad watched: $earned');
-
                   if (earned) {
                     // Ödülü ver: 2 saatlik kilidi aç
                     await addRecord(songId.toString()); // kayıt ekle

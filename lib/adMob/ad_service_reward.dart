@@ -25,7 +25,8 @@ class AdServiceReward {
         },
         onAdFailedToLoad: (err) {
           debugPrint(
-              'AdServiceReward: Rewarded ad failed to load: ${err.message}');
+            'AdServiceReward: Rewarded ad failed to load: ${err.message}',
+          );
           _isRewardedAdReady = false;
           _loadCompleter?.complete();
         },
@@ -68,7 +69,8 @@ class AdServiceReward {
           ad.dispose();
           rewardCompleter.complete(false);
           debugPrint(
-              'AdServiceReward: Reloading rewarded ad after show failure.');
+            'AdServiceReward: Reloading rewarded ad after show failure.',
+          );
           loadRewardedAd();
         },
       )
@@ -79,7 +81,8 @@ class AdServiceReward {
     await _rewardedAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
         debugPrint(
-            'AdServiceReward: User earned reward! Amount: ${reward.amount}, Type: ${reward.type}');
+          'AdServiceReward: User earned reward! Amount: ${reward.amount}, Type: ${reward.type}',
+        );
         rewardCompleter.complete(true);
       },
     );
