@@ -32,6 +32,9 @@ class _SongViewState extends State<SongView> {
   @override
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
+    final state = context.watch<BluetoothBloc>().state;
+
+    final isConnected = state.isConnected;
 
     return ChangeNotifierProvider.value(
       value: vm,
@@ -50,7 +53,8 @@ class _SongViewState extends State<SongView> {
                 itemBuilder: (_, index) {
                   final song = songs[index];
                   final isUnlocked = box.containsKey(song.songId.toString());
-                  final showLock = song.isLocked && !isUnlocked;
+                  final showLock =
+                      (song.isLocked && !isUnlocked) && !isConnected;
 
                   return Card(
                     shape: RoundedRectangleBorder(

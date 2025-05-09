@@ -9,7 +9,7 @@ Future<void> addRecord(String songId) async {
   await box.put(songId, timestamp);
 }
 
-/// Süresi geçen kayıtları siler (3 saatten eski kayıtlar)
+/// Süresi geçen kayıtları siler (2 saatten eski kayıtlar)
 Future<void> cleanExpiredRecords() async {
   final box = Hive.box('recordsBox');
   final now = DateTime.now();
@@ -19,7 +19,7 @@ Future<void> cleanExpiredRecords() async {
     final stored = box.get(key) as String;
     final createdAt = DateTime.parse(stored);
 
-    if (now.difference(createdAt) > const Duration(hours: 3)) {
+    if (now.difference(createdAt) > const Duration(hours: 2)) {
       keysToRemove.add(key);
     }
   }

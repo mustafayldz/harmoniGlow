@@ -1,3 +1,4 @@
+import 'package:drumly/adMob/ad_service_reward.dart';
 import 'package:drumly/hive/db_service.dart';
 import 'package:flutter/material.dart';
 
@@ -67,8 +68,27 @@ void showAdConsentSnackBar(BuildContext context, int songId) {
                 onPressed: () async {
                   // Kabul etme davranışı: reklam göster
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  // _showInterstitialAd(); // kendi reklam gösterme fonksiyonunuz
-                  await addRecord(songId.toString()); // kayıt ekle
+
+                  // Reklam gösterme fonksiyonunu çağır
+                  final bool earned = await AdServiceReward().showRewardedAd();
+
+                  print('Ad watched: $earned');
+
+                  if (earned) {
+                    // Ödülü ver: 2 saatlik kilidi aç
+                    await addRecord(songId.toString()); // kayıt ekle
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Başarılı! 2 saatlik erişim açıldı.'),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Reklam izlenmedi veya hata oluştu.'),
+                      ),
+                    );
+                  }
                 },
                 style: TextButton.styleFrom(),
                 child: const Text('Accept'),
