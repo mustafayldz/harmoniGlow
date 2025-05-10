@@ -1,7 +1,7 @@
 import 'package:drumly/screens/training/traning_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/screens/player/player.dart';
+import 'package:drumly/screens/player/player_view.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:provider/provider.dart';

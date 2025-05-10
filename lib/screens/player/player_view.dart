@@ -299,7 +299,7 @@ class _PlayerViewState extends State<PlayerView> {
                 ],
               ),
             ),
-            ModernVolumeButtons(player: _player),
+            VolumeButtons(player: _player),
           ],
         ),
       ),

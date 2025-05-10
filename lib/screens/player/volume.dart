@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
-class ModernVolumeButtons extends StatefulWidget {
-  const ModernVolumeButtons({
+class VolumeButtons extends StatefulWidget {
+  const VolumeButtons({
     required this.player,
     super.key,
     this.step = 0.1,
@@ -11,10 +11,10 @@ class ModernVolumeButtons extends StatefulWidget {
   final double step;
 
   @override
-  ModernVolumeButtonsState createState() => ModernVolumeButtonsState();
+  VolumeButtonsState createState() => VolumeButtonsState();
 }
 
-class ModernVolumeButtonsState extends State<ModernVolumeButtons> {
+class VolumeButtonsState extends State<VolumeButtons> {
   double _volume = 0.2;
 
   @override

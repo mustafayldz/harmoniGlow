@@ -1,10 +1,10 @@
-import 'package:drumly/hive/db_service.dart';
-import 'package:drumly/screens/player/player.dart';
-import 'package:flutter/material.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/hive/db_service.dart';
+import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -97,8 +97,9 @@ class _SongViewState extends State<SongView> {
                                   initialChildSize: 1.0,
                                   minChildSize: 0.3,
                                   expand: false,
-                                  builder: (context, scrollCtrl) => PlayerView(
-                                    song,
+                                  builder: (context, scrollCtrl) =>
+                                      YoutubeSongPlayer(
+                                    song: song,
                                   ),
                                 ),
                               ),
