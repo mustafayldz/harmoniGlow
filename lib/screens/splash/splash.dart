@@ -77,6 +77,9 @@ class SplashViewState extends State<SplashView>
     await Future.delayed(const Duration(seconds: 5));
     final token = await StorageService.getFirebaseToken();
 
+    print('=========================');
+    print('Token: $token');
+
     if (token != null && token.isNotEmpty) {
       await Navigator.pushReplacementNamed(context, '/home');
     } else {

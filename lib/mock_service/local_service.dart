@@ -137,7 +137,7 @@ class StorageService {
   }
 
   /// Clear the Firebase token
-  static Future<void> clearFirebaseToken() async {
+  Future<void> clearFirebaseToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('firebase_token');
   }
