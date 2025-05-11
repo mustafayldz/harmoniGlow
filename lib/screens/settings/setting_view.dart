@@ -133,8 +133,14 @@ class SettingViewState extends State<SettingView> {
             // Logout Button
             Center(
               child: ElevatedButton.icon(
-                icon: const Icon(Icons.logout),
-                label: const Text('Logout', style: TextStyle(fontSize: 16)),
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'Logout',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
                 style: ElevatedButton.styleFrom(
                   elevation: 2,
                   padding:
@@ -142,7 +148,7 @@ class SettingViewState extends State<SettingView> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  backgroundColor: theme.colorScheme.error,
+                  backgroundColor: Colors.red,
                 ),
                 onPressed: () async {
                   await storageService.clearSavedDeviceId();

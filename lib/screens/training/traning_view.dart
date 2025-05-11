@@ -61,13 +61,18 @@ class _TrainingBodyState extends State<_TrainingBody> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        isSelected ? Colors.blue[200] : Colors.grey[200],
+                        isSelected ? Colors.grey[200] : Colors.grey,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onPressed: () => vm.selectGenre(i),
-                  child: Text(label),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? Colors.black : Colors.white,
+                    ),
+                  ),
                 ),
               );
             },
@@ -107,26 +112,84 @@ class _TrainingBodyState extends State<_TrainingBody> {
                             borderRadius:
                                 BorderRadius.vertical(top: Radius.circular(20)),
                           ),
-                          builder: (context) => FractionallySizedBox(
-                            heightFactor: 0.95,
-                            child: ClipRRect(
+                          builder: (context) {
+                            final theme = Theme.of(context);
+                            return ClipRRect(
                               borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(20),
-                              ),
-                              child: DraggableScrollableSheet(
-                                initialChildSize: 1.0,
-                                minChildSize: 0.3,
-                                expand: false,
-                                builder: (context, scrollCtrl) => PlayerView(
-                                  beat,
-                                  isTraning: true,
+                                  top: Radius.circular(20)),
+                              child: ColoredBox(
+                                color: theme.scaffoldBackgroundColor,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // 1) Drag handle
+                                    Container(
+                                      width: 40,
+                                      height: 4,
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: theme.brightness ==
+                                                Brightness.dark
+                                            ? Colors.grey[
+                                                600] // koyu tema için biraz daha açık
+                                            : Colors.grey[
+                                                300], // açık tema için koyu tutam
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height:
+                                          MediaQuery.of(context).size.height *
+                                              0.9,
+                                      child: DraggableScrollableSheet(
+                                        initialChildSize: 1.0,
+                                        minChildSize: 0.3,
+                                        expand: false,
+                                        builder: (context, scrollCtrl) =>
+                                            PlayerView(
+                                          beat,
+                                          isTraning: true,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ).whenComplete(() async {
                           await SendData().sendHexData(bluetoothBloc, [0]);
                         });
+
+                        // await showModalBottomSheet(
+                        //   context: context,
+                        //   isScrollControlled: true,
+                        //   backgroundColor: Colors.transparent,
+                        //   shape: const RoundedRectangleBorder(
+                        //     borderRadius:
+                        //         BorderRadius.vertical(top: Radius.circular(20)),
+                        //   ),
+                        //   builder: (context) => FractionallySizedBox(
+                        //     heightFactor: 0.95,
+                        //     child: ClipRRect(
+                        //       borderRadius: const BorderRadius.vertical(
+                        //         top: Radius.circular(20),
+                        //       ),
+                        //       child: DraggableScrollableSheet(
+                        //         initialChildSize: 1.0,
+                        //         minChildSize: 0.3,
+                        //         expand: false,
+                        //         builder: (context, scrollCtrl) => PlayerView(
+                        //           beat,
+                        //           isTraning: true,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ).whenComplete(() async {
+                        //   await SendData().sendHexData(bluetoothBloc, [0]);
+                        // });
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(

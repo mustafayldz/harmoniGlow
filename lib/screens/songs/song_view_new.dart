@@ -80,30 +80,56 @@ class _SongViewState extends State<SongView> {
                             context: context,
                             isScrollControlled: true,
                             backgroundColor: Colors.transparent,
-                            // give the sheet a rounded top
                             shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(20),
-                              ),
+                                  top: Radius.circular(20)),
                             ),
-                            builder: (context) => FractionallySizedBox(
-                              // set height to 95% of screen
-                              heightFactor: 0.95,
-                              child: ClipRRect(
+                            builder: (context) {
+                              final theme = Theme.of(context);
+                              return ClipRRect(
                                 borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                                child: DraggableScrollableSheet(
-                                  initialChildSize: 1.0,
-                                  minChildSize: 0.3,
-                                  expand: false,
-                                  builder: (context, scrollCtrl) =>
-                                      YoutubeSongPlayer(
-                                    song: song,
+                                    top: Radius.circular(20)),
+                                child: ColoredBox(
+                                  color: theme.scaffoldBackgroundColor,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // 1) Drag handle
+                                      Container(
+                                        width: 40,
+                                        height: 4,
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: theme.brightness ==
+                                                  Brightness.dark
+                                              ? Colors.grey[
+                                                  600] // koyu tema için biraz daha açık
+                                              : Colors.grey[
+                                                  300], // açık tema için koyu tutam
+                                          borderRadius:
+                                              BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.9,
+                                        child: DraggableScrollableSheet(
+                                          initialChildSize: 1.0,
+                                          minChildSize: 0.3,
+                                          expand: false,
+                                          builder: (context, scrollCtrl) =>
+                                              YoutubeSongPlayer(
+                                            song: song,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ).whenComplete(() async {
                             await SendData().sendHexData(bluetoothBloc, [0]);
                           });
@@ -152,12 +178,7 @@ class _SongViewState extends State<SongView> {
                                 ],
                               ),
                             ),
-                            if (showLock)
-                              const Icon(
-                                Icons.lock,
-                                size: 32,
-                                color: Colors.black,
-                              ),
+                            if (showLock) const Icon(Icons.lock, size: 32),
                           ],
                         ),
                       ),
