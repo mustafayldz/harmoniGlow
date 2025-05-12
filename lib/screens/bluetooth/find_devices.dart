@@ -5,7 +5,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_event.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
 import 'package:drumly/constants.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/home_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 

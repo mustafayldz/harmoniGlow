@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/bluetooth/find_devices.dart';
 
 class LoginView extends StatefulWidget {
@@ -36,16 +36,20 @@ class LoginViewState extends State<LoginView> {
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Sign in successful!',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+          content: Text(
+            'Sign in successful!',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Sign in failed: $e',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onError))),
+          content: Text(
+            'Sign in failed: $e',
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+        ),
       );
     }
   }
@@ -88,9 +92,11 @@ class LoginViewState extends State<LoginView> {
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Please enter your email to reset password',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+          content: Text(
+            'Please enter your email to reset password',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+        ),
       );
       return;
     }
@@ -98,16 +104,20 @@ class LoginViewState extends State<LoginView> {
       await _auth.sendPasswordResetEmail(email: email);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Password reset email sent',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onSurface))),
+          content: Text(
+            'Password reset email sent',
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          ),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Error: $e',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onError))),
+          content: Text(
+            'Error: $e',
+            style: TextStyle(color: Theme.of(context).colorScheme.onError),
+          ),
+        ),
       );
     }
   }

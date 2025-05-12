@@ -5,7 +5,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/player/volume.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/shared/common_functions.dart';

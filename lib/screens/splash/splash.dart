@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:drumly/mock_service/local_service.dart';
-import 'package:drumly/models/device_model.dart';
-import 'package:drumly/models/user_model.dart';
 import 'package:drumly/provider/user_provider.dart';
+import 'package:drumly/services/local_service.dart';
+import 'package:drumly/services/user_service.dart';
+import 'package:flutter/material.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -17,6 +16,7 @@ class SplashViewState extends State<SplashView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  final StorageService storageService = StorageService();
 
   @override
   void initState() {
@@ -42,43 +42,21 @@ class SplashViewState extends State<SplashView>
   }
 
   Future<void> _fetchUserData() async {
-    final userModel = UserModel(
-      userId: '1',
-      name: 'mustafa',
-      email: 'mstf.yildiz92@gmail.com',
-      createdAt: DateTime.now()
-          .subtract(const Duration(hours: 24))
-          .millisecondsSinceEpoch,
-      lastLogin: DateTime.now()
-          .subtract(const Duration(hours: 5))
-          .millisecondsSinceEpoch,
-      devices: [
-        DeviceModel(
-          deviceId: '1',
-          model: 'Model A',
-          serialNumber: '123456789',
-          firmwareVersion: '1.0.0',
-          hardwareVersion: '1.0.0',
-          lastConnectedAt: DateTime.now()
-              .subtract(const Duration(hours: 6))
-              .millisecondsSinceEpoch,
-          pairedAt: DateTime.now()
-              .subtract(const Duration(hours: 5))
-              .millisecondsSinceEpoch,
-          isActive: 1,
-        ),
-      ],
-    );
-
-    UserProvider().setUser(userModel);
+    try {
+      final userModel = await UserService().getUser(context);
+      if (userModel != null) {
+        UserProvider().setUser(userModel);
+        return;
+      }
+    } catch (e) {
+      debugPrint('Error fetching user data: $e');
+    }
   }
 
   Future<void> _navigateToNextScreen() async {
     await Future.delayed(const Duration(seconds: 5));
-    final token = await StorageService.getFirebaseToken();
 
-    print('=========================');
-    print('Token: $token');
+    final token = await storageService.getFirebaseToken();
 
     if (token != null && token.isNotEmpty) {
       await Navigator.pushReplacementNamed(context, '/home');

@@ -1,7 +1,7 @@
 import 'package:drumly/app_routes.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/locator.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';

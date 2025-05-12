@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:drumly/adMob/ad_service_reward.dart';
 import 'package:drumly/hive/db_service.dart';
+import 'package:drumly/services/local_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 /// Capitalizes the first letter of a given string.
@@ -97,4 +101,43 @@ void showAdConsentSnackBar(BuildContext context, int songId) {
       ),
     ),
   );
+}
+
+/// Decode the payload (middle segment) of a JWT into a Map.
+Map<String, dynamic> decodeJwtPayload(String token) {
+  final parts = token.split('.');
+  if (parts.length != 3) {
+    throw const FormatException('Invalid JWT: must have 3 parts');
+  }
+
+  final normalized = base64Url.normalize(parts[1]);
+  final payload = utf8.decode(base64Url.decode(normalized));
+  return json.decode(payload) as Map<String, dynamic>;
+}
+
+/// Returns true if the token’s `exp` time (in seconds since epoch) is in the past.
+bool isJwtExpired(String token) {
+  try {
+    final payload = decodeJwtPayload(token);
+    final exp = payload['exp'];
+    if (exp is! int) return true;
+    final expiry = DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true);
+    return DateTime.now().toUtc().isAfter(expiry);
+  } catch (_) {
+    // If decoding/parsing fails, treat it as expired
+    return true;
+  }
+}
+
+/// Gets a valid Firebase ID token, forcing a refresh if it’s expired.
+Future<String> getValidFirebaseToken() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('Not signed in');
+  }
+  final freshToken = await user.getIdToken(true);
+  debugPrint('fresh token: $freshToken');
+  await StorageService.saveFirebaseToken(freshToken!);
+
+  return freshToken;
 }

@@ -1,7 +1,7 @@
 import 'package:drumly/adMob/ad_service.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/bluetooth/find_devices.dart';
 import 'package:drumly/screens/myDrum/drum_adjustment.dart';
 import 'package:drumly/screens/myDrum/drum_model.dart';
@@ -218,8 +218,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }) =>
       GestureDetector(
         onTap: () async {
-          print("TAP: $title");
-
           try {
             debugPrint('Tapped: $title');
             await FirebaseAnalytics.instance.logEvent(name: title);

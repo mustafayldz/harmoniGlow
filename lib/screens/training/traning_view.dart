@@ -116,7 +116,8 @@ class _TrainingBodyState extends State<_TrainingBody> {
                             final theme = Theme.of(context);
                             return ClipRRect(
                               borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(20)),
+                                top: Radius.circular(20),
+                              ),
                               child: ColoredBox(
                                 color: theme.scaffoldBackgroundColor,
                                 child: Column(
@@ -127,7 +128,8 @@ class _TrainingBodyState extends State<_TrainingBody> {
                                       width: 40,
                                       height: 4,
                                       margin: const EdgeInsets.symmetric(
-                                          vertical: 8),
+                                        vertical: 8,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: theme.brightness ==
                                                 Brightness.dark
@@ -161,35 +163,6 @@ class _TrainingBodyState extends State<_TrainingBody> {
                         ).whenComplete(() async {
                           await SendData().sendHexData(bluetoothBloc, [0]);
                         });
-
-                        // await showModalBottomSheet(
-                        //   context: context,
-                        //   isScrollControlled: true,
-                        //   backgroundColor: Colors.transparent,
-                        //   shape: const RoundedRectangleBorder(
-                        //     borderRadius:
-                        //         BorderRadius.vertical(top: Radius.circular(20)),
-                        //   ),
-                        //   builder: (context) => FractionallySizedBox(
-                        //     heightFactor: 0.95,
-                        //     child: ClipRRect(
-                        //       borderRadius: const BorderRadius.vertical(
-                        //         top: Radius.circular(20),
-                        //       ),
-                        //       child: DraggableScrollableSheet(
-                        //         initialChildSize: 1.0,
-                        //         minChildSize: 0.3,
-                        //         expand: false,
-                        //         builder: (context, scrollCtrl) => PlayerView(
-                        //           beat,
-                        //           isTraning: true,
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ).whenComplete(() async {
-                        //   await SendData().sendHexData(bluetoothBloc, [0]);
-                        // });
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(

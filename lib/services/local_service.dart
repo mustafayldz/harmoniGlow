@@ -131,7 +131,7 @@ class StorageService {
   }
 
   /// Get the saved Firebase token
-  static Future<String?> getFirebaseToken() async {
+  Future<String?> getFirebaseToken() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('firebase_token');
   }

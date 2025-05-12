@@ -82,13 +82,15 @@ class _SongViewState extends State<SongView> {
                             backgroundColor: Colors.transparent,
                             shape: const RoundedRectangleBorder(
                               borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20)),
+                                top: Radius.circular(20),
+                              ),
                             ),
                             builder: (context) {
                               final theme = Theme.of(context);
                               return ClipRRect(
                                 borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(20)),
+                                  top: Radius.circular(20),
+                                ),
                                 child: ColoredBox(
                                   color: theme.scaffoldBackgroundColor,
                                   child: Column(
@@ -99,7 +101,8 @@ class _SongViewState extends State<SongView> {
                                         width: 40,
                                         height: 4,
                                         margin: const EdgeInsets.symmetric(
-                                            vertical: 8),
+                                          vertical: 8,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: theme.brightness ==
                                                   Brightness.dark

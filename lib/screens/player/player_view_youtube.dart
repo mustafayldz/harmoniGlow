@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';

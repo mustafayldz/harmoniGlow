@@ -2,7 +2,7 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/myDrum/drum_model.dart';
 import 'package:drumly/screens/myDrum/drum_painter.dart';
 import 'package:drumly/shared/common_functions.dart';

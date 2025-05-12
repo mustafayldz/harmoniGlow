@@ -1,3 +1,7 @@
+// To parse this JSON data, do
+//
+//     final deviceModel = deviceModelFromJson(jsonString);
+
 import 'dart:convert';
 
 DeviceModel deviceModelFromJson(String str) =>
@@ -9,41 +13,41 @@ class DeviceModel {
   DeviceModel({
     this.deviceId,
     this.model,
-    this.hardwareVersion,
-    this.firmwareVersion,
     this.serialNumber,
-    this.isActive,
-    this.pairedAt,
+    this.firmwareVersion,
+    this.hardwareVersion,
     this.lastConnectedAt,
+    this.pairedAt,
+    this.isActive,
   });
 
   factory DeviceModel.fromJson(Map<String, dynamic> json) => DeviceModel(
-        deviceId: json['device_id'],
+        deviceId: json['deviceId'],
         model: json['model'],
-        hardwareVersion: json['hardware_version'],
-        firmwareVersion: json['firmware_version'],
-        serialNumber: json['serial_number'],
-        isActive: json['is_active'],
-        pairedAt: json['paired_at'],
-        lastConnectedAt: json['last_connected_at'],
+        serialNumber: json['serialNumber'],
+        firmwareVersion: json['firmwareVersion'],
+        hardwareVersion: json['hardwareVersion'],
+        lastConnectedAt: json['lastConnectedAt'],
+        pairedAt: json['pairedAt'],
+        isActive: json['isActive'],
       );
   String? deviceId;
   String? model;
-  String? hardwareVersion;
-  String? firmwareVersion;
   String? serialNumber;
-  int? isActive;
-  int? pairedAt;
+  String? firmwareVersion;
+  String? hardwareVersion;
   int? lastConnectedAt;
+  int? pairedAt;
+  int? isActive;
 
   Map<String, dynamic> toJson() => {
-        'device_id': deviceId,
+        'deviceId': deviceId,
         'model': model,
-        'hardware_version': hardwareVersion,
-        'firmware_version': firmwareVersion,
-        'serial_number': serialNumber,
-        'is_active': isActive,
-        'paired_at': pairedAt,
-        'last_connected_at': lastConnectedAt,
+        'serialNumber': serialNumber,
+        'firmwareVersion': firmwareVersion,
+        'hardwareVersion': hardwareVersion,
+        'lastConnectedAt': lastConnectedAt,
+        'pairedAt': pairedAt,
+        'isActive': isActive,
       };
 }

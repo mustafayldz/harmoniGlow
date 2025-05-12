@@ -9,6 +9,13 @@ class AppColors {
   static const Color primaryColor = Color(0xFF00c9f1);
 }
 
+class ApiServiceUrl {
+  // static const baseUrl = 'https://drumly.ca/api/v1/';
+  static const baseUrl = 'http://10.0.0.127:5001/api/';
+
+  static const user = '${baseUrl}users/';
+}
+
 class DrumParts {
   static const drumParts = {
     '1': {

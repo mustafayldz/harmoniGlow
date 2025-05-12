@@ -1,5 +1,6 @@
+import 'package:drumly/services/user_service.dart';
 import 'package:flutter/material.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -14,6 +15,7 @@ class SettingView extends StatefulWidget {
 class SettingViewState extends State<SettingView> {
   late AppProvider appProvider;
   final StorageService storageService = StorageService();
+  final UserService userService = UserService();
 
   String _version = '';
   String _buildNumber = '';

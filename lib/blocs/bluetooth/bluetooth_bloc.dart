@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_event.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
-import 'package:drumly/mock_service/local_service.dart';
+import 'package:drumly/services/local_service.dart';
 
 class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   BluetoothBloc() : super(BluetoothStateC()) {
