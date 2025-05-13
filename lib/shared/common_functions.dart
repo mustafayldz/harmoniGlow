@@ -79,16 +79,11 @@ void showAdConsentSnackBar(BuildContext context, String songId) {
                   if (earned) {
                     // Ödülü ver: 2 saatlik kilidi aç
                     await addRecord(songId); // kayıt ekle
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Başarılı! 2 saatlik erişim açıldı.'),
-                      ),
-                    );
+                    showClassicSnackBar(context, 'Access opened for 2 hours.');
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Reklam izlenmedi veya hata oluştu.'),
-                      ),
+                    showClassicSnackBar(
+                      context,
+                      'Ad was not watched or an error occurred.',
                     );
                   }
                 },
@@ -140,4 +135,24 @@ Future<String> getValidFirebaseToken() async {
   await StorageService.saveFirebaseToken(freshToken!);
 
   return freshToken;
+}
+
+/// classic snackbar
+void showClassicSnackBar(BuildContext context, String message) {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: isDark ? Colors.grey[850] : Colors.grey[200],
+      duration: const Duration(seconds: 3), // gösterim süresi
+      content: Text(
+        message,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black,
+        ),
+      ),
+    ),
+  );
 }
