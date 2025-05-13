@@ -1,17 +1,20 @@
+import 'package:drumly/services/song_service.dart';
 import 'package:flutter/material.dart';
-import 'package:drumly/services/api_service.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 
 /// ViewModel following MVVM, holds state and business logic
 class SongViewModel extends ChangeNotifier {
-  final MockApiService _apiService = MockApiService();
+  final SongService _songService = SongService();
+
+  late BuildContext context;
 
   List<SongModel> songList = [];
   List<SongModel> songListNew = [];
 
-  Future<void> fetchSongs() async {
+  Future<void> fetchSongs(BuildContext context) async {
     try {
-      songListNew = await _apiService.fetchSongData();
+      context = context;
+      songListNew = (await _songService.getSongs(context))!;
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching songs: $e');

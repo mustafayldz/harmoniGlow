@@ -1,21 +1,27 @@
-import 'package:drumly/services/api_service.dart';
-import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/models/song_types_model.dart';
+import 'package:drumly/screens/training/trraning_model.dart';
+import 'package:drumly/services/song_service.dart';
 import 'package:flutter/material.dart';
 
 class TrainingViewModel extends ChangeNotifier {
-  final MockApiService _apiService = MockApiService();
+  // final MockApiService _apiService = MockApiService();
+  final SongService _songService = SongService();
+
+  late BuildContext context;
 
   //–– State fields
-  List<SongModel> beats = [];
-  late final List<SongModel> beatsOriginal;
-  List<String> genres = [];
+  List<TraningModel> beats = [];
+  late final List<TraningModel> beatsOriginal;
+
+  List<SongTypeModel> genres = [];
   int selectedGenreIndex = 0;
 
   Future<void> fetchBeats() async {
     try {
-      beats = (await _apiService.fetchAllBeats())!;
+      beats = (await _songService.getBeats(context))!;
       beatsOriginal = beats;
-      genres = (_apiService.fetchAllBeatGenres());
+      genres = (await _songService.getSongTypes(context))!;
+      genres.insert(0, SongTypeModel(id: '0', name: 'All'));
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching beats: $e');
@@ -28,10 +34,12 @@ class TrainingViewModel extends ChangeNotifier {
     notifyListeners();
 
     if (index == 0) {
-      beats = (await _apiService.fetchAllBeats())!;
+      beats = beatsOriginal;
     } else {
       // fetch by genre: assume API supports it
-      beats = (await _apiService.fetchBeatsByGenre(genres[index - 1]))!;
+      beats = beatsOriginal
+          .where((beat) => beat.genre == genres[index].name)
+          .toList();
     }
     notifyListeners();
   }

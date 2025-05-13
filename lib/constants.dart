@@ -14,6 +14,9 @@ class ApiServiceUrl {
   static const baseUrl = 'http://10.0.0.127:5001/api/';
 
   static const user = '${baseUrl}users/';
+  static const song = '${baseUrl}songs/';
+  static const beat = '${baseUrl}beats/';
+  static const songTypes = '${baseUrl}song-types/';
 }
 
 class DrumParts {

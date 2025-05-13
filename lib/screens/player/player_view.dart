@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:drumly/screens/training/trraning_model.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/screens/player/volume.dart';
-import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
@@ -16,7 +16,7 @@ import 'package:just_audio/just_audio.dart';
 class PlayerView extends StatefulWidget {
   const PlayerView(this.songModel, {super.key, this.isTraning = false});
   final bool isTraning;
-  final SongModel songModel;
+  final TraningModel songModel;
 
   @override
   State<PlayerView> createState() => _PlayerViewState();
@@ -220,23 +220,12 @@ class _PlayerViewState extends State<PlayerView> {
                     ),
             ),
             const Spacer(),
-            Column(
-              spacing: 8,
-              children: [
-                Text(
-                  widget.songModel.title ?? 'Unknown Title',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  widget.songModel.artist ?? 'Unknown Artist',
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+            Text(
+              widget.songModel.title ?? 'Unknown Title',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),

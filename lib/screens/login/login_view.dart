@@ -1,7 +1,7 @@
+import 'package:drumly/services/local_service.dart';
+import 'package:drumly/services/user_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:drumly/services/local_service.dart';
-import 'package:drumly/screens/bluetooth/find_devices.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -11,6 +11,8 @@ class LoginView extends StatefulWidget {
 }
 
 class LoginViewState extends State<LoginView> {
+  final UserService userService = UserService();
+
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -27,12 +29,8 @@ class LoginViewState extends State<LoginView> {
       if (value.user != null) {
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const FindDevicesScreen(),
-          ),
-        );
+        await userService.getUser(context);
+        await Navigator.pushNamed(context, '/home');
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -68,6 +66,7 @@ class LoginViewState extends State<LoginView> {
         await cred.user!.updateDisplayName(name);
         await cred.user!.reload();
       }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(

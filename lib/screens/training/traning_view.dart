@@ -35,6 +35,7 @@ class _TrainingBodyState extends State<_TrainingBody> {
   void initState() {
     super.initState();
     final vm = context.read<TrainingViewModel>();
+    vm.context = context;
     vm.fetchBeats();
   }
 
@@ -46,38 +47,38 @@ class _TrainingBodyState extends State<_TrainingBody> {
 
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          height: height * 0.06,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: vm.genres.length + 1,
-            itemBuilder: (_, i) {
-              final isSelected = vm.selectedGenreIndex == i;
-              final label = i == 0 ? 'All' : vm.genres[i - 1];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 5),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isSelected ? Colors.grey[200] : Colors.grey,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+        if (vm.genres.isNotEmpty)
+          Container(
+            width: double.infinity,
+            height: height * 0.06,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: vm.genres.length,
+              itemBuilder: (_, i) {
+                final isSelected = vm.selectedGenreIndex == i;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 5),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isSelected ? Colors.grey[200] : Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () => vm.selectGenre(i),
+                    child: Text(
+                      vm.genres[i].name!,
+                      style: TextStyle(
+                        color: isSelected ? Colors.black : Colors.white,
+                      ),
                     ),
                   ),
-                  onPressed: () => vm.selectGenre(i),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: isSelected ? Colors.black : Colors.white,
-                    ),
-                  ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
-        ),
 
         const SizedBox(height: 10),
 
@@ -176,7 +177,7 @@ class _TrainingBodyState extends State<_TrainingBody> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${beat.artist ?? 'Beat'} - ${beat.title ?? 'Unknown Title'}',
+                                    beat.title ?? 'Unknown Title',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,

@@ -37,7 +37,7 @@ List<int> splitToBytes(int value) {
 }
 
 /// sneakbar
-void showAdConsentSnackBar(BuildContext context, int songId) {
+void showAdConsentSnackBar(BuildContext context, String songId) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
 
@@ -78,7 +78,7 @@ void showAdConsentSnackBar(BuildContext context, int songId) {
 
                   if (earned) {
                     // Ödülü ver: 2 saatlik kilidi aç
-                    await addRecord(songId.toString()); // kayıt ekle
+                    await addRecord(songId); // kayıt ekle
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Başarılı! 2 saatlik erişim açıldı.'),

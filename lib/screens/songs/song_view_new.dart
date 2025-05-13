@@ -24,8 +24,7 @@ class _SongViewState extends State<SongView> {
   void initState() {
     super.initState();
     vm = SongViewModel();
-    vm.fetchSongs();
-    // Temizlik işlemi
+    vm.fetchSongs(context);
     cleanExpiredRecords();
   }
 

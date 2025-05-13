@@ -32,6 +32,8 @@ class RequestHelper {
       }
     }
 
+    debugPrint('request token: $token');
+
     final HttpClient client = HttpClient()
       ..badCertificateCallback =
           ((X509Certificate cert, String host, int port) => true);

@@ -1,37 +1,11 @@
 import 'dart:convert';
 
+import 'package:drumly/models/notes_model.dart';
+
 SongModel songModelNewFromJson(String str) =>
     SongModel.fromJson(json.decode(str));
 
 String songModelNewToJson(SongModel data) => json.encode(data.toJson());
-
-class NoteModel {
-  NoteModel({
-    required this.i,
-    required this.sM,
-    required this.eM,
-    required this.led,
-  });
-
-  factory NoteModel.fromJson(Map<String, dynamic> json) => NoteModel(
-        i: json['i'] as int,
-        sM: json['sM'] as int,
-        eM: json['eM'] as int,
-        led:
-            List<int>.from((json['led'] as List<dynamic>).map((n) => n as int)),
-      );
-  final int i;
-  final int sM;
-  final int eM;
-  final List<int> led;
-
-  Map<String, dynamic> toJson() => {
-        'i': i,
-        'sM': sM,
-        'eM': eM,
-        'led': led,
-      };
-}
 
 class SongModel {
   SongModel({
@@ -44,16 +18,15 @@ class SongModel {
     this.rhythm,
     this.bpm,
     this.songtypeId,
-    this.genre,
     this.isLocked = false,
   });
 
   factory SongModel.fromJson(Map<String, dynamic> json) => SongModel(
-        songId: json['songId'] as int?,
+        songId: json['song_id'] as String?,
         title: json['title'] as String?,
         artist: json['artist'] as String?,
-        durationSeconds: json['durationSeconds'] as int?,
-        fileUrl: json['fileUrl'] as String?,
+        durationSeconds: json['duration_seconds'] as int?,
+        fileUrl: json['file_url'] as String?,
         notes: json['notes'] == null
             ? []
             : (json['notes'] as List<dynamic>)
@@ -61,12 +34,11 @@ class SongModel {
                 .toList(),
         rhythm: json['rhythm'] as String?,
         bpm: json['bpm'] as int?,
-        songtypeId: json['songtypeId'] as int?,
-        genre: json['genre'] as String?,
-        isLocked: json['isLocked'] as bool? ?? false,
+        songtypeId: json['songtype_id'] as int?,
+        isLocked: json['is_locked'] as bool? ?? false,
       );
 
-  int? songId;
+  String? songId;
   String? title;
   String? artist;
   int? durationSeconds;
@@ -75,20 +47,18 @@ class SongModel {
   String? rhythm;
   int? bpm;
   int? songtypeId;
-  String? genre;
   bool isLocked;
 
   Map<String, dynamic> toJson() => {
-        'songId': songId,
+        'song_id': songId,
         'title': title,
         'artist': artist,
-        'durationSeconds': durationSeconds,
-        'fileUrl': fileUrl,
+        'duration_seconds': durationSeconds,
+        'file_url': fileUrl,
         'notes': notes == null ? [] : notes!.map((n) => n.toJson()).toList(),
         'rhythm': rhythm,
         'bpm': bpm,
-        'songtypeId': songtypeId,
-        'genre': genre,
-        'isLocked': isLocked,
+        'songtype_id': songtypeId,
+        'is_locked': isLocked,
       };
 }
