@@ -1,4 +1,5 @@
 import 'package:drumly/screens/beatMaker/beat_maker_viewmodel.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,27 +12,55 @@ class BeatMakerView extends StatefulWidget {
 
 class _BeatMakerViewState extends State<BeatMakerView> {
   late final BeatMakerViewmodel vm;
-  final imagePath = 'assets/images/cdrumflat.png'; // örnek klasik drum
 
-  // Daire merkez koordinatları (yüzdelik olarak, ekran boyutuna göre)
-  final List<Offset> circlePositions = [
-    const Offset(0.30, 0.60), // Hi-Hat
-    const Offset(0.38, 0.20), // Crash
-    const Offset(0.69, 0.265), // Ride
-    const Offset(0.39, 0.80), // Snare
-    const Offset(0.43, 0.48), // Tom1
-    const Offset(0.56, 0.45), // Tom2
-    const Offset(0.65, 0.75), // Tom Floor
-    const Offset(0.50, 0.77), // Kick
+  final List<Map<String, dynamic>> drumPieces = [
+    {
+      'key': 'Kick Drum',
+      'image': 'assets/images/classicDrum/c_kick.png',
+      'scale': 0.3,
+    },
+    {
+      'key': 'Tom Floor',
+      'image': 'assets/images/classicDrum/c_tom_floor.png',
+      'scale': 0.2,
+    },
+    {
+      'key': 'Tom 2',
+      'image': 'assets/images/classicDrum/c_tom2.png',
+      'scale': 0.15,
+    },
+    {
+      'key': 'Tom 1',
+      'image': 'assets/images/classicDrum/c_tom1.png',
+      'scale': 0.13,
+    },
+    {
+      'key': 'Snare Drum',
+      'image': 'assets/images/classicDrum/c_snare.png',
+      'scale': 0.13,
+    },
+    {
+      'key': 'Hi-Hat',
+      'image': 'assets/images/classicDrum/c_hihat.png',
+      'scale': 0.12,
+    },
+    {
+      'key': 'Crash Cymbal',
+      'image': 'assets/images/classicDrum/c_crash.png',
+      'scale': 0.17,
+    },
+    {
+      'key': 'Ride Cymbal',
+      'image': 'assets/images/classicDrum/c_ride.png',
+      'scale': 0.17,
+    },
   ];
-
-  final Set<int> tappedCircles = {};
 
   @override
   void initState() {
     super.initState();
-    // Ekranı yatay moda zorla
     vm = BeatMakerViewmodel();
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
@@ -40,7 +69,6 @@ class _BeatMakerViewState extends State<BeatMakerView> {
 
   @override
   void dispose() {
-    // Dikey moda geri dön
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -49,68 +77,138 @@ class _BeatMakerViewState extends State<BeatMakerView> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Beat Maker'),
-        ),
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final height = constraints.maxHeight;
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
 
-            return Stack(
-              children: [
-                Center(
-                  child: Image.asset(
-                    imagePath,
-                    fit: BoxFit.contain,
-                    width: width * 0.9,
-                  ),
-                ),
-                ...List.generate(circlePositions.length, (index) {
-                  final pos = circlePositions[index];
-                  final double circleSize = 100;
+    final initialPositions = [
+      Offset(screenWidth * 0.30, screenHeight * 0.40), // hihat
+      Offset(screenWidth * 0.38, screenHeight * 0.0), // crash
+      Offset(screenWidth * 0.69, screenHeight * 0.065), // ride
+      Offset(screenWidth * 0.39, screenHeight * 0.60), // snare
+      Offset(screenWidth * 0.43, screenHeight * 0.28), // tom1
+      Offset(screenWidth * 0.56, screenHeight * 0.25), // tom2
+      Offset(screenWidth * 0.65, screenHeight * 0.55), // tom_floor
+      Offset(screenWidth * 0.50, screenHeight * 0.57), // kick
+    ];
 
-                  return Positioned(
-                    left: width * pos.dx - circleSize / 2,
-                    top: height * pos.dy - circleSize / 2,
-                    child: GestureDetector(
-                      onTapDown: (_) {
-                        setState(() {
-                          vm.playSound(
-                            vm.drumSounds.keys.elementAt(index),
-                          );
-                          tappedCircles.add(index);
-                        });
-                      },
-                      onTapUp: (_) {
-                        Future.delayed(const Duration(milliseconds: 100), () {
-                          setState(() {
-                            tappedCircles.remove(index);
-                          });
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 100),
-                        width: circleSize,
-                        height: circleSize,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: tappedCircles.contains(index)
-                              ? Colors.blueAccent.withValues(alpha: 0.5)
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Make your own beat')),
+      body: OrientationBuilder(
+        builder: (context, orientation) {
+          if (orientation == Orientation.portrait) {
+            return const Center(
+              child: Text(
+                'Lütfen ekranı yatay konuma çevirin 🔄',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
             );
-          },
+          }
+
+          return Stack(
+            children: List.generate(drumPieces.length, (index) {
+              final piece = drumPieces[index];
+              return DrumPiece(
+                imagePath: piece['image']!,
+                drumKey: piece['key']!,
+                initialPosition: initialPositions[index],
+                vm: vm,
+                scale: piece['scale']!,
+              );
+            }),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DrumPiece extends StatefulWidget {
+  const DrumPiece({
+    required this.imagePath,
+    required this.drumKey,
+    required this.initialPosition,
+    required this.scale,
+    required this.vm,
+    super.key,
+  });
+  final String imagePath;
+  final String drumKey;
+  final Offset initialPosition;
+  final double scale;
+  final BeatMakerViewmodel vm;
+
+  @override
+  State<DrumPiece> createState() => _DrumPieceState();
+}
+
+class _DrumPieceState extends State<DrumPiece> {
+  late Offset position = widget.initialPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosition();
+  }
+
+  Future<void> _loadPosition() async {
+    final saved = await StorageService().loadDrumPosition(widget.drumKey);
+
+    if (saved != null) {
+      setState(() {
+        position = saved;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final double pieceSize = screenSize.width * widget.scale;
+
+    return Positioned(
+      left: position.dx,
+      top: position.dy,
+      child: GestureDetector(
+        onTap: () {
+          widget.vm.playSound(context, widget.drumKey);
+        },
+        onPanUpdate: (details) async {
+          setState(() {
+            final Offset newPosition = position + details.delta;
+
+            final double maxX = screenSize.width - pieceSize;
+            final double maxY = screenSize.height - pieceSize;
+
+            position = Offset(
+              newPosition.dx.clamp(0.0, maxX),
+              newPosition.dy.clamp(0.0, maxY),
+            );
+          });
+          await StorageService().saveDrumPosition(widget.drumKey, position);
+        },
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Image.asset(
+              widget.imagePath,
+              semanticLabel: widget.drumKey,
+              width: pieceSize,
+              height: pieceSize,
+            ),
+            Text(
+              widget.drumKey.toUpperCase(),
+              style: TextStyle(
+                fontSize: pieceSize * 0.08, // Dinamik boyut
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 }

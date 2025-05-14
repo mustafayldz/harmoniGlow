@@ -156,3 +156,28 @@ void showClassicSnackBar(BuildContext context, String message) {
     ),
   );
 }
+
+/// Return drum part id with drum part name
+
+int getDrumPartId(String drumPartName) {
+  switch (drumPartName) {
+    case 'Hi-Hat':
+      return 1;
+    case 'Crash Cymbal':
+      return 2;
+    case 'Ride Cymbal':
+      return 3;
+    case 'Snare Drum':
+      return 4;
+    case 'Tom 1':
+      return 5;
+    case 'Tom 2':
+      return 6;
+    case 'Tom Floor':
+      return 7;
+    case 'Kick Drum':
+      return 8;
+    default:
+      return 0;
+  }
+}

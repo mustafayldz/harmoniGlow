@@ -47,4 +47,5 @@ flutter:
   assets:
     - assets/
     - assets/images/
+    - assets/images/classicDrum/
     - assets/sounds/

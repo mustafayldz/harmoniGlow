@@ -57,7 +57,7 @@ class DrumPainter extends CustomPainter {
         'radius': 36.0 * scaleX,
       },
       {
-        'name': 'Tom 3',
+        'name': 'Tom Floor',
         'center': Offset(396 * scaleX, 535 * scaleY),
         'radius': 36.0 * scaleX,
       },
@@ -122,7 +122,7 @@ class DrumPainter extends CustomPainter {
         'radius': 36.0 * scaleX,
       },
       {
-        'name': 'Tom 3',
+        'name': 'Tom Floor',
         'center': Offset(396 * scaleX, 535 * scaleY),
         'radius': 36.0 * scaleX,
       },

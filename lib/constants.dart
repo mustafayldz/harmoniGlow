@@ -53,7 +53,7 @@ class DrumParts {
     }, // Light Blue
     '7': {
       'led': 7,
-      'name': 'Tom 3',
+      'name': 'Tom Floor',
       'rgb': [235, 0, 255],
     }, // Blue
     '8': {

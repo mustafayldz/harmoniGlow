@@ -155,4 +155,33 @@ class StorageService {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getBool(themeKey) ?? false;
   }
+
+  /// Beat Maker parts positions
+  // Save the position of a drum part
+  Future<void> saveDrumPosition(String key, Offset position) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('${key}_dx', position.dx);
+    await prefs.setDouble('${key}_dy', position.dy);
+  }
+
+  /// Get the saved position of a drum part
+  Future<Offset?> loadDrumPosition(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dx = prefs.getDouble('${key}_dx');
+    final dy = prefs.getDouble('${key}_dy');
+    if (dx != null && dy != null) {
+      return Offset(dx, dy);
+    }
+    return null;
+  }
+
+  Future<void> clearDrumPositionAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    for (String key in keys) {
+      if (key.endsWith('_dx') || key.endsWith('_dy')) {
+        await prefs.remove(key);
+      }
+    }
+  }
 }

@@ -219,6 +219,33 @@ class SettingViewState extends State<SettingView> {
                 },
               ),
             ),
+            const SizedBox(height: 24),
+
+            // Logout Button
+            Center(
+              child: ElevatedButton.icon(
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
+                label: const Text(
+                  'sifirla',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  elevation: 2,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () async {
+                  await storageService.clearDrumPositionAll();
+                },
+              ),
+            ),
           ],
         ),
       ),
