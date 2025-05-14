@@ -109,6 +109,63 @@ class SettingViewState extends State<SettingView> {
             ),
             const SizedBox(height: 16),
 
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Image.asset(
+                        'assets/images/edrum.png',
+                        height: 48,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    Center(
+                      child: ToggleButtons(
+                        isSelected: appProvider.isClassic
+                            ? [false, true]
+                            : [true, false],
+                        borderRadius: BorderRadius.circular(8),
+                        selectedColor: Colors.white,
+                        fillColor: Colors.blueAccent,
+                        color: Colors.black,
+                        onPressed: (int index) {
+                          setState(() {
+                            appProvider.setIsClassic(index == 1);
+                          });
+                        },
+                        children: const [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('Electronic'),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('Classic'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Flexible(
+                      child: Image.asset(
+                        'assets/images/cdrum.png',
+                        height: 48,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             // App Version Info
             Card(
               shape: RoundedRectangleBorder(
@@ -159,71 +216,6 @@ class SettingViewState extends State<SettingView> {
                     '/login',
                     (route) => false,
                   );
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Logout Button
-            Center(
-              child: ElevatedButton.icon(
-                icon: const Icon(
-                  Icons.token,
-                  color: Colors.white,
-                ),
-                label: const Text(
-                  'token',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  elevation: 2,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  backgroundColor: Colors.red,
-                ),
-                onPressed: () async {
-                  await userService.getUser(context).then((user) {
-                    if (user != null) {
-                      print('User found');
-                    } else {
-                      print('User not found');
-                    }
-                  });
-                },
-              ),
-            ),
-
-            const SizedBox(height: 24),
-            // Logout Button
-            Center(
-              child: ElevatedButton.icon(
-                icon: const Icon(
-                  Icons.token,
-                  color: Colors.white,
-                ),
-                label: const Text(
-                  'set old token',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  elevation: 2,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  backgroundColor: Colors.red,
-                ),
-                onPressed: () async {
-                  var oldtoken =
-                      'eyJhbGciOiJSUzI1NiIsImtpZCI6IjU5MWYxNWRlZTg0OTUzNjZjOTgyZTA1MTMzYmNhOGYyNDg5ZWFjNzIiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZHJ1bWx5LW1vYmlsZSIsImF1ZCI6ImRydW1seS1tb2JpbGUiLCJhdXRoX3RpbWUiOjE3NDY5ODEyNDIsInVzZXJfaWQiOiJ4T2tLVWxmMlhEUkNDQmh4TE9NWWpKUmRaamoxIiwic3ViIjoieE9rS1VsZjJYRFJDQ0JoeExPTVlqSlJkWmpqMSIsImlhdCI6MTc0Njk4MTI0MiwiZXhwIjoxNzQ2OTg0ODQyLCJlbWFpbCI6Im1zdGYueWlsZGl6OTJAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbIm1zdGYueWlsZGl6OTJAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.t7a1JcYXx67xt8fMeVVycQ8xuZGZRVU8HrtaflUnUTN2OH1BuD9YSvdvs-KLB6Rr6aHT_3mr4r_ce-3OXl0S-P0NCLrvig9aFyeF4bG-FM8yFF-jCWgBfC7BQ6tGhaesduDFICN8TUD0-fJCC5qQCwl_FLMOoIj8MkETcebX76mbEiVSwEREsfYLZweG_6P3xRY03UtoMIv4ueVGMGD--CW2DN_2oAjSrgvjQED_OdZ4IdSHFX0N6fqE_eR-aDEiFWnWa5MSXEbLz_LyMan1RIv6zKCY_62VSJ-W474v4vZfDepwF09NYET3xXq6c54I_NkbUA2SFDVqo3gU2JFPdg';
-
-                  await StorageService.saveFirebaseToken(oldtoken);
-
-                  print("old token set");
                 },
               ),
             ),

@@ -2,17 +2,17 @@ import 'package:drumly/adMob/ad_service.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/provider/app_provider.dart';
-import 'package:drumly/services/local_service.dart';
+import 'package:drumly/screens/beatMaker/beat_maker_view.dart';
 import 'package:drumly/screens/bluetooth/find_devices.dart';
 import 'package:drumly/screens/myDrum/drum_adjustment.dart';
 import 'package:drumly/screens/myDrum/drum_model.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
-import 'package:drumly/screens/songs/song_view_new.dart';
+import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -73,25 +73,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       title: 'Training',
       subtitle: 'Train with your own music',
       backgroundColor: Colors.greenAccent,
-      emoji: '🥁',
+      emoji: '🎧', // 🎧 ile “dinle & çalış” çağrışımı
     ),
     _CardData(
       title: 'Songs',
       subtitle: 'Discover and train with your favorite songs',
       backgroundColor: Colors.pinkAccent,
-      emoji: '🎤',
+      emoji: '🎶', // 🎶 ile “şarkı & melodi” vurgusu
     ),
     _CardData(
       title: 'MY DRUM',
       subtitle: 'Adjust your drum settings',
       backgroundColor: Colors.blueAccent,
-      emoji: '🥁',
+      emoji: '🥁', // 🥁 doğrudan davul simgesi
+    ),
+    _CardData(
+      title: 'Beat Maker',
+      subtitle: 'Create your own beats',
+      backgroundColor: Colors.red,
+      emoji: '🎛️', // 🎛️ ile “mixer/control panel” hissi
     ),
     _CardData(
       title: 'Settings',
       subtitle: '',
       backgroundColor: Colors.blueAccent,
-      emoji: '⚙️',
+      emoji: '⚙️', // ⚙️ ayarlar ikonu
     ),
   ];
 
@@ -103,98 +109,94 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final deviceName = state.connectedDevice?.advName ?? 'Unknown Device';
 
     return Scaffold(
-      body: ModalProgressHUD(
-        inAsyncCall: appProvider.loading,
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FindDevicesScreen(),
+      body: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FindDevicesScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isConnected ? Colors.green[100] : Colors.red[100],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isConnected ? Colors.green : Colors.red,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isConnected
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth_disabled,
+                        color: isConnected ? Colors.green : Colors.red,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        isConnected
+                            ? 'Connected to $deviceName'
+                            : 'Disconnected',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color:
+                              isConnected ? Colors.green[800] : Colors.red[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 30),
+              Expanded(
+                child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: _cards.length,
+                  itemBuilder: (context, index) {
+                    final card = _cards[index];
+                    return AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) => Opacity(
+                        opacity: _opacity.value,
+                        child: SlideTransition(
+                          position: _slide,
+                          child: Transform.translate(
+                            offset: Offset(0, -15.0 * index), // stacked effect
+                            child: child,
+                          ),
+                        ),
+                      ),
+                      child: _buildHabitCard(
+                        context,
+                        isConnected,
+                        title: card.title,
+                        subtitle: card.subtitle,
+                        backgroundColor: card.backgroundColor,
+                        emoji: card.emoji,
+                        destination: getDestination(
+                          card.title,
+                          isConnected,
+                        ),
                       ),
                     );
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isConnected ? Colors.green[100] : Colors.red[100],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isConnected ? Colors.green : Colors.red,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          isConnected
-                              ? Icons.bluetooth_connected
-                              : Icons.bluetooth_disabled,
-                          color: isConnected ? Colors.green : Colors.red,
-                          size: 28,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          isConnected
-                              ? 'Connected to $deviceName'
-                              : 'Disconnected',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isConnected
-                                ? Colors.green[800]
-                                : Colors.red[800],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-                const SizedBox(height: 30),
-                Expanded(
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _cards.length,
-                    itemBuilder: (context, index) {
-                      final card = _cards[index];
-                      return AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) => Opacity(
-                          opacity: _opacity.value,
-                          child: SlideTransition(
-                            position: _slide,
-                            child: Transform.translate(
-                              offset:
-                                  Offset(0, -15.0 * index), // stacked effect
-                              child: child,
-                            ),
-                          ),
-                        ),
-                        child: _buildHabitCard(
-                          context,
-                          isConnected,
-                          title: card.title,
-                          subtitle: card.subtitle,
-                          backgroundColor: card.backgroundColor,
-                          emoji: card.emoji,
-                          destination: getDestination(
-                            card.title,
-                            isConnected,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -209,6 +211,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return const SongView();
       case 'MY DRUM':
         return isConnected ? const DrumAdjustment() : const FindDevicesScreen();
+      case 'Beat Maker':
+        return const BeatMakerView();
       case 'Settings':
         return const SettingView();
       default:

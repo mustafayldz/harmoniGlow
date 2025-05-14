@@ -11,10 +11,12 @@ class AppProvider with ChangeNotifier {
   bool _loading = false;
   int? _countdownValue;
   bool isDarkMode = false;
+  bool _isClassic = false;
 
   // Getter for app data
   int get countdownValue => _countdownValue ?? 3;
   bool get loading => _loading;
+  bool get isClassic => _isClassic;
 
   // Setter for app data
 
@@ -47,5 +49,11 @@ class AppProvider with ChangeNotifier {
     isDarkMode = !isDarkMode;
     notifyListeners();
     await StorageService.saveThemeMode(isDarkMode);
+  }
+
+  void setIsClassic(bool isClassic) {
+    _isClassic = isClassic;
+    debugPrint(isClassic ? 'Classic' : 'Electronic');
+    notifyListeners();
   }
 }

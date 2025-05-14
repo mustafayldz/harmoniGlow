@@ -1,12 +1,14 @@
-import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/services/local_service.dart';
+import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/myDrum/drum_model.dart';
 import 'package:drumly/screens/myDrum/drum_painter.dart';
+import 'package:drumly/screens/myDrum/drum_painter_classic.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DrumAdjustment extends StatefulWidget {
   const DrumAdjustment({super.key});
@@ -16,18 +18,22 @@ class DrumAdjustment extends StatefulWidget {
 }
 
 class DrumAdjustmentState extends State<DrumAdjustment> {
+  late AppProvider appProvider;
+
   List<DrumModel>? drumParts = [];
   DrumModel? currentDrumPart;
   Offset? _tapPosition;
-  final String drumImagePath = 'assets/images/drum.png';
+  bool isClassic = false;
 
   @override
   void initState() {
     super.initState();
+    appProvider = Provider.of<AppProvider>(context, listen: false);
     checkSavedRgbValues();
   }
 
   void checkSavedRgbValues() async {
+    isClassic = appProvider.isClassic;
     await StorageService.getDrumPartsBulk().then(
       (List<DrumModel>? drumParts) {
         if (drumParts != null) {
@@ -44,8 +50,6 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
   }
 
   void onPartClicked(BluetoothBloc bluetoothBloc, String partName) {
-    debugPrint('$partName ---------------------clicked!');
-
     sendLightsIndividually(bluetoothBloc, partName: partName);
 
     if (drumParts != null) {
@@ -58,6 +62,9 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
   @override
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
+    final imagePath = appProvider.isClassic
+        ? 'assets/images/cdrum.png'
+        : 'assets/images/edrum.png';
 
     return Scaffold(
       appBar: AppBar(
@@ -83,30 +90,46 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                     setState(() {
                       _tapPosition = localPosition;
                     });
-                    DrumPainter(
-                      bluetoothBloc: bluetoothBloc,
-                      onTapPart: onPartClicked,
-                      imageSize: Size(imageWidth, imageHeight),
-                      partColors: drumParts,
-                      tapPosition: _tapPosition,
-                    ).detectTap(localPosition);
+                    isClassic
+                        ? DrumPainterClassic(
+                            bluetoothBloc: bluetoothBloc,
+                            onTapPart: onPartClicked,
+                            imageSize: Size(imageWidth, imageHeight),
+                            partColors: drumParts,
+                            tapPosition: _tapPosition,
+                          ).detectTap(localPosition)
+                        : DrumPainter(
+                            bluetoothBloc: bluetoothBloc,
+                            onTapPart: onPartClicked,
+                            imageSize: Size(imageWidth, imageHeight),
+                            partColors: drumParts,
+                            tapPosition: _tapPosition,
+                          ).detectTap(localPosition);
                   },
                   child: Stack(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(20),
                         child: Image.asset(
-                          drumImagePath,
+                          imagePath,
                         ),
                       ),
                       CustomPaint(
-                        painter: DrumPainter(
-                          tapPosition: _tapPosition,
-                          onTapPart: onPartClicked,
-                          imageSize: Size(imageWidth, imageHeight),
-                          partColors: drumParts,
-                          bluetoothBloc: bluetoothBloc,
-                        ),
+                        painter: isClassic
+                            ? DrumPainterClassic(
+                                tapPosition: _tapPosition,
+                                onTapPart: onPartClicked,
+                                imageSize: Size(imageWidth, imageHeight),
+                                partColors: drumParts,
+                                bluetoothBloc: bluetoothBloc,
+                              )
+                            : DrumPainter(
+                                tapPosition: _tapPosition,
+                                onTapPart: onPartClicked,
+                                imageSize: Size(imageWidth, imageHeight),
+                                partColors: drumParts,
+                                bluetoothBloc: bluetoothBloc,
+                              ),
                         child: SizedBox(
                           width: imageWidth,
                           height: imageHeight,
