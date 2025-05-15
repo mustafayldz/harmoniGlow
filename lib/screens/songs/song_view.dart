@@ -1,4 +1,5 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/constants.dart';
 import 'package:drumly/hive/db_service.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
@@ -18,7 +19,7 @@ class SongView extends StatefulWidget {
 
 class _SongViewState extends State<SongView> {
   late final SongViewModel vm;
-  final _box = Hive.box('recordsBox');
+  final _box = Hive.box(Constants.lockSongBox);
 
   @override
   void initState() {

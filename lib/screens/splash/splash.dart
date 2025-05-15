@@ -1,18 +1,15 @@
 import 'dart:async';
-
-import 'package:drumly/provider/user_provider.dart';
-import 'package:drumly/services/local_service.dart';
-import 'package:drumly/services/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:drumly/services/local_service.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
 
   @override
-  SplashViewState createState() => SplashViewState();
+  State<SplashView> createState() => _SplashViewState();
 }
 
-class SplashViewState extends State<SplashView>
+class _SplashViewState extends State<SplashView>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -22,45 +19,27 @@ class SplashViewState extends State<SplashView>
   void initState() {
     super.initState();
 
-    // Initialize animation controller
     _controller = AnimationController(
-      duration: const Duration(seconds: 3),
       vsync: this,
+      duration: const Duration(seconds: 3),
     );
 
-    // Define animation
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _animation =
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
 
-    // Start animation
     _controller.forward();
 
-    // fetch user data
-    _fetchUserData();
-
-    // Navigate to the next screen after animation
-    _navigateToNextScreen();
+    _navigateAfterDelay();
   }
 
-  Future<void> _fetchUserData() async {
-    try {
-      final userModel = await UserService().getUser(context);
-      if (userModel != null) {
-        UserProvider().setUser(userModel);
-        return;
-      }
-    } catch (e) {
-      debugPrint('Error fetching user data: $e');
-    }
-  }
-
-  Future<void> _navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 5));
-
+  Future<void> _navigateAfterDelay() async {
+    await Future.delayed(const Duration(seconds: 4));
     final token = await storageService.getFirebaseToken();
-
     if (token != null && token.isNotEmpty) {
+      if (!mounted) return;
       await Navigator.pushReplacementNamed(context, '/home');
     } else {
+      if (!mounted) return;
       await Navigator.pushReplacementNamed(context, '/login');
     }
   }
@@ -72,15 +51,52 @@ class SplashViewState extends State<SplashView>
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: Center(
-          child: FadeTransition(
-            opacity: _animation,
-            child: const Text(
-              'Welcome to Drumly',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      body: Center(
+        child: ScaleTransition(
+          scale: _animation,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                'assets/images/logo.png', // LOGO YOLUNU DOĞRU AYARLA
+                width: size.width * 0.4,
+              ),
+              const SizedBox(height: 24),
+              FadeTransition(
+                opacity: _animation,
+                child: const Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: 'Drum',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      TextSpan(
+                        text: 'ly',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors
+                              .blueAccent, // farklı vurgu için renk değişikliği
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
