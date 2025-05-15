@@ -114,7 +114,6 @@ class BeatMakerViewmodel {
     _recordingId = DateTime.now().millisecondsSinceEpoch.toString();
     _recordingStartTime = DateTime.now();
     _recordedNotes.clear();
-    print('Recording started: $_recordingId');
   }
 
   Future<void> stopRecording(BuildContext context) async {
@@ -141,13 +140,13 @@ class BeatMakerViewmodel {
 
     await saveBeatMakerModel(beat);
     _isRecording = false;
-    print('Recording saved: ${beat.title}');
 
     showClassicSnackBar(context, 'Beat saved as ${beat.title}');
   }
 
   Future<Map<String, String>?> _askForTitleAndGenre(
-      BuildContext context) async {
+    BuildContext context,
+  ) async {
     String title = '';
     String genre = '';
 

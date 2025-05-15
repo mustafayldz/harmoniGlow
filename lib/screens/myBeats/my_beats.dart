@@ -30,13 +30,6 @@ class _MyBeatsViewState extends State<MyBeatsView> {
       _beats = beats;
       _beatKeys = keys;
     });
-
-    beats[0].notes?.forEach((note) {
-      print(' Start: ${note.sM}, End: ${note.eM}');
-      note.led.forEach((led) {
-        print('LED: $led');
-      });
-    });
   }
 
   @override
@@ -63,7 +56,8 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                     ),
                     onDismissed: (_) async {
                       final box = await Hive.openBox<BeatMakerModel>(
-                          Constants.beatRecordsBox);
+                        Constants.beatRecordsBox,
+                      );
                       await box.delete(key);
 
                       setState(() {
