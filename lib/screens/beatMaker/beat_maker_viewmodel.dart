@@ -1,6 +1,9 @@
 import 'dart:async';
+
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/screens/myDrum/drum_model.dart';
+import 'package:drumly/hive/db_service.dart';
+import 'package:drumly/hive/models/beat_maker_model.dart';
+import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
@@ -10,9 +13,10 @@ import 'package:just_audio/just_audio.dart';
 
 class BeatMakerViewmodel {
   final StorageService storageService = StorageService();
-
+  final Map<String, AudioPlayer> _players = {};
   final Map<String, String> drumSounds = {
     'Hi-Hat': 'assets/sounds/open_hihat.wav',
+    'Hi-Hat Closed': 'assets/sounds/closed_hihat.wav',
     'Crash Cymbal': 'assets/sounds/crash_2.wav',
     'Ride Cymbal': 'assets/sounds/ride_1.wav',
     'Snare Drum': 'assets/sounds/snare_hard.wav',
@@ -22,30 +26,82 @@ class BeatMakerViewmodel {
     'Kick Drum': 'assets/sounds/kick.wav',
   };
 
-  final Map<String, AudioPlayer> _players =
-      {}; // Her parça için bir player saklanır
+  bool _isRecording = false;
+  String? _recordingId;
+  DateTime? _recordingStartTime;
+  final List<NoteModel> _recordedNotes = [];
+
+  final List<String> _pendingDrumParts = [];
+  DateTime? _lastTapTime;
+  Timer? _recordTimer;
 
   Future<void> playSound(BuildContext context, String drumPart) async {
     final path = drumSounds[drumPart];
     if (path == null) return;
 
-    print('Playing sound for $drumPart: $path');
-
-    // Player varsa al, yoksa oluştur ve sakla
     final player = _players.putIfAbsent(drumPart, () => AudioPlayer());
 
     try {
-      // Çalmadan önce sıfırla
       await player.stop();
       await player.setAsset(path);
-      await sendLighttoDevice(context, drumPart, context.read<BluetoothBloc>());
       await player.play();
+
+      final now = DateTime.now();
+
+      // Eğer 120ms içinde değilsek, önceki grup kapanır
+      if (_lastTapTime == null ||
+          now.difference(_lastTapTime!).inMilliseconds > 120) {
+        _pendingDrumParts.clear();
+      }
+
+      _lastTapTime = now;
+      _pendingDrumParts.add(drumPart);
+
+      // Timer'ı her seferinde sıfırla, böylece en son vuruştan sonra 120ms bekler
+      _recordTimer?.cancel();
+      _recordTimer = Timer(const Duration(milliseconds: 120), () async {
+        // Tüm toplanan drumPart'lar için LED ve RGB bilgilerini al
+        final ledList = <int>[];
+        final rgbList = <List<int>>[];
+
+        for (final part in _pendingDrumParts.toSet()) {
+          final model =
+              await StorageService.getDrumPart(getDrumPartId(part).toString());
+          if (model?.led != null && model?.rgb != null) {
+            ledList.add(model!.led!);
+            rgbList.add(model.rgb!);
+          }
+        }
+
+        // 🔥 Işıkları aynı anda yak
+        final flatData = <int>[];
+        for (int i = 0; i < ledList.length; i++) {
+          flatData.add(ledList[i]); // LED numarası
+          flatData.addAll(rgbList[i]); // RGB (3 değer)
+        }
+        await SendData().sendHexData(context.read<BluetoothBloc>(), flatData);
+
+        // 🎵 Eğer kayıt açıksa, NoteModel olarak kaydet
+        if (_isRecording && _recordingStartTime != null) {
+          final ms = now.difference(_recordingStartTime!).inMilliseconds;
+
+          _recordedNotes.add(
+            NoteModel(
+              i: _recordedNotes.length + 1,
+              sM: ms,
+              eM: ms + 300,
+              led: ledList,
+            ),
+          );
+        }
+
+        _pendingDrumParts.clear(); // işlem bitti, sıradaki grup için hazırlık
+      });
     } catch (e) {
       debugPrint('Error playing $drumPart: $e');
     }
   }
 
-  // Uygulama kapanırken veya işin bittiğinde tüm player'ları temizle
   Future<void> disposeAll() async {
     for (final player in _players.values) {
       await player.dispose();
@@ -53,24 +109,84 @@ class BeatMakerViewmodel {
     _players.clear();
   }
 
-  Future<void> sendLighttoDevice(
-    BuildContext context,
-    String drumPart,
-    BluetoothBloc bluetoothBloc,
-  ) async {
-    final bluetoothBloc = context.read<BluetoothBloc>();
+  Future<void> startRecording() async {
+    _isRecording = true;
+    _recordingId = DateTime.now().millisecondsSinceEpoch.toString();
+    _recordingStartTime = DateTime.now();
+    _recordedNotes.clear();
+    print('Recording started: $_recordingId');
+  }
 
-    // Drum partına göre LED değerini belirle
-    final DrumModel? model =
-        await StorageService.getDrumPart(getDrumPartId(drumPart).toString());
+  Future<void> stopRecording(BuildContext context) async {
+    if (!_isRecording || _recordingStartTime == null) return;
 
-    print('Drum part: $drumPart');
-    print('Model: $model');
-    print('ID: ${model?.name}');
-    print('LED: ${model?.led}');
-    print('RGB: ${model?.rgb}');
+    final endTime = DateTime.now();
+    final duration = endTime.difference(_recordingStartTime!).inSeconds;
 
-    final List<int> data = [model!.led!, ...model.rgb!];
-    await SendData().sendHexData(bluetoothBloc, data);
+    final result = await _askForTitleAndGenre(context);
+    if (result == null) return;
+
+    final beat = BeatMakerModel(
+      beatId: _recordingId,
+      title: result['title'],
+      bpm: 120,
+      genre: result['genre'],
+      rhythm: '4/4',
+      durationSeconds: duration,
+      fileUrl: '',
+      createdAt: _recordingStartTime!,
+      updatedAt: endTime,
+      notes: _recordedNotes,
+    );
+
+    await saveBeatMakerModel(beat);
+    _isRecording = false;
+    print('Recording saved: ${beat.title}');
+
+    showClassicSnackBar(context, 'Beat saved as ${beat.title}');
+  }
+
+  Future<Map<String, String>?> _askForTitleAndGenre(
+      BuildContext context) async {
+    String title = '';
+    String genre = '';
+
+    return await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => MediaQuery.removeViewInsets(
+        removeBottom: true,
+        context: context,
+        child: AlertDialog(
+          title: const Text('Save Beat'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: const InputDecoration(labelText: 'Title'),
+                onChanged: (value) => title = value,
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Genre'),
+                onChanged: (value) => genre = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (title.isNotEmpty && genre.isNotEmpty) {
+                  Navigator.pop(context, {'title': title, 'genre': genre});
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

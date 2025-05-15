@@ -4,6 +4,7 @@ import 'package:drumly/constants.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/beatMaker/beat_maker_view.dart';
 import 'package:drumly/screens/bluetooth/find_devices.dart';
+import 'package:drumly/screens/myBeats/my_beats.dart';
 import 'package:drumly/screens/myDrum/drum_adjustment.dart';
 import 'package:drumly/screens/myDrum/drum_model.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
@@ -79,6 +80,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       title: 'Songs',
       subtitle: 'Discover and train with your favorite songs',
       backgroundColor: Colors.pinkAccent,
+      emoji: '🎶', // 🎶 ile “şarkı & melodi” vurgusu
+    ),
+    _CardData(
+      title: 'My Beats',
+      subtitle: 'Listen to your own beats',
+      backgroundColor: Colors.purpleAccent,
       emoji: '🎶', // 🎶 ile “şarkı & melodi” vurgusu
     ),
     _CardData(
@@ -215,6 +222,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return const BeatMakerView();
       case 'Settings':
         return const SettingView();
+      case 'My Beats':
+        return const MyBeatsView();
       default:
         return const SizedBox.shrink();
     }

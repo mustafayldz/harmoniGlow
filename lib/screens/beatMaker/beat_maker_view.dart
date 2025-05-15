@@ -13,6 +13,8 @@ class BeatMakerView extends StatefulWidget {
 class _BeatMakerViewState extends State<BeatMakerView> {
   late final BeatMakerViewmodel vm;
 
+  bool isRecording = false;
+
   final List<Map<String, dynamic>> drumPieces = [
     {
       'key': 'Kick Drum',
@@ -94,7 +96,50 @@ class _BeatMakerViewState extends State<BeatMakerView> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Make your own beat')),
+      appBar: AppBar(
+        title: const Text('Make your own beat'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () {
+                setState(() {
+                  isRecording = !isRecording;
+                });
+
+                if (isRecording) {
+                  vm.startRecording();
+                } else {
+                  vm.stopRecording(context);
+                }
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isRecording ? Colors.red : Colors.grey.shade800,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isRecording ? Icons.stop : Icons.fiber_manual_record,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isRecording ? 'Stop' : 'Record',
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: OrientationBuilder(
         builder: (context, orientation) {
           if (orientation == Orientation.portrait) {

@@ -1,5 +1,8 @@
 import 'package:drumly/app_routes.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/constants.dart';
+import 'package:drumly/hive/models/beat_maker_model.dart';
+import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/locator.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/provider/app_provider.dart';
@@ -24,7 +27,12 @@ void main() async {
 
   final appDocDir = await getApplicationDocumentsDirectory();
   Hive.init(appDocDir.path);
-  await Hive.openBox('recordsBox');
+  await Hive.openBox(Constants.lockSongBox);
+
+  Hive.registerAdapter(BeatMakerModelAdapter());
+  Hive.registerAdapter(NoteModelAdapter());
+
+  await Hive.openBox<BeatMakerModel>(Constants.beatRecordsBox);
 
   runApp(
     MultiProvider(

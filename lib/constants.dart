@@ -3,6 +3,10 @@ import 'dart:ui';
 class Constants {
   static const int timeOutInterval = 10;
   static const String myServiceUuid = 'FFE0';
+
+  // db box names
+  static const String beatRecordsBox = 'beatRecordsBox';
+  static const String lockSongBox = 'lockSongBox';
 }
 
 class AppColors {
