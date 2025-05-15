@@ -85,14 +85,14 @@ class _BeatMakerViewState extends State<BeatMakerView> {
     final screenHeight = screenSize.height;
 
     final initialPositions = [
-      Offset(screenWidth * 0.30, screenHeight * 0.40), // hihat
-      Offset(screenWidth * 0.38, screenHeight * 0.0), // crash
-      Offset(screenWidth * 0.69, screenHeight * 0.065), // ride
-      Offset(screenWidth * 0.39, screenHeight * 0.60), // snare
-      Offset(screenWidth * 0.43, screenHeight * 0.28), // tom1
-      Offset(screenWidth * 0.56, screenHeight * 0.25), // tom2
-      Offset(screenWidth * 0.65, screenHeight * 0.55), // tom_floor
-      Offset(screenWidth * 0.50, screenHeight * 0.57), // kick
+      Offset(screenWidth * 0.32, screenHeight * 0.30), // kick
+      Offset(screenWidth * 0.54, screenHeight * 0.40), // tom_floor
+      Offset(screenWidth * 0.48, screenHeight * 0.17), // tom2
+      Offset(screenWidth * 0.35, screenHeight * 0.20), // tom1
+      Offset(screenWidth * 0.27, screenHeight * 0.37), // snare
+      Offset(screenWidth * 0.16, screenHeight * 0.37), // hihat
+      Offset(screenWidth * 0.20, screenHeight * 0.03), // crash
+      Offset(screenWidth * 0.62, screenHeight * 0.03), // ride
     ];
 
     return Scaffold(
