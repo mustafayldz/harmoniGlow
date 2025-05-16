@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/screens/myDrum/drum_model.dart';
+import 'package:drumly/screens/my_drum/drum_model.dart';
 
 class DrumPainter extends CustomPainter {
   DrumPainter({

@@ -1,8 +1,8 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
-import 'package:drumly/screens/myDrum/drum_model.dart';
-import 'package:drumly/screens/myDrum/drum_painter.dart';
-import 'package:drumly/screens/myDrum/drum_painter_classic.dart';
+import 'package:drumly/screens/my_drum/drum_model.dart';
+import 'package:drumly/screens/my_drum/drum_painter.dart';
+import 'package:drumly/screens/my_drum/drum_painter_classic.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';

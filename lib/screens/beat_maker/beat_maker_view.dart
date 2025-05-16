@@ -1,4 +1,4 @@
-import 'package:drumly/screens/beatMaker/beat_maker_viewmodel.dart';
+import 'package:drumly/screens/beat_maker/beat_maker_viewmodel.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
