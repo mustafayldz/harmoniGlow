@@ -74,19 +74,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       title: 'Training',
       subtitle: 'Train with your own music',
       backgroundColor: Colors.greenAccent,
-      emoji: '🎧', // 🎧 ile “dinle & çalış” çağrışımı
+      emoji: '🎯', // 🎯 ile “dinle & çalış” çağrışımı
     ),
     _CardData(
       title: 'Songs',
       subtitle: 'Discover and train with your favorite songs',
       backgroundColor: Colors.pinkAccent,
-      emoji: '🎶', // 🎶 ile “şarkı & melodi” vurgusu
+      emoji: '🎤', // 🎤 ile “şarkı & melodi” vurgusu
     ),
     _CardData(
       title: 'My Beats',
       subtitle: 'Listen to your own beats',
       backgroundColor: Colors.purpleAccent,
-      emoji: '🎶', // 🎶 ile “şarkı & melodi” vurgusu
+      emoji: '🎼', // 🎼 ile “şarkı & melodi” vurgusu
     ),
     _CardData(
       title: 'MY DRUM',
