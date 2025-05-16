@@ -125,10 +125,14 @@ class BeatMakerViewmodel {
     final result = await _askForTitleAndGenre(context);
     if (result == null) return;
 
+    // 🎵 BPM hesapla: (noteCount / duration) * 60
+    final int noteCount = _recordedNotes.length;
+    final int bpm = duration > 0 ? ((noteCount / duration) * 60).round() : 120;
+
     final beat = BeatMakerModel(
       beatId: _recordingId,
       title: result['title'],
-      bpm: 120,
+      bpm: bpm,
       genre: result['genre'],
       rhythm: '4/4',
       durationSeconds: duration,
@@ -141,7 +145,7 @@ class BeatMakerViewmodel {
     await saveBeatMakerModel(beat);
     _isRecording = false;
 
-    showClassicSnackBar(context, 'Beat saved as ${beat.title}');
+    showClassicSnackBar(context, 'Beat saved as ${beat.title} ($bpm BPM)');
   }
 
   Future<Map<String, String>?> _askForTitleAndGenre(
