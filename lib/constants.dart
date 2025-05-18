@@ -14,8 +14,9 @@ class AppColors {
 }
 
 class ApiServiceUrl {
-  // static const baseUrl = 'https://drumly.ca/api/v1/';
-  static const baseUrl = 'http://10.0.0.127:5001/api/';
+  static const baseUrl =
+      'https://drumly-backend-541755790098.us-central1.run.app/api/';
+  // static const baseUrl = 'http://10.0.0.127:5001/api/';
 
   static const user = '${baseUrl}users/';
   static const song = '${baseUrl}songs/';

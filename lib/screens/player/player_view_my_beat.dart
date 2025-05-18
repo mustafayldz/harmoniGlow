@@ -26,18 +26,6 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
   double playerSpeed = 1.0;
 
   @override
-  void initState() {
-    print('BeatMakerPlayerView initState');
-
-    widget.songModel.notes!.forEach((element) {
-      final action = element;
-      print('Note: ${action.i}, ${action.sM}, ${action.led}');
-    });
-
-    super.initState();
-  }
-
-  @override
   void dispose() {
     _timer?.cancel();
     super.dispose();
