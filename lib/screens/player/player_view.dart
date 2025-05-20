@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
+import 'package:drumly/screens/player/drum_part_badge.dart';
 import 'package:drumly/screens/player/volume.dart';
 import 'package:drumly/screens/training/trraning_model.dart';
 import 'package:drumly/services/local_service.dart';
@@ -195,35 +196,21 @@ class _PlayerViewState extends State<PlayerView> {
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
     final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             const Spacer(),
-            SizedBox(
-              height: size.height * 0.3,
-              child: sentDrumParts.isNotEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Center(
-                        child: Text(
-                          sentDrumParts.join(', '),
-                          style: TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: rondomColor,
-                          ),
-                          textAlign: TextAlign.justify,
-                        ),
-                      ),
-                    )
-                  : Image.asset(
-                      'assets/images/drumly_logo.png',
-                      fit: BoxFit.cover,
-                    ),
-            ),
+            sentDrumParts.isNotEmpty || _player.playing
+                ? DrumOverlayView(
+                    selectedParts: sentDrumParts,
+                    highlightColor: rondomColor,
+                  )
+                : Image.asset(
+                    'assets/images/drumly_logo.png',
+                    fit: BoxFit.cover,
+                  ),
             const Spacer(),
             Text(
               widget.songModel.title ?? 'Unknown Title',

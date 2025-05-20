@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
+import 'package:drumly/screens/player/drum_part_badge.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
@@ -129,17 +130,10 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
             const Spacer(),
 
             // 2️⃣ Display triggered drum parts
-            if (_sentDrumParts.isNotEmpty)
-              Center(
-                child: Text(
-                  _sentDrumParts.join(', '),
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: _randomColor,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+            if (_sentDrumParts.isNotEmpty || _controller.value.isPlaying)
+              DrumOverlayView(
+                selectedParts: _sentDrumParts,
+                highlightColor: _randomColor,
               ),
 
             // 3️⃣ Basic play / pause buttons
