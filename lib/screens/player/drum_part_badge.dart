@@ -12,7 +12,7 @@ class DrumOverlayView extends StatelessWidget {
 
   // Orijinal görsel 400x350 → buraya göre % oranlar
   static const Map<String, Offset> relativePositions = {
-    'Crash Cymbal': Offset(0.05, 0.05), // soldaki eğik zil
+    'Crash Cymbal': Offset(0.05, 0.04), // soldaki eğik zil
     'Hi-Hat': Offset(0.73, 0.42), // sağdaki üst üste duran ziller
     'Ride Cymbal': Offset(0.90, 0.05), // sağ üstteki büyük zil
     'Snare Drum': Offset(0.24, 0.58), // sol alttaki küçük trampet
