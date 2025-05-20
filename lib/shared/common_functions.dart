@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:drumly/adMob/ad_service_reward.dart';
 import 'package:drumly/hive/db_service.dart';
@@ -180,4 +181,25 @@ int getDrumPartId(String drumPartName) {
     default:
       return 0;
   }
+}
+
+/// return dark color rondom color
+
+Color getRandomColor(bool isDark) {
+  final double threshold = isDark ? 0.7 : 0.3;
+
+  Color color;
+  do {
+    color = Color.fromARGB(
+      255,
+      Random().nextInt(256),
+      Random().nextInt(256),
+      Random().nextInt(256),
+    );
+  } while (isDark
+          ? color.computeLuminance() < threshold // want bright colors
+          : color.computeLuminance() > threshold // want dark colors
+      );
+
+  return color;
 }

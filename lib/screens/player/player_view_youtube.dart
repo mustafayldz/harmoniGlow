@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/services/local_service.dart';
+import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class YoutubeSongPlayer extends StatefulWidget {
@@ -25,6 +25,8 @@ class YoutubeSongPlayer extends StatefulWidget {
 
 class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
   late final YoutubePlayerController _controller;
+  late AppProvider appProvider;
+
   int _currentMs = 0;
   int _prevMs = 0;
   double playerSpeed = 1.0;
@@ -38,6 +40,7 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
 
   @override
   void initState() {
+    appProvider = Provider.of<AppProvider>(context, listen: false);
     super.initState();
 
     // Extract the video ID from URL (or assume URL is already the ID)
@@ -93,7 +96,7 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
           _currentData.add(drum.led!);
           _currentData.addAll(drum.rgb!);
         }
-        _randomColor = _pickRandomDarkColor();
+        _randomColor = getRandomColor(appProvider.isDarkMode);
 
         // send over Bluetooth
         await SendData().sendHexData(bluetoothBloc, _currentData);
@@ -101,19 +104,6 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
     }
 
     if (mounted) setState(() {});
-  }
-
-  Color _pickRandomDarkColor() {
-    Color c;
-    do {
-      c = Color.fromARGB(
-        255,
-        Random().nextInt(256),
-        Random().nextInt(256),
-        Random().nextInt(256),
-      );
-    } while (c.computeLuminance() > 0.3);
-    return c;
   }
 
   @override

@@ -101,7 +101,8 @@ class _SongViewState extends State<SongView> {
                                           width: 40,
                                           height: 4,
                                           margin: const EdgeInsets.symmetric(
-                                              vertical: 8),
+                                            vertical: 8,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: theme.brightness ==
                                                     Brightness.dark
@@ -167,7 +168,8 @@ class _SongViewState extends State<SongView> {
                                           Chip(
                                             label: Text(
                                               vm.formatDuration(
-                                                  song.durationSeconds),
+                                                song.durationSeconds,
+                                              ),
                                             ),
                                             visualDensity:
                                                 VisualDensity.compact,

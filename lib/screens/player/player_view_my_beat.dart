@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
+import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 
 class BeatMakerPlayerView extends StatefulWidget {
   const BeatMakerPlayerView(this.songModel, {super.key});
@@ -17,6 +19,8 @@ class BeatMakerPlayerView extends StatefulWidget {
 }
 
 class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
+  late AppProvider appProvider;
+
   final List<String> _currentDrumParts = [];
   final List<int> _currentLedData = [];
   final Set<int> _sentNoteIndices = {};
@@ -25,6 +29,14 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
   int _msCounter = 0;
   bool _isPlaying = false;
   double playerSpeed = 1.0;
+
+  Color _randomColor = Colors.black;
+
+  @override
+  void initState() {
+    appProvider = Provider.of<AppProvider>(context, listen: false);
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -58,6 +70,8 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
             _currentLedData.add(drum.led!);
             _currentLedData.addAll(drum.rgb!);
           }
+
+          _randomColor = getRandomColor(appProvider.isDarkMode);
 
           if (_currentLedData.isNotEmpty) {
             await SendData().sendHexData(bluetoothBloc, _currentLedData);
@@ -119,10 +133,10 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
                       child: Center(
                         child: Text(
                           _currentDrumParts.join(', '),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 34,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: _randomColor,
                           ),
                           textAlign: TextAlign.justify,
                         ),

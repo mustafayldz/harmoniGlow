@@ -1,17 +1,17 @@
 import 'dart:async';
-import 'dart:math';
 
-import 'package:drumly/screens/training/trraning_model.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/services/local_service.dart';
+import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/player/volume.dart';
+import 'package:drumly/screens/training/trraning_model.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
 
 class PlayerView extends StatefulWidget {
   const PlayerView(this.songModel, {super.key, this.isTraning = false});
@@ -24,6 +24,7 @@ class PlayerView extends StatefulWidget {
 
 class _PlayerViewState extends State<PlayerView> {
   final AudioPlayer _player = AudioPlayer();
+  late AppProvider appProvider;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
   double playerSpeed = 1.0;
@@ -46,9 +47,13 @@ class _PlayerViewState extends State<PlayerView> {
   Duration prevPos = Duration.zero;
   Duration start = Duration.zero;
 
+  // // ➎ check thme dark mode
+  // bool isDark = false;
+
   @override
   void initState() {
     super.initState();
+    appProvider = Provider.of<AppProvider>(context, listen: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initAudio(context);
@@ -134,7 +139,7 @@ class _PlayerViewState extends State<PlayerView> {
             sentDrumParts.add(drum!.name!);
             curretnData.add(drum.led!);
             curretnData.addAll(drum.rgb!);
-            rondomColor = getRandomDarkColor();
+            rondomColor = getRandomColor(appProvider.isDarkMode);
           }
 
           // ➎ Veriyi Bluetooth üzerinden gönder
@@ -305,18 +310,5 @@ class _PlayerViewState extends State<PlayerView> {
 
     final int ledDuration = (baseLedDuration / newSpeed).round();
     await SendData().sendHexData(bluetoothBloc, splitToBytes(ledDuration));
-  }
-
-  Color getRandomDarkColor() {
-    Color color;
-    do {
-      color = Color.fromARGB(
-        255,
-        Random().nextInt(256), // Red 0–255
-        Random().nextInt(256), // Green 0–255
-        Random().nextInt(256), // Blue 0–255
-      );
-    } while (color.computeLuminance() > 0.3);
-    return color;
   }
 }
