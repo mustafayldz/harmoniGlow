@@ -20,19 +20,8 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setupLocator();
   await Firebase.initializeApp();
-
-  await MobileAds.instance.initialize();
-
-  final appDocDir = await getApplicationDocumentsDirectory();
-  Hive.init(appDocDir.path);
-  await Hive.openBox(Constants.lockSongBox);
-
-  Hive.registerAdapter(BeatMakerModelAdapter());
-  Hive.registerAdapter(NoteModelAdapter());
-
-  await Hive.openBox<BeatMakerModel>(Constants.beatRecordsBox);
+  setupLocator();
 
   runApp(
     MultiProvider(
@@ -53,6 +42,19 @@ void main() async {
       ),
     ),
   );
+
+  // Arka planda başlat
+  await Future.microtask(() async {
+    await MobileAds.instance.initialize();
+    final appDocDir = await getApplicationDocumentsDirectory();
+    Hive.init(appDocDir.path);
+
+    await Hive.openLazyBox(Constants.lockSongBox);
+    await Hive.openLazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+
+    Hive.registerAdapter(BeatMakerModelAdapter());
+    Hive.registerAdapter(NoteModelAdapter());
+  });
 }
 
 class Drumly extends StatelessWidget {

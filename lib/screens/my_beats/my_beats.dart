@@ -27,9 +27,17 @@ class _MyBeatsViewState extends State<MyBeatsView> {
   }
 
   Future<void> _loadBeats() async {
-    final box = await Hive.openBox<BeatMakerModel>(Constants.beatRecordsBox);
-    final beats = box.values.toList();
-    final keys = box.keys.toList();
+    final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+
+// tüm key'leri al
+    final keys = lazyBox.keys.toList();
+
+// değerleri async olarak getir
+    final beats = <BeatMakerModel>[];
+    for (var key in keys) {
+      final beat = await lazyBox.get(key);
+      if (beat != null) beats.add(beat);
+    }
 
     setState(() {
       _beats = beats;
@@ -120,10 +128,12 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
                     onDismissed: (_) async {
-                      final box = await Hive.openBox<BeatMakerModel>(
+                      final lazyBox = Hive.lazyBox<BeatMakerModel>(
                         Constants.beatRecordsBox,
                       );
-                      await box.delete(key);
+                      final key = _beatKeys[index];
+
+                      await lazyBox.delete(key);
 
                       setState(() {
                         _beats.removeAt(index);

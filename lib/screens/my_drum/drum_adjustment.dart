@@ -4,7 +4,6 @@ import 'package:drumly/screens/my_drum/drum_model.dart';
 import 'package:drumly/screens/my_drum/drum_painter.dart';
 import 'package:drumly/screens/my_drum/drum_painter_classic.dart';
 import 'package:drumly/services/local_service.dart';
-import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
@@ -198,20 +197,6 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                               child: Column(
                                 spacing: 10,
                                 children: [
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      onPressed: () async {
-                                        await SendData().sendHexData(
-                                          bluetoothBloc,
-                                          splitToBytes(100),
-                                        );
-                                      },
-                                      child: const Text(
-                                        'Set duration',
-                                      ),
-                                    ),
-                                  ),
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(

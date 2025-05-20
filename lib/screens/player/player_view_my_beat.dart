@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -157,7 +158,13 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
                         _isPlaying = !_isPlaying;
                       });
                       if (_isPlaying) {
-                        _startNoteSync();
+                        await showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => const Countdown(),
+                        ).whenComplete(() async {
+                          _startNoteSync();
+                        });
                       }
                     },
                     iconSize: 52,

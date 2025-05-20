@@ -241,25 +241,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       GestureDetector(
         onTap: () async {
           try {
-            appProvider.setLoading(true);
             debugPrint('Tapped: $title');
             await FirebaseAnalytics.instance.logEvent(name: title);
-
-            // If not connected and tapping “Songs”, show an interstitial ad first
-            if (!isConnected && title == 'Songs') {
-              await AdService.instance.showInterstitialAd();
-            }
 
             // Decide which screen to push:
             final Widget screenToPush = !isConnected && title == 'MY DRUM'
                 ? const FindDevicesScreen() // otherwise, go to pairing
                 : destination; // connected or post‐ad “Songs”
 
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => screenToPush),
-            );
-            appProvider.setLoading(false);
+            // If not connected and tapping “Songs”, show an interstitial ad first
+            if (!isConnected && title == 'Songs') {
+              await AdService.instance
+                  .showInterstitialAd()
+                  .whenComplete(() async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => screenToPush),
+                );
+              });
+            } else {
+              // If connected or tapping any other card, go directly to the screen
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => screenToPush),
+              );
+            }
           } catch (e, st) {
             debugPrint('Navigation error: $e\n$st');
           }

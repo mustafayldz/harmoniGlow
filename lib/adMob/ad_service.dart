@@ -8,52 +8,52 @@ class AdService {
   static final AdService instance = AdService._();
 
   bool _isLoading = false;
+  InterstitialAd? interstitialAd;
 
   /// Interstitial reklamı yükler, gösterir ve reklam kapatıldığında
   /// Future’ı tamamlar. Hata olursa yine tamamlar.
-  Future<void> showInterstitialAd() {
+  Future<void> showInterstitialAd() async {
     if (_isLoading) {
-      debugPrint(
-        '[AdService] showInterstitialAd: Zaten yükleniyor, hemen tamamlanıyor.',
-      );
-      return Future.value();
+      debugPrint('[AdService] showInterstitialAd: Zaten yükleniyor.');
+      return;
     }
+
     _isLoading = true;
     final completer = Completer<void>();
 
-    debugPrint(
-      '[AdService] Interstitial load başlıyor. UnitID=${AdHelper().interstitialAdUnitId}',
-    );
-    InterstitialAd.load(
+    debugPrint('[AdService] Reklam yükleniyor...');
+
+    await InterstitialAd.load(
       adUnitId: AdHelper().interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (InterstitialAd ad) {
-          debugPrint('[AdService] onAdLoaded: Reklam yüklendi.');
+          debugPrint('[AdService] Reklam yüklendi.');
+          interstitialAd = ad;
+
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
-              debugPrint(
-                '[AdService] onAdDismissedFullScreenContent: Reklam kapatıldı.',
-              );
+              debugPrint('[AdService] Reklam kapatıldı.');
               ad.dispose();
               _isLoading = false;
               completer.complete();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               debugPrint(
-                '[AdService] onAdFailedToShowFullScreenContent: Hata gösterme sırasında: ${error.message}',
+                '[AdService] Reklam gösterilemedi: ${error.message}',
               );
               ad.dispose();
               _isLoading = false;
               completer.complete();
             },
           );
-          debugPrint('[AdService] ad.show() çağrılıyor.');
+
+          debugPrint('[AdService] Reklam gösteriliyor...');
           ad.show();
         },
         onAdFailedToLoad: (LoadAdError error) {
           debugPrint(
-            '[AdService] onAdFailedToLoad: Yükleme hatası: ${error.message}',
+            '[AdService] Reklam yüklenemedi: ${error.message}',
           );
           _isLoading = false;
           completer.complete();

@@ -2,63 +2,66 @@ import 'package:drumly/constants.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:hive/hive.dart';
 
-/// Box adıyla bir Hive kutusuna kayıt edilecek.
-Future<void> addRecord(String songId) async {
-  final box = Hive.box(Constants.lockSongBox);
+/// 🔒 Kullanıcının eriştiği şarkıların kilit kayıtları (LazyBox)
 
-  // Şarkı ID'si anahtar olarak kullanılıyor, değer olarak oynatma zamanı kaydediliyor
+Future<void> addRecord(String songId) async {
+  final lazyBox = Hive.lazyBox(Constants.lockSongBox);
   final timestamp = DateTime.now().toIso8601String();
-  await box.put(songId, timestamp);
+  await lazyBox.put(songId, timestamp);
 }
 
-/// Süresi geçen kayıtları siler (2 saatten eski kayıtlar)
 Future<void> cleanExpiredRecords() async {
-  final box = Hive.box(Constants.lockSongBox);
+  final lazyBox = Hive.lazyBox(Constants.lockSongBox);
   final now = DateTime.now();
   final keysToRemove = <dynamic>[];
 
-  for (final key in box.keys) {
-    final stored = box.get(key) as String;
-    final createdAt = DateTime.parse(stored);
-
-    if (now.difference(createdAt) > const Duration(hours: 2)) {
-      keysToRemove.add(key);
+  for (final key in lazyBox.keys) {
+    final stored = await lazyBox.get(key);
+    if (stored is String) {
+      final createdAt = DateTime.tryParse(stored);
+      if (createdAt != null &&
+          now.difference(createdAt) > const Duration(hours: 2)) {
+        keysToRemove.add(key);
+      }
     }
   }
 
   for (final key in keysToRemove) {
-    await box.delete(key);
+    await lazyBox.delete(key);
   }
 }
 
-/// Belirli bir şarkının tutup tutulmadığını kontrol etmek için örnek yardımcı
 bool hasRecord(String songId) {
-  final box = Hive.box(Constants.lockSongBox);
-  return box.containsKey(songId);
+  final lazyBox = Hive.lazyBox(Constants.lockSongBox);
+  return lazyBox.containsKey(songId);
 }
 
-///------------------------------------------------------
+/// 🥁 BeatMaker kayıt işlemleri (LazyBox ile)
 
-/// Beat maker için kayıt ekler
 Future<void> saveBeatMakerModel(BeatMakerModel beat) async {
-  final box = Hive.box<BeatMakerModel>(Constants.beatRecordsBox);
-  await box.put(beat.beatId, beat);
+  final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+  await lazyBox.put(beat.beatId, beat);
 }
 
-/// Beat maker için kayıt var mı kontrol eder
-List<BeatMakerModel> getAllBeatMakerRecords() {
-  final box = Hive.box<BeatMakerModel>(Constants.beatRecordsBox);
-  return box.values.toList();
+Future<List<BeatMakerModel>> getAllBeatMakerRecords() async {
+  final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+  final keys = lazyBox.keys;
+  final List<BeatMakerModel> beats = [];
+
+  for (final key in keys) {
+    final beat = await lazyBox.get(key);
+    if (beat != null) beats.add(beat);
+  }
+
+  return beats;
 }
 
-/// Beat maker için kayıt siler
 Future<void> deleteBeatMakerRecord(String beatId) async {
-  final box = Hive.box<BeatMakerModel>(Constants.beatRecordsBox);
-  await box.delete(beatId);
+  final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+  await lazyBox.delete(beatId);
 }
 
-/// belirli bir beat id'ye göre kayıt getirir
-BeatMakerModel? getBeatById(String beatId) {
-  final box = Hive.box<BeatMakerModel>(Constants.beatRecordsBox);
-  return box.get(beatId);
+Future<BeatMakerModel?> getBeatById(String beatId) async {
+  final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+  return await lazyBox.get(beatId);
 }
