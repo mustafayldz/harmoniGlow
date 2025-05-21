@@ -29,7 +29,7 @@
 	<key>NSAllowsArbitraryLoads</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app needs Bluetooth to function</string>
+	<string>This app uses Bluetooth to connect to your drum training device and synchronize LED lights with beats in real time.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>This app communicates with external devices via Bluetooth.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
