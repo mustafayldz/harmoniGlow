@@ -15,19 +15,26 @@ class TrainingView extends StatefulWidget {
 }
 
 class _TrainingViewState extends State<TrainingView> {
+  late final TrainingViewModel _viewModel;
+
   @override
-  Widget build(BuildContext context) => ChangeNotifierProvider(
-        create: (_) => TrainingViewModel()
-          ..context = context
-          ..fetchBeats(),
-        child: Consumer<TrainingViewModel>(
-          builder: (context, vm, _) => Scaffold(
-            appBar: AppBar(
-              title: const Text('Training').tr(),
-              centerTitle: true,
-            ),
-            body: const _TrainingBody(),
+  void initState() {
+    super.initState();
+    _viewModel = TrainingViewModel();
+    _viewModel.context = context;
+    _viewModel.fetchBeats(); // ✅ Verileri ilk açılışta çek
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      ChangeNotifierProvider<TrainingViewModel>.value(
+        value: _viewModel,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Training').tr(),
+            centerTitle: true,
           ),
+          body: const _TrainingBody(),
         ),
       );
 }

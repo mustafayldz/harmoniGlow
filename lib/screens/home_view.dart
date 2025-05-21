@@ -38,43 +38,43 @@ class _HomeViewState extends State<HomeView> {
         key: 'training',
         title: 'training'.tr(),
         subtitle: 'trainWithMusic'.tr(),
-        color: Colors.greenAccent,
-        emoji: '🎯',
+        color: AppColors.trainingGreen, // Yeşil
+        icon: Icons.multitrack_audio_sharp, // Öğretmen tahtası
       ),
       _CardData(
         key: 'songs',
         title: 'songs'.tr(),
         subtitle: 'discoverSongs'.tr(),
-        color: Colors.pinkAccent,
-        emoji: '🎤',
+        color: AppColors.songsPink, // Pembe
+        icon: Icons.music_note, // Nota
       ),
       _CardData(
         key: 'my beats',
         title: 'myBeats'.tr(),
         subtitle: 'listenToBeats'.tr(),
-        color: Colors.purpleAccent,
-        emoji: '🎼',
+        color: AppColors.beatsPurple, // Mor
+        icon: Icons.headphones, // Kulaklık
       ),
       _CardData(
         key: 'my drum',
         title: 'myDrum'.tr(),
         subtitle: 'adjustDrum'.tr(),
-        color: Colors.blueAccent,
-        emoji: '🥁',
+        color: AppColors.drumBlue, // Mavi
+        icon: Icons.music_video, // Davul görünümlü ikon
       ),
       _CardData(
         key: 'beat maker',
         title: 'beatMaker'.tr(),
         subtitle: 'createBeats'.tr(),
-        color: Colors.red,
-        emoji: '🎛️',
+        color: AppColors.makerOrange, // Turuncu
+        icon: Icons.tune, // Ayar çubuğu (beat kontrolü)
       ),
       _CardData(
         key: 'settings',
         title: 'settings'.tr(),
         subtitle: '',
-        color: Colors.teal,
-        emoji: '⚙️',
+        color: AppColors.settingsRed, // Kırmızı
+        icon: Icons.settings, // Ayarlar çarkı
       ),
     ];
   }
@@ -192,7 +192,7 @@ class _HomeViewState extends State<HomeView> {
         ),
         child: Row(
           children: [
-            Text(card.emoji, style: const TextStyle(fontSize: 32)),
+            Icon(card.icon, size: 32, color: Colors.white),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -213,7 +213,7 @@ class _HomeViewState extends State<HomeView> {
                         card.subtitle,
                         style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.black54,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -281,17 +281,16 @@ class _HomeViewState extends State<HomeView> {
 }
 
 class _CardData {
-  const _CardData({
+  _CardData({
     required this.key,
     required this.title,
     required this.subtitle,
     required this.color,
-    required this.emoji,
+    required this.icon,
   });
-
   final String key;
   final String title;
   final String subtitle;
   final Color color;
-  final String emoji;
+  final IconData icon;
 }

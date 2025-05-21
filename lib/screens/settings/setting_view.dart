@@ -1,3 +1,4 @@
+import 'package:drumly/constants.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/home_view.dart';
 import 'package:drumly/screens/settings/settings_viewmodel.dart';
@@ -26,7 +27,6 @@ class _SettingViewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = Provider.of<SettingViewModel>(context);
     final appProvider = vm.appProvider;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -50,8 +50,9 @@ class _SettingViewBody extends StatelessWidget {
                       appProvider.isDarkMode
                           ? Icons.dark_mode
                           : Icons.light_mode,
-                      color: theme.colorScheme.primary,
+                      color: AppColors.settingsRed,
                     ),
+                    activeColor: AppColors.settingsRed,
                     value: appProvider.isDarkMode,
                     onChanged: (_) => vm.toggleTheme(),
                   ),
@@ -116,8 +117,8 @@ class _SettingViewBody extends StatelessWidget {
                               : [true, false],
                           borderRadius: BorderRadius.circular(8),
                           selectedColor: Colors.white,
-                          fillColor: theme.colorScheme.primary,
-                          color: theme.colorScheme.onSurface,
+                          fillColor: AppColors.settingsRed,
+                          color: AppColors.settingsRed.withAlpha(100),
                           onPressed: (index) => vm.setDrumStyle(index == 1),
                           children: [
                             Padding(
@@ -182,7 +183,8 @@ class _SettingViewBody extends StatelessWidget {
                         DropdownButton<Locale>(
                           value: context.locale,
                           isExpanded: true,
-                          icon: const Icon(Icons.language),
+                          icon: const Icon(Icons.language,
+                              color: AppColors.settingsRed),
                           borderRadius: BorderRadius.circular(8),
                           onChanged: (Locale? newLocale) async {
                             if (newLocale != null) {
@@ -228,7 +230,7 @@ class _SettingViewBody extends StatelessWidget {
 
           // Fixed Logout Button
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -239,7 +241,7 @@ class _SettingViewBody extends StatelessWidget {
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Colors.grey[500],
+                  backgroundColor: AppColors.settingsRed,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

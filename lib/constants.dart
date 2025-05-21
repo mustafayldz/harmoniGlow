@@ -20,6 +20,14 @@ class AppColors {
   static const warmGray = Color(0xFFE5E7EB);
   static const darkGray = Color(0xFF1F2937);
   static const white = Color(0xFFFFFFFF);
+
+  // Additional colors from the cards
+  static const trainingGreen = Color(0xFF22C55E); // Training
+  static const songsPink = Color(0xFFEC4899); // Songs
+  static const beatsPurple = Color(0xFFA855F7); // My Beats
+  static const drumBlue = Color(0xFF3B82F6); // My Drum
+  static const makerOrange = Color(0xFFF97316); // Beat Maker
+  static const settingsRed = Color(0xFFEF4444); // Settings
 }
 
 class ApiServiceUrl {
