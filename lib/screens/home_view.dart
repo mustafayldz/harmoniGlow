@@ -1,7 +1,6 @@
-import 'package:drumly/adMob/ad_service.dart';
+import 'package:drumly/adMob/ad_view.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
-import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/beat_maker/beat_maker_view.dart';
 import 'package:drumly/screens/bluetooth/find_devices.dart';
 import 'package:drumly/screens/my_beats/my_beats.dart';
@@ -22,43 +21,14 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
-  final AppProvider appProvider = AppProvider();
-
-  late final AnimationController _controller;
-  late final Animation<double> _opacity;
-  late final Animation<Offset> _slide;
-
+class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 700),
-      vsync: this,
-    );
-
-    _opacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _slide =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    _controller.forward();
-
-    checkLocalStorage();
+    _checkLocalStorage();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  checkLocalStorage() async {
+  Future<void> _checkLocalStorage() async {
     final savedData = await StorageService.getDrumPartsBulk();
     if (savedData == null) {
       await StorageService.saveDrumPartsBulk(
@@ -73,262 +43,236 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     _CardData(
       title: 'Training',
       subtitle: 'Train with your own music',
-      backgroundColor: Colors.greenAccent,
-      emoji: '🎯', // 🎯 ile “dinle & çalış” çağrışımı
+      color: Colors.greenAccent,
+      emoji: '🎯',
     ),
     _CardData(
       title: 'Songs',
       subtitle: 'Discover and train with your favorite songs',
-      backgroundColor: Colors.pinkAccent,
-      emoji: '🎤', // 🎤 ile “şarkı & melodi” vurgusu
+      color: Colors.pinkAccent,
+      emoji: '🎤',
     ),
     _CardData(
       title: 'My Beats',
       subtitle: 'Listen to your own beats',
-      backgroundColor: Colors.purpleAccent,
-      emoji: '🎼', // 🎼 ile “şarkı & melodi” vurgusu
+      color: Colors.purpleAccent,
+      emoji: '🎼',
     ),
     _CardData(
-      title: 'MY DRUM',
+      title: 'My Drum',
       subtitle: 'Adjust your drum settings',
-      backgroundColor: Colors.blueAccent,
-      emoji: '🥁', // 🥁 doğrudan davul simgesi
+      color: Colors.blueAccent,
+      emoji: '🥁',
     ),
     _CardData(
       title: 'Beat Maker',
       subtitle: 'Create your own beats',
-      backgroundColor: Colors.red,
-      emoji: '🎛️', // 🎛️ ile “mixer/control panel” hissi
+      color: Colors.red,
+      emoji: '🎛️',
     ),
-    _CardData(
-      title: 'Settings',
-      subtitle: '',
-      backgroundColor: Colors.blueAccent,
-      emoji: '⚙️', // ⚙️ ayarlar ikonu
-    ),
+    _CardData(title: 'Settings', subtitle: '', color: Colors.teal, emoji: '⚙️'),
   ];
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<BluetoothBloc>().state;
-
     final isConnected = state.isConnected;
     final deviceName = state.connectedDevice?.advName ?? 'Unknown Device';
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const FindDevicesScreen(),
+        child: Column(
+          children: [
+            _buildBluetoothBanner(isConnected, deviceName),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                physics: const BouncingScrollPhysics(),
+                itemCount: _cards.length,
+                itemBuilder: (context, index) {
+                  final card = _cards[index];
+                  final destination = _getDestination(card.title, isConnected);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _handleTap(
+                        context,
+                        card.title,
+                        isConnected,
+                        destination,
+                      ),
+                      child: _buildCard(card),
                     ),
                   );
                 },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isConnected ? Colors.green[100] : Colors.red[100],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isConnected ? Colors.green : Colors.red,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isConnected
-                            ? Icons.bluetooth_connected
-                            : Icons.bluetooth_disabled,
-                        color: isConnected ? Colors.green : Colors.red,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        isConnected
-                            ? 'Connected to $deviceName'
-                            : 'Disconnected',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              isConnected ? Colors.green[800] : Colors.red[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ),
-              const SizedBox(height: 30),
-              Expanded(
-                child: ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: _cards.length,
-                  itemBuilder: (context, index) {
-                    final card = _cards[index];
-                    return AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, child) => Opacity(
-                        opacity: _opacity.value,
-                        child: SlideTransition(
-                          position: _slide,
-                          child: Transform.translate(
-                            offset: Offset(0, -15.0 * index), // stacked effect
-                            child: child,
-                          ),
-                        ),
-                      ),
-                      child: _buildHabitCard(
-                        context,
-                        isConnected,
-                        title: card.title,
-                        subtitle: card.subtitle,
-                        backgroundColor: card.backgroundColor,
-                        emoji: card.emoji,
-                        destination: getDestination(
-                          card.title,
-                          isConnected,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget getDestination(String title, bool isConnected) {
-    switch (title) {
-      case 'Training':
-        return const TrainingView();
-      case 'Songs':
-        return const SongView();
-      case 'MY DRUM':
-        return isConnected ? const DrumAdjustment() : const FindDevicesScreen();
-      case 'Beat Maker':
-        return const BeatMakerView();
-      case 'Settings':
-        return const SettingView();
-      case 'My Beats':
-        return const MyBeatsView();
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  Widget _buildHabitCard(
-    BuildContext context,
-    bool isConnected, {
-    required String title,
-    required String subtitle,
-    required Color backgroundColor,
-    required String emoji,
-    required Widget destination,
-  }) =>
+  Widget _buildBluetoothBanner(bool connected, String deviceName) =>
       GestureDetector(
-        onTap: () async {
-          try {
-            debugPrint('Tapped: $title');
-            await FirebaseAnalytics.instance.logEvent(name: title);
-
-            // Decide which screen to push:
-            final Widget screenToPush = !isConnected && title == 'MY DRUM'
-                ? const FindDevicesScreen() // otherwise, go to pairing
-                : destination; // connected or post‐ad “Songs”
-
-            // If not connected and tapping “Songs”, show an interstitial ad first
-            if (!isConnected && title == 'Songs') {
-              await AdService.instance
-                  .showInterstitialAd()
-                  .whenComplete(() async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => screenToPush),
-                );
-              });
-            } else {
-              // If connected or tapping any other card, go directly to the screen
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => screenToPush),
-              );
-            }
-          } catch (e, st) {
-            debugPrint('Navigation error: $e\n$st');
-          }
-        },
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const FindDevicesScreen()),
+        ),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 24),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha((0.05 * 255).round()),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: connected ? Colors.green[100] : Colors.red[100],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: connected ? Colors.green : Colors.red,
+              width: 1.5,
+            ),
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 36)),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    if (subtitle.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6.0),
-                        child: Text(
-                          subtitle,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ),
-                  ],
+              Icon(
+                connected
+                    ? Icons.bluetooth_connected
+                    : Icons.bluetooth_disabled,
+                color: connected ? Colors.green : Colors.red,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                connected ? 'Connected to $deviceName' : 'Disconnected',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: connected ? Colors.green[800] : Colors.red[800],
                 ),
               ),
             ],
           ),
         ),
       );
+
+  Widget _buildCard(_CardData card) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        decoration: BoxDecoration(
+          color: card.color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Text(card.emoji, style: const TextStyle(fontSize: 32)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    card.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (card.subtitle.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        card.subtitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _getDestination(String title, bool isConnected) {
+    switch (title.trim().toLowerCase()) {
+      case 'training':
+        return const TrainingView();
+      case 'songs':
+        return const SongView(); // AdView burada DÖNÜLMEMELİ
+      case 'my drum':
+        return isConnected ? const DrumAdjustment() : const FindDevicesScreen();
+      case 'beat maker':
+        return const BeatMakerView();
+      case 'settings':
+        return const SettingView();
+      case 'my beats':
+        return const MyBeatsView();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Future<void> _handleTap(
+    BuildContext context,
+    String title,
+    bool isConnected,
+    Widget destination,
+  ) async {
+    try {
+      final event = title.toLowerCase().replaceAll(' ', '_');
+      await FirebaseAnalytics.instance.logEvent(name: event);
+
+      final lowercaseTitle = title.toLowerCase();
+      if (!context.mounted) return;
+
+      if (!isConnected && lowercaseTitle == 'songs') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AdView(
+              onAdFinished: () async {
+                if (!context.mounted) return;
+                await Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SongView()),
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => destination),
+        );
+      }
+    } catch (e, st) {
+      debugPrint('Navigation error: $e\n$st');
+    }
+  }
 }
 
 class _CardData {
   const _CardData({
     required this.title,
     required this.subtitle,
-    required this.backgroundColor,
+    required this.color,
     required this.emoji,
   });
   final String title;
   final String subtitle;
-  final Color backgroundColor;
+  final Color color;
   final String emoji;
 }
