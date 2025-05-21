@@ -3,7 +3,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/screens/beat_maker/beat_maker_view.dart';
 import 'package:drumly/screens/bluetooth/find_devices.dart';
-import 'package:drumly/screens/my_beats/my_beats.dart';
+import 'package:drumly/screens/my_beats/my_beats_view.dart';
 import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/my_drum/drum_model.dart';
 import 'package:drumly/screens/settings/setting_view.dart';

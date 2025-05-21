@@ -51,4 +51,5 @@ flutter:
     - assets/
     - assets/images/
     - assets/images/classicDrum/
+    - assets/images/empty/
     - assets/sounds/

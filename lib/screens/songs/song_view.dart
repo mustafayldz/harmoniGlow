@@ -39,158 +39,177 @@ class _SongViewState extends State<SongView> {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
 
-    return ChangeNotifierProvider.value(
+    return ChangeNotifierProvider<SongViewModel>.value(
       value: vm,
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Songs')),
-        body: Consumer<SongViewModel>(
-          builder: (context, vm, _) {
-            final songs = vm.songListNew;
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemCount: songs.length,
-              itemBuilder: (_, index) {
-                final song = songs[index];
-                final songId = song.songId.toString();
+      child: Consumer<SongViewModel>(
+        builder: (context, vm, _) => Scaffold(
+          appBar: AppBar(title: const Text('Songs')),
+          body: vm.songList.isEmpty
+              ? Center(
+                  child: Image.asset(
+                    'assets/images/empty/song_empty.png',
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemCount: vm.songList.length,
+                  itemBuilder: (_, index) {
+                    final songs = vm.songListNew;
+                    final song = songs[index];
+                    final songId = song.songId.toString();
 
-                return FutureBuilder<bool>(
-                  future: _isUnlocked(songId),
-                  builder: (context, snapshot) {
-                    final isUnlocked = snapshot.data ?? false;
-                    final showLock =
-                        (song.isLocked && !isUnlocked) && !isConnected;
+                    return FutureBuilder<bool>(
+                      future: _isUnlocked(songId),
+                      builder: (context, snapshot) {
+                        final isUnlocked = snapshot.data ?? false;
+                        final showLock =
+                            (song.isLocked && !isUnlocked) && !isConnected;
 
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 2,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () async {
-                          if (showLock) {
-                            showAdConsentSnackBar(context, song.songId!);
-                          } else {
-                            await SendData().sendHexData(
-                              bluetoothBloc,
-                              splitToBytes(100),
-                            );
-
-                            await showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(20),
-                                ),
-                              ),
-                              builder: (context) {
-                                final theme = Theme.of(context);
-                                return ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(20),
-                                  ),
-                                  child: ColoredBox(
-                                    color: theme.scaffoldBackgroundColor,
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Container(
-                                          width: 40,
-                                          height: 4,
-                                          margin: const EdgeInsets.symmetric(
-                                            vertical: 8,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: theme.brightness ==
-                                                    Brightness.dark
-                                                ? Colors.grey[600]
-                                                : Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(2),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: MediaQuery.of(context)
-                                                  .size
-                                                  .height *
-                                              0.9,
-                                          child: DraggableScrollableSheet(
-                                            initialChildSize: 1.0,
-                                            minChildSize: 0.3,
-                                            expand: false,
-                                            builder: (context, scrollCtrl) =>
-                                                YoutubeSongPlayer(song: song),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ).whenComplete(() async {
-                              await SendData().sendHexData(bluetoothBloc, [0]);
-                            });
-                          }
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 16,
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${song.artist ?? 'Unknown'} – ${song.title ?? '—'}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                          elevation: 2,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              if (showLock) {
+                                showAdConsentSnackBar(
+                                  context,
+                                  song.songId!,
+                                );
+                              } else {
+                                await SendData().sendHexData(
+                                  bluetoothBloc,
+                                  splitToBytes(100),
+                                );
+
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        if (song.bpm != null) ...[
-                                          Chip(
-                                            label: Text('${song.bpm} BPM'),
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                          ),
-                                          const SizedBox(width: 8),
-                                        ],
-                                        if (song.durationSeconds != null) ...[
-                                          Chip(
-                                            label: Text(
-                                              vm.formatDuration(
-                                                song.durationSeconds,
+                                  ),
+                                  builder: (context) {
+                                    final theme = Theme.of(context);
+                                    return ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(20),
+                                      ),
+                                      child: ColoredBox(
+                                        color: theme.scaffoldBackgroundColor,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              width: 40,
+                                              height: 4,
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 8,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: theme.brightness ==
+                                                        Brightness.dark
+                                                    ? Colors.grey[600]
+                                                    : Colors.grey[300],
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                  2,
+                                                ),
                                               ),
                                             ),
-                                            visualDensity:
-                                                VisualDensity.compact,
+                                            SizedBox(
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.9,
+                                              child: DraggableScrollableSheet(
+                                                initialChildSize: 1.0,
+                                                minChildSize: 0.3,
+                                                expand: false,
+                                                builder:
+                                                    (context, scrollCtrl) =>
+                                                        YoutubeSongPlayer(
+                                                  song: song,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ).whenComplete(() async {
+                                  await SendData()
+                                      .sendHexData(bluetoothBloc, [0]);
+                                });
+                              }
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${song.artist ?? 'Unknown'} – ${song.title ?? '—'}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                        ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            if (song.bpm != null) ...[
+                                              Chip(
+                                                label: Text('${song.bpm} BPM'),
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                              ),
+                                              const SizedBox(width: 8),
+                                            ],
+                                            if (song.durationSeconds !=
+                                                null) ...[
+                                              Chip(
+                                                label: Text(
+                                                  vm.formatDuration(
+                                                    song.durationSeconds,
+                                                  ),
+                                                ),
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  if (showLock)
+                                    const Icon(Icons.lock, size: 32),
+                                ],
                               ),
-                              if (showLock) const Icon(Icons.lock, size: 32),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            );
-          },
+                ),
         ),
       ),
     );

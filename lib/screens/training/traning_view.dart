@@ -42,52 +42,61 @@ class _TrainingBodyState extends State<_TrainingBody> {
   @override
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
-    final vm = context.watch<TrainingViewModel>();
-    final height = MediaQuery.of(context).size.height;
 
-    return Column(
-      children: [
-        if (vm.genres.isNotEmpty)
-          Container(
-            width: double.infinity,
-            height: height * 0.06,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: vm.genres.length,
-              itemBuilder: (_, i) {
-                final isSelected = vm.selectedGenreIndex == i;
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          isSelected ? Colors.grey[200] : Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () => vm.selectGenre(i),
-                    child: Text(
-                      vm.genres[i].name!,
-                      style: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white,
-                      ),
-                    ),
-                  ),
-                );
-              },
+    return Consumer<TrainingViewModel>(
+      builder: (context, vm, _) {
+        final beats = vm.beats;
+        final genres = vm.genres;
+        final height = MediaQuery.of(context).size.height;
+
+        // 🎯 Empty state: beats listesi boşsa
+        if (beats.isEmpty) {
+          return Center(
+            child: Image.asset(
+              'assets/images/empty/traning_empty.png',
+              width: MediaQuery.of(context).size.width * 0.8,
+              fit: BoxFit.contain,
             ),
-          ),
+          );
+        }
 
-        const SizedBox(height: 10),
-
-        // — wrap this Consumer / ListView in Expanded —
-        Expanded(
-          child: Consumer<TrainingViewModel>(
-            builder: (context, vm, _) {
-              final beats = vm.beats;
-              return ListView.separated(
+        // ✅ Beats varsa: genre filtresi + beat listesi
+        return Column(
+          children: [
+            if (genres.isNotEmpty)
+              SizedBox(
+                height: height * 0.06,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: genres.length,
+                  itemBuilder: (_, i) {
+                    final isSelected = vm.selectedGenreIndex == i;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              isSelected ? Colors.grey[200] : Colors.grey,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () => vm.selectGenre(i),
+                        child: Text(
+                          genres[i].name ?? 'Unnamed',
+                          style: TextStyle(
+                            color: isSelected ? Colors.black : Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.separated(
                 padding: const EdgeInsets.all(16),
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemCount: beats.length,
@@ -124,7 +133,6 @@ class _TrainingBodyState extends State<_TrainingBody> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // 1) Drag handle
                                     Container(
                                       width: 40,
                                       height: 4,
@@ -132,12 +140,10 @@ class _TrainingBodyState extends State<_TrainingBody> {
                                         vertical: 8,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: theme.brightness ==
-                                                Brightness.dark
-                                            ? Colors.grey[
-                                                600] // koyu tema için biraz daha açık
-                                            : Colors.grey[
-                                                300], // açık tema için koyu tutam
+                                        color:
+                                            theme.brightness == Brightness.dark
+                                                ? Colors.grey[600]
+                                                : Colors.grey[300],
                                         borderRadius: BorderRadius.circular(2),
                                       ),
                                     ),
@@ -214,11 +220,11 @@ class _TrainingBodyState extends State<_TrainingBody> {
                     ),
                   );
                 },
-              );
-            },
-          ),
-        ),
-      ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
