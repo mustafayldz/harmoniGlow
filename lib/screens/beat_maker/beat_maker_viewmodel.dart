@@ -134,7 +134,7 @@ class BeatMakerViewmodel {
       beatId: _recordingId,
       title: result['title'],
       bpm: bpm,
-      genre: result['genre'] ?? 'unknown'.tr(),
+      genre: result['genre'],
       rhythm: '4/4',
       durationSeconds: duration,
       fileUrl: '',
@@ -162,6 +162,7 @@ class BeatMakerViewmodel {
 
     return await showDialog<Map<String, String>>(
       context: context,
+      barrierDismissible: false, // dışarı tıklanınca kapanmasın
       builder: (context) => MediaQuery.removeViewInsets(
         removeBottom: true,
         context: context,
@@ -177,8 +178,8 @@ class BeatMakerViewmodel {
                     errorText: titleError,
                   ),
                   onChanged: (value) {
-                    title = value;
-                    if (titleError != null && value.isNotEmpty) {
+                    title = value.trim();
+                    if (titleError != null && title.isNotEmpty) {
                       setState(() => titleError = null);
                     }
                   },
@@ -189,8 +190,8 @@ class BeatMakerViewmodel {
                     errorText: genreError,
                   ),
                   onChanged: (value) {
-                    genre = value;
-                    if (genreError != null && value.isNotEmpty) {
+                    genre = value.trim();
+                    if (genreError != null && genre.isNotEmpty) {
                       setState(() => genreError = null);
                     }
                   },
@@ -219,7 +220,10 @@ class BeatMakerViewmodel {
                   if (!hasError) {
                     Navigator.pop(
                       context,
-                      {'title'.tr(): title, 'genre'.tr(): genre},
+                      {
+                        'title': title,
+                        'genre': genre
+                      }, // Anahtarlar sabit olmalı
                     );
                   }
                 },

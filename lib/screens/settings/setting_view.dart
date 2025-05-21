@@ -183,8 +183,10 @@ class _SettingViewBody extends StatelessWidget {
                         DropdownButton<Locale>(
                           value: context.locale,
                           isExpanded: true,
-                          icon: const Icon(Icons.language,
-                              color: AppColors.settingsRed),
+                          icon: const Icon(
+                            Icons.language,
+                            color: AppColors.settingsRed,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                           onChanged: (Locale? newLocale) async {
                             if (newLocale != null) {

@@ -135,7 +135,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        beat.title ?? 'noTitle'.tr(),
+                                        beat.title!,
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -153,7 +153,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  '${beat.genre ?? 'unknownGenre'.tr()} • ${beat.durationSeconds ?? 0}s',
+                                  '${beat.genre} • ${beat.durationSeconds ?? 0}s',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 Padding(
