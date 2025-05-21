@@ -1,12 +1,13 @@
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
+import 'package:drumly/constants.dart';
 import 'package:drumly/screens/bluetooth/find_device_viewmodel.dart';
+import 'package:drumly/screens/home_view.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:drumly/constants.dart';
-import 'package:drumly/screens/home_view.dart';
-import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
+
 // import 'package:url_launcher/url_launcher.dart';
 
 class FindDevicesView extends StatefulWidget {

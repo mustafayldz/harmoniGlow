@@ -1,0 +1,50 @@
+{
+  "@@locale": "ru",
+  "@enterEmailToReset": {
+    "description": "Prompt to enter email before requesting password reset"
+  },
+  "@resetEmailFailed": {
+    "description": "Shown when sending the password reset email fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@resetEmailSent": {
+    "description": "Confirmation that password reset email was sent"
+  },
+  "@signInFailed": {
+    "description": "Shown when login fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@signUpFailed": {
+    "description": "Shown when registration fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "adjustCountdown": "Настроить отсчёт",
+  "appInformation": "Информация о приложении",
+  "classic": "Классическая",
+  "darkMode": "Тёмная тема",
+  "electronic": "Электронная",
+  "email": "Электронная почта",
+  "enterEmailToReset": "Please enter your email to reset password",
+  "forgotPassword": "Забыли пароль?",
+  "language": "Язык",
+  "logout": "Выйти",
+  "name": "Имя",
+  "password": "Пароль",
+  "resetEmailFailed": "Failed to send reset email: {error}",
+  "resetEmailSent": "Password reset email sent",
+  "settings": "Настройки",
+  "signIn": "Войти",
+  "signInFailed": "Sign in failed: {error}",
+  "signUp": "Зарегистрироваться",
+  "signUpFailed": "Sign up failed: {error}",
+  "training": "Тренировка",
+  "@training": {
+    "description": "Training screen title"
+  }
+}

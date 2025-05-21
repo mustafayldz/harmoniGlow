@@ -1,7 +1,9 @@
+import 'package:drumly/provider/app_provider.dart';
+import 'package:drumly/provider/locale_provider.dart';
 import 'package:drumly/screens/settings/settings_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:drumly/provider/app_provider.dart';
 
 class SettingView extends StatelessWidget {
   const SettingView({super.key});
@@ -25,10 +27,21 @@ class _SettingViewBody extends StatelessWidget {
     final vm = Provider.of<SettingViewModel>(context);
     final appProvider = vm.appProvider;
     final theme = Theme.of(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final currentLocale = localeProvider.locale?.languageCode ??
+        Localizations.localeOf(context).languageCode;
+
+    final supportedLanguages = {
+      'en': 'English',
+      'tr': 'Türkçe',
+      'ru': 'Русский',
+      'es': 'Español',
+      'fr': 'Français',
+    };
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(AppLocalizations.of(context)!.settings),
         centerTitle: true,
       ),
       body: Column(
@@ -40,8 +53,10 @@ class _SettingViewBody extends StatelessWidget {
                 // Dark Mode Toggle
                 _SettingCard(
                   child: SwitchListTile(
-                    title:
-                        const Text('Dark Mode', style: TextStyle(fontSize: 18)),
+                    title: Text(
+                      AppLocalizations.of(context)!.darkMode,
+                      style: const TextStyle(fontSize: 18),
+                    ),
                     secondary: Icon(
                       appProvider.isDarkMode
                           ? Icons.dark_mode
@@ -64,9 +79,9 @@ class _SettingViewBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Adjust Countdown',
-                          style: TextStyle(fontSize: 18),
+                        Text(
+                          AppLocalizations.of(context)!.adjustCountdown,
+                          style: const TextStyle(fontSize: 18),
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -115,14 +130,19 @@ class _SettingViewBody extends StatelessWidget {
                           fillColor: theme.colorScheme.primary,
                           color: theme.colorScheme.onSurface,
                           onPressed: (index) => vm.setDrumStyle(index == 1),
-                          children: const [
+                          children: [
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text('Electronic'),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                AppLocalizations.of(context)!.electronic,
+                              ),
                             ),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 12),
-                              child: Text('Classic'),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              child:
+                                  Text(AppLocalizations.of(context)!.classic),
                             ),
                           ],
                         ),
@@ -143,9 +163,9 @@ class _SettingViewBody extends StatelessWidget {
                 _SettingCard(
                   child: ListTile(
                     leading: const Icon(Icons.info_outline),
-                    title: const Text(
-                      'App Information',
-                      style: TextStyle(fontSize: 18),
+                    title: Text(
+                      AppLocalizations.of(context)!.appInformation,
+                      style: const TextStyle(fontSize: 18),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,6 +173,33 @@ class _SettingViewBody extends StatelessWidget {
                         Text('Version: ${vm.version}'),
                         Text('Build #: ${vm.buildNumber}'),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Language Selector
+                _SettingCard(
+                  child: ListTile(
+                    title: Text(AppLocalizations.of(context)!.language),
+                    subtitle: Text(
+                      supportedLanguages[currentLocale] ?? currentLocale,
+                    ),
+                    trailing: DropdownButton<String>(
+                      value: currentLocale,
+                      onChanged: (String? newLangCode) {
+                        if (newLangCode != null) {
+                          localeProvider.setLocale(Locale(newLangCode));
+                        }
+                      },
+                      items: supportedLanguages.entries
+                          .map(
+                            (entry) => DropdownMenuItem<String>(
+                              value: entry.key,
+                              child: Text(entry.value),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ),
                 ),
@@ -167,9 +214,9 @@ class _SettingViewBody extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.logout, color: Colors.white),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                label: Text(
+                  AppLocalizations.of(context)!.logout,
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -200,11 +247,7 @@ class _SettingCard extends StatelessWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
-      color: isDark
-          ? Colors
-              .grey[850] // Daha açık bir dark card (varsayılan 800'den açık)
-          : Colors
-              .grey[200], // Daha koyu bir light card (varsayılan white yerine)
+      color: isDark ? Colors.grey[850] : Colors.grey[200],
       child: child,
     );
   }

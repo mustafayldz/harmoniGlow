@@ -1,0 +1,50 @@
+{
+  "@@locale": "fr",
+  "@enterEmailToReset": {
+    "description": "Prompt to enter email before requesting password reset"
+  },
+  "@resetEmailFailed": {
+    "description": "Shown when sending the password reset email fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@resetEmailSent": {
+    "description": "Confirmation that password reset email was sent"
+  },
+  "@signInFailed": {
+    "description": "Shown when login fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "@signUpFailed": {
+    "description": "Shown when registration fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "adjustCountdown": "Ajuster le compte à rebours",
+  "appInformation": "Informations sur l'application",
+  "classic": "Classique",
+  "darkMode": "Mode sombre",
+  "electronic": "Électronique",
+  "email": "E-mail",
+  "enterEmailToReset": "Please enter your email to reset password",
+  "forgotPassword": "Mot de passe oublié ?",
+  "language": "Langue",
+  "logout": "Se déconnecter",
+  "name": "Nom",
+  "password": "Mot de passe",
+  "resetEmailFailed": "Failed to send reset email: {error}",
+  "resetEmailSent": "Password reset email sent",
+  "settings": "Paramètres",
+  "signIn": "Se connecter",
+  "signInFailed": "Sign in failed: {error}",
+  "signUp": "S'inscrire",
+  "signUpFailed": "Sign up failed: {error}",
+  "training": "Entraînement",
+  "@training": {
+    "description": "Training screen title"
+  }
+}

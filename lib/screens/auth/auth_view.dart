@@ -2,6 +2,7 @@ import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/auth/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class AuthView extends StatefulWidget {
   const AuthView({super.key});
@@ -77,7 +78,7 @@ class AuthViewBody extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'Sign In',
+                            AppLocalizations.of(context)!.signIn,
                             style: TextStyle(
                               color: viewModel.isLoginMode
                                   ? textColor
@@ -98,7 +99,7 @@ class AuthViewBody extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'Sign Up',
+                            AppLocalizations.of(context)!.signUp,
                             style: TextStyle(
                               color: !viewModel.isLoginMode
                                   ? textColor
@@ -116,7 +117,7 @@ class AuthViewBody extends StatelessWidget {
                       controller: viewModel.nameController,
                       style: TextStyle(color: textColor),
                       decoration: InputDecoration(
-                        labelText: 'Name',
+                        labelText: AppLocalizations.of(context)!.name,
                         filled: true,
                         fillColor: fieldColor,
                         border: OutlineInputBorder(
@@ -131,7 +132,7 @@ class AuthViewBody extends StatelessWidget {
                     keyboardType: TextInputType.emailAddress,
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
-                      labelText: 'Email',
+                      labelText: AppLocalizations.of(context)!.email,
                       filled: true,
                       fillColor: fieldColor,
                       border: OutlineInputBorder(
@@ -146,7 +147,7 @@ class AuthViewBody extends StatelessWidget {
                     obscureText: true,
                     style: TextStyle(color: textColor),
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: AppLocalizations.of(context)!.password,
                       filled: true,
                       fillColor: fieldColor,
                       border: OutlineInputBorder(
@@ -187,7 +188,11 @@ class AuthViewBody extends StatelessWidget {
                                     AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : Text(viewModel.isLoginMode ? 'Sign In' : 'Sign Up'),
+                          : Text(
+                              viewModel.isLoginMode
+                                  ? AppLocalizations.of(context)!.signIn
+                                  : AppLocalizations.of(context)!.signUp,
+                            ),
                     ),
                   ),
                   if (viewModel.isLoginMode) ...[
@@ -197,7 +202,7 @@ class AuthViewBody extends StatelessWidget {
                           ? null
                           : () => viewModel.resetPassword(context),
                       child: Text(
-                        'Forgot Password?',
+                        AppLocalizations.of(context)!.forgotPassword,
                         style: TextStyle(
                           decoration: TextDecoration.underline,
                           color: textColor,
