@@ -41,7 +41,7 @@ class DrumOverlayView extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: highlightColor.withOpacity(0.2),
+                          color: highlightColor.withAlpha(51),
                           border: Border.all(color: highlightColor, width: 2),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -111,7 +111,7 @@ class _HighlightBox extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.3),
+          color: color.withAlpha(77),
           shape: BoxShape.circle,
         ),
       );
