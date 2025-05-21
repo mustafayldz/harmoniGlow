@@ -1,4 +1,4 @@
-import 'package:drumly/screens/bluetooth/find_devices.dart';
+import 'package:drumly/screens/bluetooth/find_devices_view.dart';
 import 'package:drumly/screens/home_view.dart';
 import 'package:drumly/screens/auth/auth_view.dart';
 import 'package:drumly/screens/splash/splash.dart';
@@ -10,7 +10,7 @@ class AppRoute {
         '/auth': (context) => const AuthView(),
         '/home': (context) => const HomeView(),
         '/splash': (context) => const SplashView(),
-        '/findDevices': (context) => const FindDevicesScreen(),
+        '/findDevices': (context) => const FindDevicesView(),
       };
 
   static String getInitialRoute() => '/splash';

@@ -10,7 +10,16 @@ class Constants {
 }
 
 class AppColors {
-  static const Color primaryColor = Color(0xFF00c9f1);
+  static const emerald = Color(0xFF34D399);
+  static const rose = Color(0xFFFB7185);
+  static const indigo = Color(0xFF6366F1);
+  static const skyBlue = Color(0xFF38BDF8);
+  static const amber = Color(0xFFFBBF24);
+  static const teal = Color(0xFF14B8A6);
+  static const slate = Color(0xFF64748B);
+  static const warmGray = Color(0xFFE5E7EB);
+  static const darkGray = Color(0xFF1F2937);
+  static const white = Color(0xFFFFFFFF);
 }
 
 class ApiServiceUrl {

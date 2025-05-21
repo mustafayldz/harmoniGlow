@@ -23,6 +23,8 @@ class RequestHelper {
     final AppProvider appProvider =
         Provider.of<AppProvider>(context, listen: false);
 
+    appProvider.setLoading(true);
+
     final StorageService storageService = StorageService();
     String? token = await storageService.getFirebaseToken();
 
@@ -40,7 +42,6 @@ class RequestHelper {
 
     HttpClientResponse? response;
     try {
-      appProvider.setLoading(true);
       switch (requestType) {
         case RequestType.post:
           final request = await client.postUrl(Uri.parse(url));

@@ -2,7 +2,7 @@ import 'package:drumly/adMob/ad_view.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/screens/beat_maker/beat_maker_view.dart';
-import 'package:drumly/screens/bluetooth/find_devices.dart';
+import 'package:drumly/screens/bluetooth/find_devices_view.dart';
 import 'package:drumly/screens/my_beats/my_beats_view.dart';
 import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/my_drum/drum_model.dart';
@@ -122,7 +122,7 @@ class _HomeViewState extends State<HomeView> {
         behavior: HitTestBehavior.opaque,
         onTap: () => Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const FindDevicesScreen()),
+          MaterialPageRoute(builder: (_) => const FindDevicesView()),
         ),
         child: Container(
           margin: const EdgeInsets.all(16),
@@ -211,7 +211,7 @@ class _HomeViewState extends State<HomeView> {
       case 'songs':
         return const SongView(); // AdView burada DÖNÜLMEMELİ
       case 'my drum':
-        return isConnected ? const DrumAdjustment() : const FindDevicesScreen();
+        return isConnected ? const DrumAdjustment() : const FindDevicesView();
       case 'beat maker':
         return const BeatMakerView();
       case 'settings':

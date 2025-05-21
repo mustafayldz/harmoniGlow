@@ -23,6 +23,17 @@ void main() async {
   await Firebase.initializeApp();
   setupLocator();
 
+  final appDocDir = await getApplicationDocumentsDirectory();
+  Hive.init(appDocDir.path);
+
+  Hive.registerAdapter(BeatMakerModelAdapter());
+  Hive.registerAdapter(NoteModelAdapter());
+
+  await Hive.openLazyBox(Constants.lockSongBox);
+  await Hive.openLazyBox<BeatMakerModel>(Constants.beatRecordsBox);
+
+  await MobileAds.instance.initialize();
+
   runApp(
     MultiProvider(
       providers: [
@@ -42,19 +53,6 @@ void main() async {
       ),
     ),
   );
-
-  // Arka planda başlat
-  await Future.microtask(() async {
-    await MobileAds.instance.initialize();
-    final appDocDir = await getApplicationDocumentsDirectory();
-    Hive.init(appDocDir.path);
-
-    await Hive.openLazyBox(Constants.lockSongBox);
-    await Hive.openLazyBox<BeatMakerModel>(Constants.beatRecordsBox);
-
-    Hive.registerAdapter(BeatMakerModelAdapter());
-    Hive.registerAdapter(NoteModelAdapter());
-  });
 }
 
 class Drumly extends StatelessWidget {
