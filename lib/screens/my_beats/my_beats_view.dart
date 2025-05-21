@@ -85,7 +85,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
       child: Consumer<MyBeatsViewModel>(
         builder: (context, vm, _) => Scaffold(
           appBar: AppBar(
-            title: const Text('My Beats').tr(),
+            title: const Text('myBeats').tr(),
           ),
           body: vm.beats.isEmpty
               ? Center(
@@ -116,7 +116,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                         ),
                         onDismissed: (_) async {
                           await vm.deleteBeatAt(index);
-                          showClassicSnackBar(context, 'Beat deleted'.tr());
+                          showClassicSnackBar(context, 'beatDeleted'.tr());
                         },
                         child: Card(
                           elevation: 2,
@@ -135,7 +135,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        beat.title ?? 'No title'.tr(),
+                                        beat.title ?? 'noTitle'.tr(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -153,14 +153,15 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  '${beat.genre ?? 'Unknown genre'.tr()} • ${beat.durationSeconds ?? 0}s',
+                                  '${beat.genre ?? 'unknownGenre'.tr()} • ${beat.durationSeconds ?? 0}s',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
-                                    'Created: ${DateFormat.yMMMd().format(beat.createdAt)}'
-                                        .tr(),
+                                    'created:'.tr() +
+                                        DateFormat.yMMMd()
+                                            .format(beat.createdAt),
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall

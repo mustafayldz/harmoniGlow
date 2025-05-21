@@ -166,9 +166,7 @@ class _HomeViewState extends State<HomeView> {
               ),
               const SizedBox(width: 8),
               Text(
-                connected
-                    ? tr('connectedToDevice', args: [deviceName])
-                    : tr('disconnected'),
+                connected ? 'connectedToDevice'.tr() : 'disconnected'.tr(),
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: connected ? Colors.green[800] : Colors.red[800],

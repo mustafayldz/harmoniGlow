@@ -115,7 +115,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Already connected to ${device.advName}.'.tr(),
+                '${'alreadyConnectedTo'.tr()} ${device.advName}.',
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
@@ -124,7 +124,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
               ElevatedButton.icon(
                 onPressed: () => vm.disconnect(device),
                 icon: const Icon(Icons.restart_alt),
-                label: const Text('Disconnect and Scan Again').tr(),
+                label: const Text('disconnectAndScanAgain').tr(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
@@ -147,7 +147,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'No devices found. Please ensure Bluetooth is enabled.'.tr(),
+                'noDevicesFound'.tr(),
                 style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
@@ -156,7 +156,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
             ElevatedButton.icon(
               onPressed: vm.startScan,
               icon: const Icon(Icons.refresh),
-              label: const Text('Refresh').tr(),
+              label: const Text('refresh').tr(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 shape: RoundedRectangleBorder(
@@ -190,12 +190,10 @@ class _FindDevicesViewState extends State<FindDevicesView> {
               ),
             ),
             title: Text(
-              device.advName.isNotEmpty
-                  ? device.advName
-                  : 'Unknown Device'.tr(),
+              device.advName.isNotEmpty ? device.advName : 'unknownDevice'.tr(),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('Signal Strength: ${result.rssi} dBm'.tr()),
+            subtitle: Text('${'signalStrength'.tr()} ${result.rssi} dBm'),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -217,7 +215,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
                     ? Icons.bluetooth_disabled
                     : Icons.bluetooth_connected,
               ),
-              label: Text(isConnected ? 'Disconnect'.tr() : 'Connect'.tr()),
+              label: Text(isConnected ? 'disconnect'.tr() : 'connect'.tr()),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(

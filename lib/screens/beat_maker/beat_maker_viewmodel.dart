@@ -134,7 +134,7 @@ class BeatMakerViewmodel {
       beatId: _recordingId,
       title: result['title'],
       bpm: bpm,
-      genre: result['genre'],
+      genre: result['genre'] ?? 'unknown'.tr(),
       rhythm: '4/4',
       durationSeconds: duration,
       fileUrl: '',
@@ -157,44 +157,76 @@ class BeatMakerViewmodel {
   ) async {
     String title = '';
     String genre = '';
+    String? titleError;
+    String? genreError;
 
     return await showDialog<Map<String, String>>(
       context: context,
       builder: (context) => MediaQuery.removeViewInsets(
         removeBottom: true,
         context: context,
-        child: AlertDialog(
-          title: Text('saveBeat'.tr()),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'title'.tr()),
-                onChanged: (value) => title = value,
+        child: StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text('saveBeat'.tr()),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'title'.tr(),
+                    errorText: titleError,
+                  ),
+                  onChanged: (value) {
+                    title = value;
+                    if (titleError != null && value.isNotEmpty) {
+                      setState(() => titleError = null);
+                    }
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'genre'.tr(),
+                    errorText: genreError,
+                  ),
+                  onChanged: (value) {
+                    genre = value;
+                    if (genreError != null && value.isNotEmpty) {
+                      setState(() => genreError = null);
+                    }
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('cancel'.tr()),
               ),
-              TextField(
-                decoration: InputDecoration(labelText: 'genre'.tr()),
-                onChanged: (value) => genre = value,
+              ElevatedButton(
+                onPressed: () {
+                  bool hasError = false;
+
+                  if (title.isEmpty) {
+                    setState(() => titleError = 'titleCantbeEmpty'.tr());
+                    hasError = true;
+                  }
+
+                  if (genre.isEmpty) {
+                    setState(() => genreError = 'genreCantbeEmpty'.tr());
+                    hasError = true;
+                  }
+
+                  if (!hasError) {
+                    Navigator.pop(
+                      context,
+                      {'title'.tr(): title, 'genre'.tr(): genre},
+                    );
+                  }
+                },
+                child: Text('save'.tr()),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('cancel'.tr()),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (title.isNotEmpty && genre.isNotEmpty) {
-                  Navigator.pop(
-                    context,
-                    {'title'.tr(): title, 'genre'.tr(): genre},
-                  );
-                }
-              },
-              child: Text('save'.tr()),
-            ),
-          ],
         ),
       ),
     );

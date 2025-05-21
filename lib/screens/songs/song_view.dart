@@ -166,7 +166,7 @@ class _SongViewState extends State<SongView> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${song.artist ?? 'Unknown'.tr()} – ${song.title ?? '—'}',
+                                          '${song.artist ?? 'unknown'.tr()} – ${song.title ?? '—'}',
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
