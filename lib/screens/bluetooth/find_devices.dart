@@ -6,7 +6,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_event.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/services/local_service.dart';
-import 'package:drumly/screens/home_page.dart';
+import 'package:drumly/screens/home_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FindDevicesScreen extends StatefulWidget {
@@ -70,7 +70,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const HomePage(),
+                        builder: (_) => const HomeView(),
                       ),
                       (route) => false,
                     );
@@ -354,7 +354,7 @@ class FindDevicesScreenState extends State<FindDevicesScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const HomePage(),
+        builder: (context) => const HomeView(),
       ),
     );
   }

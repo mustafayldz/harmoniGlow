@@ -40,7 +40,7 @@ class _SplashViewState extends State<SplashView>
       await Navigator.pushReplacementNamed(context, '/home');
     } else {
       if (!mounted) return;
-      await Navigator.pushReplacementNamed(context, '/login');
+      await Navigator.pushReplacementNamed(context, '/auth');
     }
   }
 

@@ -15,7 +15,7 @@ String capitalize(String input) {
 
 /// Checks if a given string is a valid email address.
 bool isValidEmail(String email) {
-  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+  final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   return emailRegex.hasMatch(email);
 }
 
@@ -156,6 +156,58 @@ void showClassicSnackBar(BuildContext context, String message) {
       ),
     ),
   );
+}
+
+void showTopSnackBar(BuildContext context, String message) {
+  final overlay = Overlay.of(context);
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  late OverlayEntry entry;
+
+  entry = OverlayEntry(
+    builder: (context) => Positioned(
+      top: MediaQuery.of(context).padding.top + 16,
+      left: 16,
+      right: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: AnimatedOpacity(
+          opacity: 1,
+          duration: const Duration(milliseconds: 300),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey[850] : Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // Ekle
+  overlay.insert(entry);
+
+  // 3 saniye sonra kaldır
+  Future.delayed(const Duration(seconds: 3), () {
+    entry.remove();
+  });
 }
 
 /// Return drum part id with drum part name

@@ -213,7 +213,7 @@ class SettingViewState extends State<SettingView> {
                   await storageService.clearSavedDeviceId();
                   await storageService.clearFirebaseToken();
                   await Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/login',
+                    '/auth',
                     (route) => false,
                   );
                 },
