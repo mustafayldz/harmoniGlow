@@ -3,8 +3,8 @@ import 'package:drumly/screens/my_beats/my_beats_viewmodel.dart';
 import 'package:drumly/screens/player/player_view_my_beat.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class MyBeatsView extends StatefulWidget {
@@ -85,7 +85,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
       child: Consumer<MyBeatsViewModel>(
         builder: (context, vm, _) => Scaffold(
           appBar: AppBar(
-            title: const Text('My Beats'),
+            title: const Text('My Beats').tr(),
           ),
           body: vm.beats.isEmpty
               ? Center(
@@ -116,7 +116,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                         ),
                         onDismissed: (_) async {
                           await vm.deleteBeatAt(index);
-                          showClassicSnackBar(context, 'Beat deleted');
+                          showClassicSnackBar(context, 'Beat deleted'.tr());
                         },
                         child: Card(
                           elevation: 2,
@@ -135,7 +135,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        beat.title ?? 'No title',
+                                        beat.title ?? 'No title'.tr(),
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -153,13 +153,14 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  '${beat.genre ?? 'Unknown genre'} • ${beat.durationSeconds ?? 0}s',
+                                  '${beat.genre ?? 'Unknown genre'.tr()} • ${beat.durationSeconds ?? 0}s',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
-                                    'Created: ${DateFormat.yMMMd().format(beat.createdAt)}',
+                                    'Created: ${DateFormat.yMMMd().format(beat.createdAt)}'
+                                        .tr(),
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall

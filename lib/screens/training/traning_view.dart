@@ -3,6 +3,7 @@ import 'package:drumly/screens/player/player_view.dart';
 import 'package:drumly/screens/training/traning_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,7 +23,7 @@ class _TrainingViewState extends State<TrainingView> {
         child: Consumer<TrainingViewModel>(
           builder: (context, vm, _) => Scaffold(
             appBar: AppBar(
-              title: const Text('Training'),
+              title: const Text('Training').tr(),
               centerTitle: true,
             ),
             body: const _TrainingBody(),
@@ -79,7 +80,7 @@ class _TrainingBody extends StatelessWidget {
                     ),
                     onPressed: () => vm.selectGenre(i),
                     child: Text(
-                      genres[i].name ?? 'Unnamed',
+                      genres[i].name ?? 'Unnamed'.tr(),
                       style: TextStyle(
                         color: isSelected ? Colors.black : Colors.white,
                       ),
@@ -174,7 +175,7 @@ class _TrainingBody extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                beat.title ?? 'Unknown Title',
+                                beat.title ?? 'Unknown Title'.tr(),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

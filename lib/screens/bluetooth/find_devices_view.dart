@@ -4,6 +4,7 @@ import 'package:drumly/constants.dart';
 import 'package:drumly/screens/bluetooth/find_device_viewmodel.dart';
 import 'package:drumly/screens/home_view.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -114,7 +115,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Already connected to ${device.advName}.',
+                'Already connected to ${device.advName}.'.tr(),
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
@@ -123,7 +124,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
               ElevatedButton.icon(
                 onPressed: () => vm.disconnect(device),
                 icon: const Icon(Icons.restart_alt),
-                label: const Text('Disconnect and Scan Again'),
+                label: const Text('Disconnect and Scan Again').tr(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
@@ -146,7 +147,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                'No devices found. Please ensure Bluetooth is enabled.',
+                'No devices found. Please ensure Bluetooth is enabled.'.tr(),
                 style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
@@ -155,7 +156,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
             ElevatedButton.icon(
               onPressed: vm.startScan,
               icon: const Icon(Icons.refresh),
-              label: const Text('Refresh'),
+              label: const Text('Refresh').tr(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 shape: RoundedRectangleBorder(
@@ -189,10 +190,12 @@ class _FindDevicesViewState extends State<FindDevicesView> {
               ),
             ),
             title: Text(
-              device.advName.isNotEmpty ? device.advName : 'Unknown Device',
+              device.advName.isNotEmpty
+                  ? device.advName
+                  : 'Unknown Device'.tr(),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            subtitle: Text('Signal Strength: ${result.rssi} dBm'),
+            subtitle: Text('Signal Strength: ${result.rssi} dBm'.tr()),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -214,7 +217,7 @@ class _FindDevicesViewState extends State<FindDevicesView> {
                     ? Icons.bluetooth_disabled
                     : Icons.bluetooth_connected,
               ),
-              label: Text(isConnected ? 'Disconnect' : 'Connect'),
+              label: Text(isConnected ? 'Disconnect'.tr() : 'Connect'.tr()),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(

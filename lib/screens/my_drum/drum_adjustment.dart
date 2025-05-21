@@ -5,6 +5,7 @@ import 'package:drumly/screens/my_drum/drum_painter.dart';
 import 'package:drumly/screens/my_drum/drum_painter_classic.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -67,7 +68,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text('Settings').tr(),
       ),
       body: GestureDetector(
         onTap: () => setState(() {
@@ -203,9 +204,8 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                       onPressed: () {
                                         sendLightsIndividually(bluetoothBloc);
                                       },
-                                      child: const Text(
-                                        'Test individual LEDs',
-                                      ),
+                                      child: const Text('Test individual LEDs')
+                                          .tr(),
                                     ),
                                   ),
                                   SizedBox(
@@ -217,7 +217,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                           2,
                                         );
                                       },
-                                      child: const Text('Test (2 LEDs)'),
+                                      child: const Text('Test (2 LEDs)').tr(),
                                     ),
                                   ),
                                   SizedBox(
@@ -228,9 +228,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                           bluetoothBloc,
                                         );
                                       },
-                                      child: const Text(
-                                        'Rainbow',
-                                      ),
+                                      child: const Text('Rainbow').tr(),
                                     ),
                                   ),
                                   SizedBox(
@@ -239,14 +237,11 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                       onPressed: () {
                                         turnOffAllLights(bluetoothBloc);
                                       },
-                                      child: const Text(
-                                        'Turn Off All Lights',
-                                      ),
+                                      child: const Text('Turn Off All Lights')
+                                          .tr(),
                                     ),
                                   ),
-                                  const Text(
-                                    'Brightness Levels',
-                                  ),
+                                  const Text('Brightness Levels').tr(),
                                   Row(
                                     spacing: 5,
                                     children: [

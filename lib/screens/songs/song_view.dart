@@ -5,6 +5,7 @@ import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
@@ -43,7 +44,7 @@ class _SongViewState extends State<SongView> {
       value: vm,
       child: Consumer<SongViewModel>(
         builder: (context, vm, _) => Scaffold(
-          appBar: AppBar(title: const Text('Songs')),
+          appBar: AppBar(title: const Text('Songs').tr()),
           body: vm.songList.isEmpty
               ? Center(
                   child: Image.asset(
@@ -165,7 +166,7 @@ class _SongViewState extends State<SongView> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${song.artist ?? 'Unknown'} – ${song.title ?? '—'}',
+                                          '${song.artist ?? 'Unknown'.tr()} – ${song.title ?? '—'}',
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,

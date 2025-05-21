@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:drumly/adMob/ad_service_reward.dart';
 import 'package:drumly/hive/db_service.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -52,7 +53,8 @@ void showAdConsentSnackBar(BuildContext context, String songId) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'To play this song for three hours, you first need to watch a support ad.',
+            'To play this song for three hours, you first need to watch a support ad.'
+                .tr(),
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black,
             ),
@@ -67,7 +69,7 @@ void showAdConsentSnackBar(BuildContext context, String songId) {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                 },
                 style: TextButton.styleFrom(),
-                child: const Text('Decline'),
+                child: const Text('Decline').tr(),
               ),
               TextButton(
                 onPressed: () async {
@@ -80,16 +82,19 @@ void showAdConsentSnackBar(BuildContext context, String songId) {
                   if (earned) {
                     // Ödülü ver: 2 saatlik kilidi aç
                     await addRecord(songId); // kayıt ekle
-                    showClassicSnackBar(context, 'Access opened for 2 hours.');
+                    showClassicSnackBar(
+                      context,
+                      'Access opened for 2 hours.'.tr(),
+                    );
                   } else {
                     showClassicSnackBar(
                       context,
-                      'Ad was not watched or an error occurred.',
+                      'Ad was not watched or an error occurred.'.tr(),
                     );
                   }
                 },
                 style: TextButton.styleFrom(),
-                child: const Text('Accept'),
+                child: const Text('Accept').tr(),
               ),
             ],
           ),
