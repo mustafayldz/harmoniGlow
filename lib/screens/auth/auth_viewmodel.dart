@@ -1,6 +1,7 @@
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/shared/common_functions.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -109,15 +110,18 @@ class AuthViewModel extends ChangeNotifier {
     final email = emailController.text.trim();
 
     if (email.isEmpty) {
-      showTopSnackBar(context, 'Please enter your email to reset password');
+      showTopSnackBar(
+        context,
+        'resetPasswordInstruction'.tr(),
+      );
       return;
     }
 
     try {
       await _auth.sendPasswordResetEmail(email: email);
-      showTopSnackBar(context, 'Password reset email sent');
+      showTopSnackBar(context, 'resetPasswordSuccess'.tr());
     } catch (e) {
-      showTopSnackBar(context, 'Failed to send reset email: $e');
+      showTopSnackBar(context, '${'resetPasswordFailure'.tr()}: $e');
     }
   }
 

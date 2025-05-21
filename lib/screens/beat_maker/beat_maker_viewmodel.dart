@@ -7,6 +7,7 @@ import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
@@ -145,7 +146,10 @@ class BeatMakerViewmodel {
     await saveBeatMakerModel(beat);
     _isRecording = false;
 
-    showClassicSnackBar(context, 'Beat saved as ${beat.title} ($bpm BPM)');
+    showClassicSnackBar(
+      context,
+      '${'beatSavedAs'.tr()}${beat.title} ($bpm BPM)',
+    );
   }
 
   Future<Map<String, String>?> _askForTitleAndGenre(
@@ -160,16 +164,16 @@ class BeatMakerViewmodel {
         removeBottom: true,
         context: context,
         child: AlertDialog(
-          title: const Text('Save Beat'),
+          title: Text('saveBeat'.tr()),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: 'title'.tr()),
                 onChanged: (value) => title = value,
               ),
               TextField(
-                decoration: const InputDecoration(labelText: 'Genre'),
+                decoration: InputDecoration(labelText: 'genre'.tr()),
                 onChanged: (value) => genre = value,
               ),
             ],
@@ -177,15 +181,18 @@ class BeatMakerViewmodel {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text('cancel'.tr()),
             ),
             ElevatedButton(
               onPressed: () {
                 if (title.isNotEmpty && genre.isNotEmpty) {
-                  Navigator.pop(context, {'title': title, 'genre': genre});
+                  Navigator.pop(
+                    context,
+                    {'title'.tr(): title, 'genre'.tr(): genre},
+                  );
                 }
               },
-              child: const Text('Save'),
+              child: Text('save'.tr()),
             ),
           ],
         ),

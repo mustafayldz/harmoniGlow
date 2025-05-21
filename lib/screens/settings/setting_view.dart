@@ -1,8 +1,8 @@
 import 'package:drumly/provider/app_provider.dart';
-import 'package:drumly/provider/locale_provider.dart';
+import 'package:drumly/screens/home_view.dart';
 import 'package:drumly/screens/settings/settings_viewmodel.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 
 class SettingView extends StatelessWidget {
@@ -27,21 +27,10 @@ class _SettingViewBody extends StatelessWidget {
     final vm = Provider.of<SettingViewModel>(context);
     final appProvider = vm.appProvider;
     final theme = Theme.of(context);
-    final localeProvider = Provider.of<LocaleProvider>(context);
-    final currentLocale = localeProvider.locale?.languageCode ??
-        Localizations.localeOf(context).languageCode;
-
-    final supportedLanguages = {
-      'en': 'English',
-      'tr': 'Türkçe',
-      'ru': 'Русский',
-      'es': 'Español',
-      'fr': 'Français',
-    };
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settings),
+        title: Text('settings'.tr()),
         centerTitle: true,
       ),
       body: Column(
@@ -54,7 +43,7 @@ class _SettingViewBody extends StatelessWidget {
                 _SettingCard(
                   child: SwitchListTile(
                     title: Text(
-                      AppLocalizations.of(context)!.darkMode,
+                      'darkMode'.tr(),
                       style: const TextStyle(fontSize: 18),
                     ),
                     secondary: Icon(
@@ -80,7 +69,7 @@ class _SettingViewBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          AppLocalizations.of(context)!.adjustCountdown,
+                          'adjustCountdown'.tr(),
                           style: const TextStyle(fontSize: 18),
                         ),
                         const SizedBox(height: 8),
@@ -134,15 +123,12 @@ class _SettingViewBody extends StatelessWidget {
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                AppLocalizations.of(context)!.electronic,
-                              ),
+                              child: Text('electronic'.tr()),
                             ),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12),
-                              child:
-                                  Text(AppLocalizations.of(context)!.classic),
+                              child: Text('classic'.tr()),
                             ),
                           ],
                         ),
@@ -164,7 +150,7 @@ class _SettingViewBody extends StatelessWidget {
                   child: ListTile(
                     leading: const Icon(Icons.info_outline),
                     title: Text(
-                      AppLocalizations.of(context)!.appInformation,
+                      'appInformation'.tr(),
                       style: const TextStyle(fontSize: 18),
                     ),
                     subtitle: Column(
@@ -180,26 +166,59 @@ class _SettingViewBody extends StatelessWidget {
 
                 // Language Selector
                 _SettingCard(
-                  child: ListTile(
-                    title: Text(AppLocalizations.of(context)!.language),
-                    subtitle: Text(
-                      supportedLanguages[currentLocale] ?? currentLocale,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
                     ),
-                    trailing: DropdownButton<String>(
-                      value: currentLocale,
-                      onChanged: (String? newLangCode) {
-                        if (newLangCode != null) {
-                          localeProvider.setLocale(Locale(newLangCode));
-                        }
-                      },
-                      items: supportedLanguages.entries
-                          .map(
-                            (entry) => DropdownMenuItem<String>(
-                              value: entry.key,
-                              child: Text(entry.value),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'language'.tr(),
+                          style: const TextStyle(fontSize: 18),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButton<Locale>(
+                          value: context.locale,
+                          isExpanded: true,
+                          icon: const Icon(Icons.language),
+                          borderRadius: BorderRadius.circular(8),
+                          onChanged: (Locale? newLocale) async {
+                            if (newLocale != null) {
+                              await context.setLocale(newLocale);
+                              await Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const HomeView(),
+                                ),
+                              );
+                            }
+                          },
+                          items: const [
+                            DropdownMenuItem(
+                              value: Locale('en'),
+                              child: Text('English'),
                             ),
-                          )
-                          .toList(),
+                            DropdownMenuItem(
+                              value: Locale('tr'),
+                              child: Text('Türkçe'),
+                            ),
+                            DropdownMenuItem(
+                              value: Locale('es'),
+                              child: Text('Español'),
+                            ),
+                            DropdownMenuItem(
+                              value: Locale('fr'),
+                              child: Text('Français'),
+                            ),
+                            DropdownMenuItem(
+                              value: Locale('ru'),
+                              child: Text('Русский'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -215,7 +234,7 @@ class _SettingViewBody extends StatelessWidget {
               child: ElevatedButton.icon(
                 icon: const Icon(Icons.logout, color: Colors.white),
                 label: Text(
-                  AppLocalizations.of(context)!.logout,
+                  'logout'.tr(),
                   style: const TextStyle(fontSize: 16, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(

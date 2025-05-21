@@ -10,6 +10,7 @@ import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,10 +23,60 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  List<_CardData> _cards = [];
+
   @override
   void initState() {
     super.initState();
     _checkLocalStorage();
+    _initCards();
+  }
+
+  void _initCards() {
+    _cards = [
+      _CardData(
+        key: 'training',
+        title: 'training'.tr(),
+        subtitle: 'trainWithMusic'.tr(),
+        color: Colors.greenAccent,
+        emoji: '🎯',
+      ),
+      _CardData(
+        key: 'songs',
+        title: 'songs'.tr(),
+        subtitle: 'discoverSongs'.tr(),
+        color: Colors.pinkAccent,
+        emoji: '🎤',
+      ),
+      _CardData(
+        key: 'my beats',
+        title: 'myBeats'.tr(),
+        subtitle: 'listenToBeats'.tr(),
+        color: Colors.purpleAccent,
+        emoji: '🎼',
+      ),
+      _CardData(
+        key: 'my drum',
+        title: 'myDrum'.tr(),
+        subtitle: 'adjustDrum'.tr(),
+        color: Colors.blueAccent,
+        emoji: '🥁',
+      ),
+      _CardData(
+        key: 'beat maker',
+        title: 'beatMaker'.tr(),
+        subtitle: 'createBeats'.tr(),
+        color: Colors.red,
+        emoji: '🎛️',
+      ),
+      _CardData(
+        key: 'settings',
+        title: 'settings'.tr(),
+        subtitle: '',
+        color: Colors.teal,
+        emoji: '⚙️',
+      ),
+    ];
   }
 
   Future<void> _checkLocalStorage() async {
@@ -39,45 +90,14 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  final List<_CardData> _cards = const [
-    _CardData(
-      title: 'Training',
-      subtitle: 'Train with your own music',
-      color: Colors.greenAccent,
-      emoji: '🎯',
-    ),
-    _CardData(
-      title: 'Songs',
-      subtitle: 'Discover and train with your favorite songs',
-      color: Colors.pinkAccent,
-      emoji: '🎤',
-    ),
-    _CardData(
-      title: 'My Beats',
-      subtitle: 'Listen to your own beats',
-      color: Colors.purpleAccent,
-      emoji: '🎼',
-    ),
-    _CardData(
-      title: 'My Drum',
-      subtitle: 'Adjust your drum settings',
-      color: Colors.blueAccent,
-      emoji: '🥁',
-    ),
-    _CardData(
-      title: 'Beat Maker',
-      subtitle: 'Create your own beats',
-      color: Colors.red,
-      emoji: '🎛️',
-    ),
-    _CardData(title: 'Settings', subtitle: '', color: Colors.teal, emoji: '⚙️'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
     final deviceName = state.connectedDevice?.advName ?? 'Unknown Device';
+
+    // Rebuild localized cards when language changes
+    _initCards();
 
     return Scaffold(
       body: SafeArea(
@@ -93,7 +113,7 @@ class _HomeViewState extends State<HomeView> {
                 itemCount: _cards.length,
                 itemBuilder: (context, index) {
                   final card = _cards[index];
-                  final destination = _getDestination(card.title, isConnected);
+                  final destination = _getDestination(card.key, isConnected);
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16),
@@ -101,7 +121,7 @@ class _HomeViewState extends State<HomeView> {
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _handleTap(
                         context,
-                        card.title,
+                        card.key,
                         isConnected,
                         destination,
                       ),
@@ -204,12 +224,12 @@ class _HomeViewState extends State<HomeView> {
         ),
       );
 
-  Widget _getDestination(String title, bool isConnected) {
-    switch (title.trim().toLowerCase()) {
+  Widget _getDestination(String key, bool isConnected) {
+    switch (key) {
       case 'training':
         return const TrainingView();
       case 'songs':
-        return const SongView(); // AdView burada DÖNÜLMEMELİ
+        return const SongView();
       case 'my drum':
         return isConnected ? const DrumAdjustment() : const FindDevicesView();
       case 'beat maker':
@@ -225,18 +245,15 @@ class _HomeViewState extends State<HomeView> {
 
   Future<void> _handleTap(
     BuildContext context,
-    String title,
+    String key,
     bool isConnected,
     Widget destination,
   ) async {
     try {
-      final event = title.toLowerCase().replaceAll(' ', '_');
-      await FirebaseAnalytics.instance.logEvent(name: event);
-
-      final lowercaseTitle = title.toLowerCase();
+      await FirebaseAnalytics.instance.logEvent(name: key.replaceAll(' ', '_'));
       if (!context.mounted) return;
 
-      if (!isConnected && lowercaseTitle == 'songs') {
+      if (!isConnected && key == 'songs') {
         await Navigator.push(
           context,
           MaterialPageRoute(
@@ -265,11 +282,14 @@ class _HomeViewState extends State<HomeView> {
 
 class _CardData {
   const _CardData({
+    required this.key,
     required this.title,
     required this.subtitle,
     required this.color,
     required this.emoji,
   });
+
+  final String key;
   final String title;
   final String subtitle;
   final Color color;

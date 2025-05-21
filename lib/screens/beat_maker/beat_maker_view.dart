@@ -1,5 +1,6 @@
 import 'package:drumly/screens/beat_maker/beat_maker_viewmodel.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -97,7 +98,7 @@ class _BeatMakerViewState extends State<BeatMakerView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Make your own beat'),
+        title: Text('makeYourOwnBeat'.tr()),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
@@ -130,7 +131,7 @@ class _BeatMakerViewState extends State<BeatMakerView> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      isRecording ? 'Stop' : 'Record',
+                      isRecording ? 'stop'.tr() : 'record'.tr(),
                       style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                   ],
@@ -143,10 +144,11 @@ class _BeatMakerViewState extends State<BeatMakerView> {
       body: OrientationBuilder(
         builder: (context, orientation) {
           if (orientation == Orientation.portrait) {
-            return const Center(
+            return Center(
               child: Text(
-                'Lütfen ekranı yatay konuma çevirin 🔄',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                'rotateScreen'.tr(),
+                style:
+                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
             );
