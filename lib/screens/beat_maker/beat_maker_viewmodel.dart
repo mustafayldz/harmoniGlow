@@ -1,31 +1,19 @@
 import 'dart:async';
-
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/hive/db_service.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/hive/models/note_model.dart';
+import 'package:drumly/screens/beat_maker/drum_player_manager.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:just_audio/just_audio.dart';
 
 class BeatMakerViewmodel {
   final StorageService storageService = StorageService();
-  final Map<String, AudioPlayer> _players = {};
-  final Map<String, String> drumSounds = {
-    'Hi-Hat': 'assets/sounds/open_hihat.wav',
-    'Hi-Hat Closed': 'assets/sounds/closed_hihat.wav',
-    'Crash Cymbal': 'assets/sounds/crash_2.wav',
-    'Ride Cymbal': 'assets/sounds/ride_1.wav',
-    'Snare Drum': 'assets/sounds/snare_hard.wav',
-    'Tom 1': 'assets/sounds/tom_1.wav',
-    'Tom 2': 'assets/sounds/tom_2.wav',
-    'Tom Floor': 'assets/sounds/tom_floor.wav',
-    'Kick Drum': 'assets/sounds/kick.wav',
-  };
+  final DrumPlayerManager drumManager = DrumPlayerManager(); // Singleton
 
   bool _isRecording = false;
   String? _recordingId;
@@ -36,78 +24,82 @@ class BeatMakerViewmodel {
   DateTime? _lastTapTime;
   Timer? _recordTimer;
 
+  bool _disposed = false;
+
   Future<void> playSound(BuildContext context, String drumPart) async {
-    final path = drumSounds[drumPart];
-    if (path == null) return;
+    if (_disposed || drumPart.trim().isEmpty) return;
 
-    final player = _players.putIfAbsent(drumPart, () => AudioPlayer());
+    drumManager.reinitialize();
 
-    try {
-      await player.stop();
-      await player.setAsset(path);
-      await player.play();
+    await drumManager.play(drumPart);
+    print('▶️ Played: $drumPart');
 
-      final now = DateTime.now();
+    final now = DateTime.now();
+    if (_lastTapTime == null ||
+        now.difference(_lastTapTime!).inMilliseconds > 120) {
+      _pendingDrumParts.clear();
+    }
 
-      // Eğer 120ms içinde değilsek, önceki grup kapanır
-      if (_lastTapTime == null ||
-          now.difference(_lastTapTime!).inMilliseconds > 120) {
-        _pendingDrumParts.clear();
-      }
+    _lastTapTime = now;
+    _pendingDrumParts.add(drumPart);
 
-      _lastTapTime = now;
-      _pendingDrumParts.add(drumPart);
+    _recordTimer?.cancel();
+    _recordTimer = Timer(const Duration(milliseconds: 120), () async {
+      final ledList = <int>[];
+      final rgbList = <List<int>>[];
 
-      // Timer'ı her seferinde sıfırla, böylece en son vuruştan sonra 120ms bekler
-      _recordTimer?.cancel();
-      _recordTimer = Timer(const Duration(milliseconds: 120), () async {
-        // Tüm toplanan drumPart'lar için LED ve RGB bilgilerini al
-        final ledList = <int>[];
-        final rgbList = <List<int>>[];
-
-        for (final part in _pendingDrumParts.toSet()) {
+      for (final part in _pendingDrumParts.toSet()) {
+        try {
           final model =
               await StorageService.getDrumPart(getDrumPartId(part).toString());
           if (model?.led != null && model?.rgb != null) {
             ledList.add(model!.led!);
             rgbList.add(model.rgb!);
           }
+        } catch (e) {
+          debugPrint('⚠️ Error fetching drum part model for $part: $e');
         }
+      }
 
-        // 🔥 Işıkları aynı anda yak
-        final flatData = <int>[];
-        for (int i = 0; i < ledList.length; i++) {
-          flatData.add(ledList[i]); // LED numarası
-          flatData.addAll(rgbList[i]); // RGB (3 değer)
+      final flatData = <int>[];
+      for (int i = 0; i < ledList.length; i++) {
+        flatData.add(ledList[i]);
+        flatData.addAll(rgbList[i]);
+      }
+
+      try {
+        final bloc = context.read<BluetoothBloc>();
+        if (bloc.characteristic == null) {
+          debugPrint('❌ Error: No connected device or characteristic.');
+        } else {
+          await SendData().sendHexData(bloc, flatData);
         }
-        await SendData().sendHexData(context.read<BluetoothBloc>(), flatData);
+      } catch (e) {
+        debugPrint('❌ Bluetooth send error: $e');
+      }
 
-        // 🎵 Eğer kayıt açıksa, NoteModel olarak kaydet
-        if (_isRecording && _recordingStartTime != null) {
-          final ms = now.difference(_recordingStartTime!).inMilliseconds;
+      if (_isRecording && _recordingStartTime != null) {
+        final ms = now.difference(_recordingStartTime!).inMilliseconds;
+        _recordedNotes.add(
+          NoteModel(
+            i: _recordedNotes.length + 1,
+            sM: ms,
+            eM: ms + 300,
+            led: ledList,
+          ),
+        );
+      }
 
-          _recordedNotes.add(
-            NoteModel(
-              i: _recordedNotes.length + 1,
-              sM: ms,
-              eM: ms + 300,
-              led: ledList,
-            ),
-          );
-        }
-
-        _pendingDrumParts.clear(); // işlem bitti, sıradaki grup için hazırlık
-      });
-    } catch (e) {
-      debugPrint('Error playing $drumPart: $e');
-    }
+      _pendingDrumParts.clear();
+    });
   }
 
   Future<void> disposeAll() async {
-    for (final player in _players.values) {
-      await player.dispose();
-    }
-    _players.clear();
+    _disposed = true;
+    _recordTimer?.cancel();
+    _recordTimer = null;
+
+    await drumManager.dispose(); // 🎯 Yeni eklenen: tüm player'ları temizle
   }
 
   Future<void> startRecording() async {
@@ -120,13 +112,17 @@ class BeatMakerViewmodel {
   Future<void> stopRecording(BuildContext context) async {
     if (!_isRecording || _recordingStartTime == null) return;
 
+    if (_recordedNotes.isEmpty) {
+      showClassicSnackBar(context, 'No notes recorded');
+      return;
+    }
+
     final endTime = DateTime.now();
     final duration = endTime.difference(_recordingStartTime!).inSeconds;
 
     final result = await _askForTitleAndGenre(context);
     if (result == null) return;
 
-    // 🎵 BPM hesapla: (noteCount / duration) * 60
     final int noteCount = _recordedNotes.length;
     final int bpm = duration > 0 ? ((noteCount / duration) * 60).round() : 120;
 
@@ -143,7 +139,12 @@ class BeatMakerViewmodel {
       notes: _recordedNotes,
     );
 
-    await saveBeatMakerModel(beat);
+    try {
+      await saveBeatMakerModel(beat);
+    } catch (e) {
+      debugPrint('❌ Error saving beat model: $e');
+    }
+
     _isRecording = false;
 
     showClassicSnackBar(
@@ -162,7 +163,7 @@ class BeatMakerViewmodel {
 
     return await showDialog<Map<String, String>>(
       context: context,
-      barrierDismissible: false, // dışarı tıklanınca kapanmasın
+      barrierDismissible: false,
       builder: (context) => MediaQuery.removeViewInsets(
         removeBottom: true,
         context: context,
@@ -206,24 +207,21 @@ class BeatMakerViewmodel {
               ElevatedButton(
                 onPressed: () {
                   bool hasError = false;
-
                   if (title.isEmpty) {
                     setState(() => titleError = 'titleCantbeEmpty'.tr());
                     hasError = true;
                   }
-
                   if (genre.isEmpty) {
                     setState(() => genreError = 'genreCantbeEmpty'.tr());
                     hasError = true;
                   }
-
                   if (!hasError) {
                     Navigator.pop(
                       context,
                       {
                         'title': title,
-                        'genre': genre
-                      }, // Anahtarlar sabit olmalı
+                        'genre': genre,
+                      },
                     );
                   }
                 },

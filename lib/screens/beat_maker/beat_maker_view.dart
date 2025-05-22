@@ -13,7 +13,6 @@ class BeatMakerView extends StatefulWidget {
 
 class _BeatMakerViewState extends State<BeatMakerView> {
   late final BeatMakerViewmodel vm;
-
   bool isRecording = false;
 
   final List<Map<String, dynamic>> drumPieces = [
@@ -72,6 +71,7 @@ class _BeatMakerViewState extends State<BeatMakerView> {
 
   @override
   void dispose() {
+    vm.disposeAll(); // 🎯 player’ları ve timer’ı temizle
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -86,87 +86,98 @@ class _BeatMakerViewState extends State<BeatMakerView> {
     final screenHeight = screenSize.height;
 
     final initialPositions = [
-      Offset(screenWidth * 0.32, screenHeight * 0.30), // kick
-      Offset(screenWidth * 0.54, screenHeight * 0.40), // tom_floor
-      Offset(screenWidth * 0.48, screenHeight * 0.17), // tom2
-      Offset(screenWidth * 0.35, screenHeight * 0.20), // tom1
-      Offset(screenWidth * 0.27, screenHeight * 0.37), // snare
-      Offset(screenWidth * 0.16, screenHeight * 0.37), // hihat
-      Offset(screenWidth * 0.20, screenHeight * 0.03), // crash
-      Offset(screenWidth * 0.62, screenHeight * 0.03), // ride
+      Offset(screenWidth * 0.32, screenHeight * 0.30),
+      Offset(screenWidth * 0.54, screenHeight * 0.40),
+      Offset(screenWidth * 0.48, screenHeight * 0.17),
+      Offset(screenWidth * 0.35, screenHeight * 0.20),
+      Offset(screenWidth * 0.27, screenHeight * 0.37),
+      Offset(screenWidth * 0.16, screenHeight * 0.37),
+      Offset(screenWidth * 0.20, screenHeight * 0.03),
+      Offset(screenWidth * 0.62, screenHeight * 0.03),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('makeYourOwnBeat'.tr()),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () {
-                setState(() {
-                  isRecording = !isRecording;
-                });
-
-                if (isRecording) {
-                  vm.startRecording();
-                } else {
-                  vm.stopRecording(context);
-                }
-              },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isRecording ? Colors.red : Colors.grey.shade800,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isRecording ? Icons.stop : Icons.fiber_manual_record,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isRecording ? 'stop'.tr() : 'record'.tr(),
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ],
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          vm.disposeAll(); // 🎯 player’ları ve timer’ı temizle
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('makeYourOwnBeat'.tr()),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  setState(() => isRecording = !isRecording);
+                  if (isRecording) {
+                    vm.startRecording();
+                  } else {
+                    vm.stopRecording(context);
+                  }
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isRecording ? Colors.red : Colors.grey.shade800,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isRecording ? Icons.stop : Icons.fiber_manual_record,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isRecording ? 'stop'.tr() : 'record'.tr(),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-      body: OrientationBuilder(
-        builder: (context, orientation) {
-          if (orientation == Orientation.portrait) {
-            return Center(
-              child: Text(
-                'rotateScreen'.tr(),
-                style:
-                    const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-
-          return Stack(
-            children: List.generate(drumPieces.length, (index) {
-              final piece = drumPieces[index];
-              return DrumPiece(
-                imagePath: piece['image']!,
-                drumKey: piece['key']!,
-                initialPosition: initialPositions[index],
-                vm: vm,
-                scale: piece['scale']!,
+          ],
+        ),
+        body: OrientationBuilder(
+          builder: (context, orientation) {
+            if (orientation == Orientation.portrait) {
+              return Center(
+                child: Text(
+                  'rotateScreen'.tr(),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               );
-            }),
-          );
-        },
+            }
+
+            return Stack(
+              children: List.generate(drumPieces.length, (index) {
+                final piece = drumPieces[index];
+                return DrumPiece(
+                  imagePath: piece['image']!,
+                  drumKey: piece['key']!,
+                  initialPosition: initialPositions[index],
+                  vm: vm,
+                  scale: piece['scale']!,
+                );
+              }),
+            );
+          },
+        ),
       ),
     );
   }
@@ -181,6 +192,7 @@ class DrumPiece extends StatefulWidget {
     required this.vm,
     super.key,
   });
+
   final String imagePath;
   final String drumKey;
   final Offset initialPosition;
@@ -202,11 +214,8 @@ class _DrumPieceState extends State<DrumPiece> {
 
   Future<void> _loadPosition() async {
     final saved = await StorageService().loadDrumPosition(widget.drumKey);
-
-    if (saved != null) {
-      setState(() {
-        position = saved;
-      });
+    if (saved != null && mounted) {
+      setState(() => position = saved);
     }
   }
 
@@ -219,13 +228,10 @@ class _DrumPieceState extends State<DrumPiece> {
       left: position.dx,
       top: position.dy,
       child: GestureDetector(
-        onTap: () {
-          widget.vm.playSound(context, widget.drumKey);
-        },
+        onTap: () => widget.vm.playSound(context, widget.drumKey),
         onPanUpdate: (details) async {
           setState(() {
             final Offset newPosition = position + details.delta;
-
             final double maxX = screenSize.width - pieceSize;
             final double maxY = screenSize.height - pieceSize;
 
@@ -248,7 +254,7 @@ class _DrumPieceState extends State<DrumPiece> {
             Text(
               widget.drumKey.toUpperCase(),
               style: TextStyle(
-                fontSize: pieceSize * 0.08, // Dinamik boyut
+                fontSize: pieceSize * 0.08,
                 color: Colors.white,
               ),
               textAlign: TextAlign.center,

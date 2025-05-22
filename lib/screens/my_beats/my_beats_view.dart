@@ -135,7 +135,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        beat.title!,
+                                        beat.title ?? '',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
