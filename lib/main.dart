@@ -1,8 +1,5 @@
 import 'package:drumly/app_routes.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/constants.dart';
-import 'package:drumly/hive/models/beat_maker_model.dart';
-import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/locator.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/provider/user_provider.dart';
@@ -13,8 +10,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -23,15 +18,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   setupLocator();
-
-  final appDocDir = await getApplicationDocumentsDirectory();
-  Hive.init(appDocDir.path);
-  Hive.registerAdapter(BeatMakerModelAdapter());
-  Hive.registerAdapter(NoteModelAdapter());
-
-  await Hive.openLazyBox(Constants.lockSongBox);
-  await Hive.openLazyBox<BeatMakerModel>(Constants.beatRecordsBox);
-
   await MobileAds.instance.initialize();
   await EasyLocalization.ensureInitialized();
 

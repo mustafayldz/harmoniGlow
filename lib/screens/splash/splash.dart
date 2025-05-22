@@ -1,6 +1,11 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:drumly/constants.dart';
+import 'package:drumly/hive/models/beat_maker_model.dart';
+import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -21,7 +26,7 @@ class _SplashViewState extends State<SplashView>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 2),
     );
 
     _animation =
@@ -29,17 +34,32 @@ class _SplashViewState extends State<SplashView>
 
     _controller.forward();
 
-    _navigateAfterDelay();
+    _initializeApp(); // Hive başlatma + yönlendirme
   }
 
-  Future<void> _navigateAfterDelay() async {
-    await Future.delayed(const Duration(seconds: 4));
+  Future<void> _initializeApp() async {
+    // 1. Hive setup
+    final appDocDir = await getApplicationDocumentsDirectory();
+    Hive.init(appDocDir.path);
+    Hive.registerAdapter(BeatMakerModelAdapter());
+    Hive.registerAdapter(NoteModelAdapter());
+
+    await Future.wait([
+      Hive.openLazyBox(Constants.lockSongBox),
+      Hive.openLazyBox<BeatMakerModel>(Constants.beatRecordsBox),
+    ]);
+
+    // 2. Hafif bir gecikme animasyon için (gerekirse)
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // 3. Firebase token kontrolü
     final token = await storageService.getFirebaseToken();
+
+    if (!mounted) return;
+
     if (token != null && token.isNotEmpty) {
-      if (!mounted) return;
       await Navigator.pushReplacementNamed(context, '/home');
     } else {
-      if (!mounted) return;
       await Navigator.pushReplacementNamed(context, '/auth');
     }
   }
@@ -84,8 +104,7 @@ class _SplashViewState extends State<SplashView>
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
-                          color: Colors
-                              .blueAccent, // farklı vurgu için renk değişikliği
+                          color: Colors.blueAccent,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
