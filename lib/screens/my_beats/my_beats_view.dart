@@ -159,7 +159,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
-                                    'created:'.tr() +
+                                    'created'.tr() +
                                         DateFormat.yMMMd()
                                             .format(beat.createdAt),
                                     style: Theme.of(context)

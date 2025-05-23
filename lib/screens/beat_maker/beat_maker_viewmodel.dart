@@ -32,7 +32,7 @@ class BeatMakerViewmodel {
     drumManager.reinitialize();
 
     await drumManager.play(drumPart);
-    print('▶️ Played: $drumPart');
+    debugPrint('▶️ Played: $drumPart');
 
     final now = DateTime.now();
     if (_lastTapTime == null ||

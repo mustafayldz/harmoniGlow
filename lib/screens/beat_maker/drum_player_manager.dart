@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
 
 class DrumPlayerManager {
   factory DrumPlayerManager() => _instance;
@@ -60,7 +61,7 @@ class DrumPlayerManager {
       await player.setSource(AssetSource(path));
       await player.resume();
     } catch (e) {
-      print('❌ Error playing $drumPart: $e');
+      debugPrint('❌ Error playing $drumPart');
     }
   }
 

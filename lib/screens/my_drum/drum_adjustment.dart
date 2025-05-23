@@ -68,7 +68,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings').tr(),
+        title: const Text('settings').tr(),
       ),
       body: GestureDetector(
         onTap: () => setState(() {
@@ -204,8 +204,8 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                       onPressed: () {
                                         sendLightsIndividually(bluetoothBloc);
                                       },
-                                      child: const Text('Test individual LEDs')
-                                          .tr(),
+                                      child:
+                                          const Text('testIndividualLEDs').tr(),
                                     ),
                                   ),
                                   SizedBox(
@@ -217,7 +217,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                           2,
                                         );
                                       },
-                                      child: const Text('Test (2 LEDs)').tr(),
+                                      child: const Text('testTwoLEDs').tr(),
                                     ),
                                   ),
                                   SizedBox(
@@ -228,7 +228,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                           bluetoothBloc,
                                         );
                                       },
-                                      child: const Text('Rainbow').tr(),
+                                      child: const Text('rainbow').tr(),
                                     ),
                                   ),
                                   SizedBox(
@@ -237,11 +237,11 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
                                       onPressed: () {
                                         turnOffAllLights(bluetoothBloc);
                                       },
-                                      child: const Text('Turn Off All Lights')
-                                          .tr(),
+                                      child:
+                                          const Text('turnOffAllLights').tr(),
                                     ),
                                   ),
-                                  const Text('Brightness Levels').tr(),
+                                  const Text('brightnessLevels').tr(),
                                   Row(
                                     spacing: 5,
                                     children: [

@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 class Constants {
-  static const int timeOutInterval = 10;
+  static const int timeOutInterval = 15;
   static const String myServiceUuid = 'FFE0';
 
   // db box names

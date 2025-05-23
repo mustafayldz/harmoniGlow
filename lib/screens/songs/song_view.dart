@@ -44,7 +44,7 @@ class _SongViewState extends State<SongView> {
       value: vm,
       child: Consumer<SongViewModel>(
         builder: (context, vm, _) => Scaffold(
-          appBar: AppBar(title: const Text('Songs').tr()),
+          appBar: AppBar(title: const Text('songs').tr()),
           body: vm.songList.isEmpty
               ? Center(
                   child: Image.asset(

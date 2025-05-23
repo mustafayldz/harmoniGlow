@@ -1,6 +1,6 @@
 name: drumly
 description: "Light Up Your Beat"
-version: 1.0.0+8
+version: 1.0.0+9
 
 environment:
   sdk: ^3.5.4
@@ -29,7 +29,6 @@ dependencies:
   path_provider: ^2.1.5
   youtube_player_flutter: ^9.1.1
   package_info_plus: ^8.3.0
-  modal_progress_hud_nsn: ^0.5.1
   intl: ^0.19.0
   easy_localization: ^3.0.7+1
   audioplayers: ^6.4.0 #bunu beat maker için ekledim

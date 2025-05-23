@@ -31,7 +31,7 @@ class _TrainingViewState extends State<TrainingView> {
         value: _viewModel,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Training').tr(),
+            title: const Text('training').tr(),
             centerTitle: true,
           ),
           body: const _TrainingBody(),
