@@ -63,6 +63,11 @@
   "accept": "Принять",
   "language": "Язык",
   "titleCantbeEmpty": "Название не может быть пустым",
-  "genreCantbeEmpty": "Жанр не может быть пустым"
+  "genreCantbeEmpty": "Жанр не может быть пустым",
+  "beginner": "Новичок",
+  "intermediate": "Средний",
+  "advanced": "Продвинутый",
+  "pro": "Профессионал",
+  "master": "Мастер"
 }
 

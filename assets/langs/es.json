@@ -63,6 +63,11 @@
   "accept": "Aceptar",
   "language": "Idioma",
   "titleCantbeEmpty": "Título no puede estar vacío",
-  "genreCantbeEmpty": "Género no puede estar vacío"
+  "genreCantbeEmpty": "Género no puede estar vacío",
+  "beginner": "Principiante",
+  "intermediate": "Intermedio",
+  "advanced": "Avanzado",
+  "pro": "Profesional",
+  "master": "Maestro"
 }
 

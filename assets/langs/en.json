@@ -63,6 +63,11 @@
   "accept": "Accept",
   "language": "Language",
   "titleCantbeEmpty": "Title cannot be empty",
-  "genreCantbeEmpty": "Genre cannot be empty"
+  "genreCantbeEmpty": "Genre cannot be empty",
+  "beginner": "Beginner",
+  "intermediate": "Intermediate",
+  "advanced": "Advanced",
+  "pro": "Pro",
+  "master": "Master"
 }
 

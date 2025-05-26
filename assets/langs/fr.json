@@ -63,6 +63,11 @@
   "accept": "Accepter",
   "language": "Langue",
   "titleCantbeEmpty": "Titre ne peut pas être vide",
-  "genreCantbeEmpty": "Le genre ne peut pas être vide"
+  "genreCantbeEmpty": "Le genre ne peut pas être vide",
+  "beginner": "Débutant",
+  "intermediate": "Intermédiaire",
+  "advanced": "Avancé",
+  "pro": "Pro",
+  "master": "Maître"
 }
 

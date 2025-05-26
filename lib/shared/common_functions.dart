@@ -260,3 +260,9 @@ Color getRandomColor(bool isDark) {
 
   return color;
 }
+
+/// Capitalize the first letter of each word in a string.
+String capitalizeFirst(String text) {
+  if (text.isEmpty) return '';
+  return text[0].toUpperCase() + text.substring(1).toLowerCase();
+}

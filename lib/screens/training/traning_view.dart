@@ -54,15 +54,15 @@ class _TrainingViewState extends State<TrainingView>
             centerTitle: true,
             bottom: TabBar(
               controller: _tabController,
+              isScrollable: true,
               tabs: trainingLevels
                   .map(
                     (level) => Tab(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          level.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        capitalizeFirst(level.name.tr()),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),

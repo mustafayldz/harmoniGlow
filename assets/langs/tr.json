@@ -63,6 +63,11 @@
   "accept": "Kabul Et",
   "language": "Dil",
   "titleCantbeEmpty": "Başlık boş olamaz",
-  "genreCantbeEmpty": "Tür boş olamaz"
+  "genreCantbeEmpty": "Tür boş olamaz",
+  "beginner": "Başlangıç",
+  "intermediate": "Orta",
+  "advanced": "İleri",
+  "pro": "Profesyonel",
+  "master": "Usta"
 }
 
