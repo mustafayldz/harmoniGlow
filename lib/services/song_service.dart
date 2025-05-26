@@ -70,23 +70,48 @@ class SongService {
                   Get Beats
 ----------------------------------------------------------------------*/
 
-  Future<List<TraningModel>?> getBeats(BuildContext context) async {
-    final String url = getBaseUrlBeats();
-
-    final List<TraningModel> beats = <TraningModel>[];
+  Future<List<TraningModel>?> getBeats(
+    BuildContext context, {
+    String? level,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final String url =
+        '${getBaseUrlBeats()}?level=$level&limit=$limit&offset=$offset';
 
     try {
       final response =
           await RequestHelper.requestAsync(context, RequestType.get, url);
 
-      if (response == null || response == '' || response.isEmpty) {
-        return null;
-      } else if (response.isNotEmpty && response != '') {
-        json.decode(response)['data'].forEach((item) {
-          beats.add(TraningModel.fromJson(item));
-        });
+      if (response != null && response.isNotEmpty) {
+        return List<TraningModel>.from(
+          json.decode(response)['data'].map((x) => TraningModel.fromJson(x)),
+        );
       }
-      return beats;
+      return null;
+    } catch (e) {
+      debugPrint(e.toString());
+      return null;
+    }
+  }
+
+  /*----------------------------------------------------------------------
+                  Get Beat By ID
+----------------------------------------------------------------------*/
+  Future<TraningModel?> getBeatById(
+    BuildContext context, {
+    required String beatId,
+  }) async {
+    final String url = '${getBaseUrlBeats()}$beatId';
+
+    try {
+      final response =
+          await RequestHelper.requestAsync(context, RequestType.get, url);
+
+      if (response != null && response.isNotEmpty) {
+        return TraningModel.fromJson(json.decode(response));
+      }
+      return null;
     } catch (e) {
       debugPrint(e.toString());
       return null;

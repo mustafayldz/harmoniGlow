@@ -15,8 +15,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
 class PlayerView extends StatefulWidget {
-  const PlayerView(this.songModel, {super.key, this.isTraning = false});
-  final bool isTraning;
+  const PlayerView(this.songModel, {super.key});
   final TraningModel songModel;
 
   @override
@@ -48,9 +47,6 @@ class _PlayerViewState extends State<PlayerView> {
   Duration prevPos = Duration.zero;
   Duration start = Duration.zero;
 
-  // // ➎ check thme dark mode
-  // bool isDark = false;
-
   @override
   void initState() {
     super.initState();
@@ -62,6 +58,8 @@ class _PlayerViewState extends State<PlayerView> {
   }
 
   Future<void> _initAudio(BuildContext context) async {
+    print('PlayerView initAudio: ${widget.songModel.notes?.length} notes');
+
     try {
       // ➊ Firebase Analytics
       await FirebaseAnalytics.instance.logEvent(name: widget.songModel.title!);
@@ -83,24 +81,13 @@ class _PlayerViewState extends State<PlayerView> {
       // 4) proccessing state’i dinle
       _player.processingStateStream.listen((state) async {
         if (state == ProcessingState.completed) {
-          if (widget.isTraning) {
-            await _player.seek(Duration.zero);
-            setState(() {
-              prevPos = Duration.zero;
-              start = Duration.zero;
-              _sentNoteIndices = {};
-            });
-            await _player.play();
-          } else {
-            await _player.seek(Duration.zero);
-            await _player.stop();
-            setState(() {
-              prevPos = Duration.zero;
-              start = Duration.zero;
-              _sentNoteIndices = {};
-              sentDrumParts.clear();
-            });
-          }
+          await _player.seek(Duration.zero);
+          setState(() {
+            prevPos = Duration.zero;
+            start = Duration.zero;
+            _sentNoteIndices = {};
+          });
+          await _player.play();
         }
       });
     } catch (e, stack) {

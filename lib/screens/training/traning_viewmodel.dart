@@ -1,67 +1,106 @@
-import 'package:drumly/models/song_types_model.dart';
 import 'package:drumly/screens/training/trraning_model.dart';
 import 'package:drumly/services/song_service.dart';
 import 'package:flutter/material.dart';
 
 class TrainingViewModel extends ChangeNotifier {
   final SongService _songService = SongService();
-
   late BuildContext context;
 
-  //–– UI State
   bool loading = false;
-  List<TraningModel> beats = [];
-  List<TraningModel> beatsOriginal = [];
+  final Map<String, List<TraningModel>> _levelBeats = {};
+  final Map<String, int> _levelPages = {};
+  final Set<String> _loadedLevels = {};
 
-  List<SongTypeModel> genres = [];
-  int selectedGenreIndex = 0;
+  static const int _pageSize = 20;
 
-  /// ––– Fetch beats & genres
-  Future<void> fetchBeats() async {
+  List<TraningModel> getBeatsForLevel(String level) =>
+      _levelBeats[level.toLowerCase()] ?? [];
+
+  int getPage(String level) => _levelPages[level.toLowerCase()] ?? 0;
+
+  bool isLevelLoaded(String level) =>
+      _loadedLevels.contains(level.toLowerCase());
+
+  Future<void> initBeginnerLevel() async {
+    await fetchBeats(level: 'beginner', reset: true);
+  }
+
+  Future<void> fetchBeats({required String level, bool reset = false}) async {
     loading = true;
     notifyListeners();
 
+    final key = level.toLowerCase();
+    final currentPage = reset ? 0 : (_levelPages[key] ?? 0);
+
     try {
-      final fetchedBeats = await _songService.getBeats(context);
-      final fetchedGenres = await _songService.getSongTypes(context);
+      final fetched = await _songService.getBeats(
+        context,
+        level: key,
+        offset: currentPage * _pageSize,
+      );
 
-      beats = fetchedBeats ?? [];
-      beatsOriginal = List.from(beats); // avoid reference link
-      genres = fetchedGenres ?? [];
+      if (reset || !_levelBeats.containsKey(key)) {
+        _levelBeats[key] = fetched ?? [];
+      } else {
+        _levelBeats[key]!.addAll(fetched ?? []);
+      }
 
-      // Add "All" genre at the start
-      genres.insert(0, SongTypeModel(id: '0', name: 'All'));
+      _levelPages[key] = currentPage + 1;
+      _loadedLevels.add(key);
+      notifyListeners();
     } catch (e, st) {
-      debugPrint('⚠️ Error fetching beats: $e\n$st');
+      debugPrint('⚠️ fetchBeats($level) error: $e\n$st');
     } finally {
       loading = false;
       notifyListeners();
     }
   }
 
-  /// ––– Genre selection filter
-  Future<void> selectGenre(int index) async {
-    selectedGenreIndex = index;
-    notifyListeners();
-
-    if (index == 0) {
-      // All genres
-      beats = List.from(beatsOriginal);
-    } else {
-      final selectedGenreName = genres[index].name;
-      beats = beatsOriginal
-          .where(
-            (beat) =>
-                beat.genre?.toLowerCase().trim() ==
-                selectedGenreName?.toLowerCase().trim(),
-          )
-          .toList();
+  Future<TraningModel> getBeatById(String beatId) async {
+    if (beatId.isEmpty) {
+      throw ArgumentError('Beat ID cannot be empty');
     }
 
+    for (final entry in _levelBeats.entries) {
+      final index = entry.value.indexWhere((beat) => beat.beatId == beatId);
+      if (index != -1) {
+        final existing = entry.value[index];
+        if (existing.notes != null && existing.notes!.isNotEmpty) {
+          debugPrint('✅ Beat already loaded with notes: $beatId');
+          return existing;
+        }
+
+        // Notes eksik, yeniden yükle
+        debugPrint('🔁 Beat loaded but missing notes. Reloading: $beatId');
+        final updated = await _songService.getBeatById(context, beatId: beatId);
+        if (updated == null) {
+          throw Exception('Beat with ID $beatId not found');
+        }
+
+        _levelBeats[entry.key]![index] = updated;
+        notifyListeners();
+        return updated;
+      }
+    }
+
+    // Hiç yüklü değilse
+    debugPrint('🔄 Loading beat by ID for the first time: $beatId');
+    final beat = await _songService.getBeatById(context, beatId: beatId);
+    if (beat == null) {
+      throw Exception('Beat with ID $beatId not found');
+    }
+
+    final level = beat.level!.toLowerCase();
+    if (!_levelBeats.containsKey(level)) {
+      _levelBeats[level] = [];
+    }
+    _levelBeats[level]!.add(beat);
+    _loadedLevels.add(level);
+
     notifyListeners();
+    return beat;
   }
 
-  /// ––– Format seconds to mm:ss
   String formatDuration(int? seconds) {
     if (seconds == null) return '--:--';
     final minutes = seconds ~/ 60;

@@ -18,7 +18,7 @@ class TraningModel {
     this.bpm,
     this.durationSeconds,
     this.fileUrl,
-    this.genre,
+    this.level,
     this.notes,
     this.rhythm,
     this.title,
@@ -30,7 +30,7 @@ class TraningModel {
         bpm: json['bpm'],
         durationSeconds: json['duration_seconds'],
         fileUrl: json['file_url'],
-        genre: json['genre'],
+        level: json['level'],
         notes: json['notes'] == null
             ? []
             : List<NoteModel>.from(
@@ -44,7 +44,7 @@ class TraningModel {
   int? bpm;
   int? durationSeconds;
   String? fileUrl;
-  String? genre;
+  String? level;
   List<NoteModel>? notes;
   String? rhythm;
   String? title;
@@ -55,7 +55,7 @@ class TraningModel {
         'bpm': bpm,
         'duration_seconds': durationSeconds,
         'file_url': fileUrl,
-        'genre': genre,
+        'level': level,
         'notes': notes == null
             ? []
             : List<dynamic>.from(notes!.map((x) => x.toJson())),
