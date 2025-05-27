@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -39,22 +40,22 @@ List<int> splitToBytes(int value) {
 }
 
 /// sneakbar
-void showAdConsentSnackBar(BuildContext context, String songId) {
+Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
+  final completer = Completer<bool>();
 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: isDark ? Colors.grey[850] : Colors.grey[200],
-      duration: const Duration(seconds: 10), // gösterim süresi
+      duration: const Duration(seconds: 10),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'To play this song for three hours, you first need to watch a support ad.'
-                .tr(),
+            'toPlayThisSong'.tr(),
             style: TextStyle(
               color: isDark ? Colors.white : Colors.black,
             ),
@@ -65,36 +66,29 @@ void showAdConsentSnackBar(BuildContext context, String songId) {
             children: [
               TextButton(
                 onPressed: () {
-                  // Reddetme davranışı: SnackBar’ı kapat
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  completer.complete(false); // ❌ Kullanıcı reddetti
                 },
-                style: TextButton.styleFrom(),
-                child: const Text('Decline').tr(),
+                child: const Text('decline').tr(),
               ),
               TextButton(
                 onPressed: () async {
-                  // Kabul etme davranışı: reklam göster
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-                  // Reklam gösterme fonksiyonunu çağır
                   final bool earned = await AdServiceReward().showRewardedAd();
 
                   if (earned) {
-                    // Ödülü ver: 2 saatlik kilidi aç
-                    await addRecord(songId); // kayıt ekle
-                    showClassicSnackBar(
-                      context,
-                      'Access opened for 2 hours.'.tr(),
-                    );
+                    await addRecord(songId);
+                    showClassicSnackBar(context, 'accessOpenedFor'.tr());
+                    completer.complete(true); // ✅ Kullanıcı izledi
                   } else {
                     showClassicSnackBar(
-                      context,
-                      'Ad was not watched or an error occurred.'.tr(),
-                    );
+                        context, 'adNotWatchedOrErrorOccurred'.tr());
+                    completer
+                        .complete(false); // ❌ Kullanıcı izlemeyi tamamlamadı
                   }
                 },
-                style: TextButton.styleFrom(),
-                child: const Text('Accept').tr(),
+                child: const Text('accept').tr(),
               ),
             ],
           ),
@@ -102,6 +96,8 @@ void showAdConsentSnackBar(BuildContext context, String songId) {
       ),
     ),
   );
+
+  return completer.future; // Burada sonucu döndürür
 }
 
 /// Decode the payload (middle segment) of a JWT into a Map.

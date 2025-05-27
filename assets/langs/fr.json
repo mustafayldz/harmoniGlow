@@ -68,6 +68,11 @@
   "intermediate": "Intermédiaire",
   "advanced": "Avancé",
   "pro": "Pro",
-  "master": "Maître"
+  "master": "Maître",
+  "searchBySong": "Rechercher par titre ou artiste",
+  "error_loading_song_details": "Erreur lors du chargement des détails de la chanson",
+  "toPlayThisSong": "Pour écouter cette chanson, vous devez d'abord regarder une publicité de soutien.",
+  "accessOpenedFor": "Accès ouvert pour 2 heures.",
+  "adNotWatchedOrErrorOccurred": "La publicité n’a pas été regardée ou une erreur est survenue."
 }
 

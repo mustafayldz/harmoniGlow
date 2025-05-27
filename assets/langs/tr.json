@@ -68,6 +68,11 @@
   "intermediate": "Orta",
   "advanced": "İleri",
   "pro": "Profesyonel",
-  "master": "Usta"
+  "master": "Usta",
+  "searchBySong": "Şarkı adı veya sanatçıya göre ara",
+  "error_loading_song_details": "Şarkı detayları yüklenirken hata oluştu",
+  "toPlayThisSong": "Bu şarkıyı çalmak için önce destek reklamını izlemeniz gerekiyor.",
+  "accessOpenedFor": "Erişim 2 saatliğine açıldı.",
+  "adNotWatchedOrErrorOccurred": "Reklam izlenmedi veya bir hata oluştu."
 }
 

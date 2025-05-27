@@ -68,6 +68,14 @@
   "intermediate": "Intermediate",
   "advanced": "Advanced",
   "pro": "Pro",
-  "master": "Master"
+  "master": "Master",
+  "searchBySong": "Search by song title or artist",
+  "error_loading_song_details": "Error loading song details",
+  "toPlayThisSong": "To play this song, you first need to watch a support ad.",
+  "accessOpenedFor": "Access opened for 2 hours.",
+  "adNotWatchedOrErrorOccurred": "Ad was not watched or an error occurred."
+
+
+
 }
 

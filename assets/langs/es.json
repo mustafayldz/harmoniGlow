@@ -68,6 +68,11 @@
   "intermediate": "Intermedio",
   "advanced": "Avanzado",
   "pro": "Profesional",
-  "master": "Maestro"
+  "master": "Maestro",
+  "searchBySong": "Buscar por título de canción o artista",
+  "error_loading_song_details": "Error al cargar los detalles de la canción",
+  "toPlayThisSong": "Para reproducir esta canción, primero debes ver un anuncio de apoyo.",
+  "accessOpenedFor": "Acceso habilitado por 2 horas.",
+  "adNotWatchedOrErrorOccurred": "No se vio el anuncio o ocurrió un error."
 }
 

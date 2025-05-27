@@ -1,7 +1,8 @@
 import 'dart:collection';
 
-import 'package:flutter/material.dart';
+import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:flutter/material.dart';
 
 class AppProvider with ChangeNotifier {
   AppProvider() {
@@ -13,10 +14,15 @@ class AppProvider with ChangeNotifier {
   bool isDarkMode = false;
   bool _isClassic = false;
 
+  // 🎵 Şarkı cache'i
+  List<SongModel> _cachedSongs = [];
+
   // Getter for app data
   int get countdownValue => _countdownValue ?? 3;
   bool get loading => _loading;
   bool get isClassic => _isClassic;
+
+  List<SongModel> get cachedSongs => _cachedSongs;
 
   // Setter for app data
 
@@ -54,6 +60,16 @@ class AppProvider with ChangeNotifier {
   void setIsClassic(bool isClassic) {
     _isClassic = isClassic;
     debugPrint(isClassic ? 'Classic' : 'Electronic');
+    notifyListeners();
+  }
+
+  void cacheSongs(List<SongModel> songs) {
+    _cachedSongs = songs;
+    notifyListeners();
+  }
+
+  void clearSongCache() {
+    _cachedSongs = [];
     notifyListeners();
   }
 }
