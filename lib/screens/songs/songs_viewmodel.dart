@@ -14,7 +14,15 @@ class SongViewModel extends ChangeNotifier {
   Future<void> fetchSongs(BuildContext context) async {
     try {
       context = context;
-      songListNew = (await _songService.getSongs(context))!;
+      await _songService.getSongs(context).then((songs) {
+        if (songs != null) {
+          songList = songs;
+          songListNew = songs; // Keep a copy for filtering
+        } else {
+          songList = [];
+          songListNew = [];
+        }
+      });
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching songs: $e');
