@@ -128,12 +128,14 @@ class _SettingViewBody extends StatelessWidget {
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 12),
+                                      horizontal: 12,
+                                    ),
                                     child: Text('electronic'.tr()),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 12),
+                                      horizontal: 12,
+                                    ),
                                     child: Text('classic'.tr()),
                                   ),
                                 ],

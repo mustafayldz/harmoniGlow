@@ -40,7 +40,10 @@ class SongService {
       // Final URL oluştur
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
       final response = await RequestHelper.requestAsync(
-          context, RequestType.get, uri.toString());
+        context,
+        RequestType.get,
+        uri.toString(),
+      );
 
       if (response == null || response.isEmpty) {
         return null;

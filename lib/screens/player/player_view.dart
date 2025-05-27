@@ -58,7 +58,7 @@ class _PlayerViewState extends State<PlayerView> {
   }
 
   Future<void> _initAudio(BuildContext context) async {
-    print('PlayerView initAudio: ${widget.songModel.notes?.length} notes');
+    // print('PlayerView initAudio: ${widget.songModel.notes?.length} notes');
 
     try {
       // ➊ Firebase Analytics

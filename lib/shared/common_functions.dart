@@ -83,7 +83,9 @@ Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
                     completer.complete(true); // ✅ Kullanıcı izledi
                   } else {
                     showClassicSnackBar(
-                        context, 'adNotWatchedOrErrorOccurred'.tr());
+                      context,
+                      'adNotWatchedOrErrorOccurred'.tr(),
+                    );
                     completer
                         .complete(false); // ❌ Kullanıcı izlemeyi tamamlamadı
                   }
