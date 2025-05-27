@@ -1,3 +1,4 @@
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/home_view.dart';
@@ -27,6 +28,7 @@ class _SettingViewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final vm = Provider.of<SettingViewModel>(context);
     final appProvider = vm.appProvider;
+    final bluetoothState = context.watch<BluetoothBloc>().state;
 
     return Scaffold(
       appBar: AppBar(
@@ -97,54 +99,60 @@ class _SettingViewBody extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
-                // Drum Type Toggle
-                _SettingCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Image.asset(
-                            'assets/images/edrum.png',
-                            height: 48,
-                            fit: BoxFit.contain,
+                bluetoothState.isConnected
+                    ?
+                    // Drum Type Toggle
+                    _SettingCard(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Image.asset(
+                                  'assets/images/edrum.png',
+                                  height: 48,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              ToggleButtons(
+                                isSelected: appProvider.isClassic
+                                    ? [false, true]
+                                    : [true, false],
+                                borderRadius: BorderRadius.circular(8),
+                                selectedColor: Colors.white,
+                                fillColor: AppColors.settingsRed,
+                                color: AppColors.settingsRed.withAlpha(100),
+                                onPressed: (index) =>
+                                    vm.setDrumStyle(index == 1),
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
+                                    child: Text('electronic'.tr()),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
+                                    child: Text('classic'.tr()),
+                                  ),
+                                ],
+                              ),
+                              Flexible(
+                                child: Image.asset(
+                                  'assets/images/cdrum.png',
+                                  height: 48,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        ToggleButtons(
-                          isSelected: appProvider.isClassic
-                              ? [false, true]
-                              : [true, false],
-                          borderRadius: BorderRadius.circular(8),
-                          selectedColor: Colors.white,
-                          fillColor: AppColors.settingsRed,
-                          color: AppColors.settingsRed.withAlpha(100),
-                          onPressed: (index) => vm.setDrumStyle(index == 1),
-                          children: [
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text('electronic'.tr()),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text('classic'.tr()),
-                            ),
-                          ],
-                        ),
-                        Flexible(
-                          child: Image.asset(
-                            'assets/images/cdrum.png',
-                            height: 48,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                      )
+                    : const SizedBox(),
+                bluetoothState.isConnected
+                    ? const SizedBox(height: 16)
+                    : const SizedBox(),
 
                 // App Info
                 _SettingCard(

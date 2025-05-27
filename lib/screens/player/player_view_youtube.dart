@@ -118,66 +118,62 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1️⃣ Video player
-            YoutubePlayer(
-              controller: _controller,
-              showVideoProgressIndicator: true,
+      body: Column(
+        children: [
+          // 1️⃣ Video player
+          YoutubePlayer(
+            controller: _controller,
+            showVideoProgressIndicator: true,
+          ),
+
+          const Spacer(),
+
+          // 2️⃣ Display triggered drum parts
+          if (_sentDrumParts.isNotEmpty || _controller.value.isPlaying)
+            DrumOverlayView(
+              selectedParts: _sentDrumParts,
+              highlightColor: _randomColor,
             ),
 
-            const Spacer(),
-
-            // 2️⃣ Display triggered drum parts
-            if (_sentDrumParts.isNotEmpty || _controller.value.isPlaying)
-              DrumOverlayView(
-                selectedParts: _sentDrumParts,
-                highlightColor: _randomColor,
-              ),
-
-            // 3️⃣ Basic play / pause buttons
-            const Spacer(),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _controlButton(Icons.remove_circle_outline, () async {
-                    playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
-                    await _applySpeedAndReset(bluetoothBloc, playerSpeed);
-                  }),
-                  _controlButton(
-                    _controller.value.isPlaying
-                        ? Icons.pause
-                        : Icons.play_arrow,
-                    () async {
-                      if (_controller.value.isPlaying) {
-                        _controller.pause();
-                        await SendData().sendHexData(bluetoothBloc, [0]);
-                      } else {
-                        await showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => const Countdown(),
-                        ).whenComplete(() async {
-                          if (mounted) {
-                            _controller.play();
-                          }
-                        });
-                      }
-                    },
-                    iconSize: 52,
-                  ),
-                  _controlButton(Icons.add_circle, () async {
-                    playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
-                    await _applySpeedAndReset(bluetoothBloc, playerSpeed);
-                  }),
-                ],
-              ),
+          // 3️⃣ Basic play / pause buttons
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _controlButton(Icons.remove_circle_outline, () async {
+                  playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
+                  await _applySpeedAndReset(bluetoothBloc, playerSpeed);
+                }),
+                _controlButton(
+                  _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  () async {
+                    if (_controller.value.isPlaying) {
+                      _controller.pause();
+                      await SendData().sendHexData(bluetoothBloc, [0]);
+                    } else {
+                      await showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const Countdown(),
+                      ).whenComplete(() async {
+                        if (mounted) {
+                          _controller.play();
+                        }
+                      });
+                    }
+                  },
+                  iconSize: 52,
+                ),
+                _controlButton(Icons.add_circle, () async {
+                  playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
+                  await _applySpeedAndReset(bluetoothBloc, playerSpeed);
+                }),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

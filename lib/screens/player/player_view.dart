@@ -185,91 +185,89 @@ class _PlayerViewState extends State<PlayerView> {
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(),
-            sentDrumParts.isNotEmpty || _player.playing
-                ? DrumOverlayView(
-                    selectedParts: sentDrumParts,
-                    highlightColor: rondomColor,
-                  )
-                : Image.asset(
-                    'assets/images/drumly_logo.png',
-                    fit: BoxFit.cover,
-                  ),
-            const Spacer(),
-            Text(
-              widget.songModel.title ?? 'Unknown Title',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+      body: Column(
+        children: [
+          const Spacer(),
+          sentDrumParts.isNotEmpty || _player.playing
+              ? DrumOverlayView(
+                  selectedParts: sentDrumParts,
+                  highlightColor: rondomColor,
+                )
+              : Image.asset(
+                  'assets/images/drumly_logo.png',
+                  fit: BoxFit.cover,
+                ),
+          const Spacer(),
+          Text(
+            widget.songModel.title ?? 'Unknown Title',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  Slider(
-                    max: _duration.inSeconds.toDouble(),
-                    value: _position.inSeconds
-                        .clamp(0, _duration.inSeconds)
-                        .toDouble(),
-                    onChanged: (value) {
-                      _player.seek(Duration(seconds: value.toInt()));
-                    },
-                    allowedInteraction: SliderInteraction.tapAndSlide,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(_formatDuration(_position)),
-                      Text(_formatDuration(_duration)),
-                    ],
-                  ),
-                ],
-              ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              children: [
+                Slider(
+                  max: _duration.inSeconds.toDouble(),
+                  value: _position.inSeconds
+                      .clamp(0, _duration.inSeconds)
+                      .toDouble(),
+                  onChanged: (value) {
+                    _player.seek(Duration(seconds: value.toInt()));
+                  },
+                  allowedInteraction: SliderInteraction.tapAndSlide,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_formatDuration(_position)),
+                    Text(_formatDuration(_duration)),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _controlButton(Icons.remove_circle_outline, () async {
-                    playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
-                    await _applySpeedAndReset(bluetoothBloc, playerSpeed);
-                  }),
-                  _controlButton(
-                    _player.playing ? Icons.pause : Icons.play_arrow,
-                    () async {
-                      if (_player.playing) {
-                        await _player.pause();
-                        await SendData().sendHexData(bluetoothBloc, [0]);
-                      } else {
-                        await showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => const Countdown(),
-                        ).whenComplete(() async {
-                          if (mounted) {
-                            await _player.play();
-                          }
-                        });
-                      }
-                    },
-                    iconSize: 52,
-                  ),
-                  _controlButton(Icons.add_circle, () async {
-                    playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
-                    await _applySpeedAndReset(bluetoothBloc, playerSpeed);
-                  }),
-                ],
-              ),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _controlButton(Icons.remove_circle_outline, () async {
+                  playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
+                  await _applySpeedAndReset(bluetoothBloc, playerSpeed);
+                }),
+                _controlButton(
+                  _player.playing ? Icons.pause : Icons.play_arrow,
+                  () async {
+                    if (_player.playing) {
+                      await _player.pause();
+                      await SendData().sendHexData(bluetoothBloc, [0]);
+                    } else {
+                      await showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const Countdown(),
+                      ).whenComplete(() async {
+                        if (mounted) {
+                          await _player.play();
+                        }
+                      });
+                    }
+                  },
+                  iconSize: 52,
+                ),
+                _controlButton(Icons.add_circle, () async {
+                  playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
+                  await _applySpeedAndReset(bluetoothBloc, playerSpeed);
+                }),
+              ],
             ),
-            VolumeButtons(player: _player),
-          ],
-        ),
+          ),
+          VolumeButtons(player: _player),
+        ],
       ),
     );
   }

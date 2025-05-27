@@ -120,64 +120,62 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              const Spacer(),
-              _currentDrumParts.isNotEmpty || _isPlaying
-                  ? DrumOverlayView(
-                      selectedParts: _currentDrumParts,
-                      highlightColor: _randomColor,
-                    )
-                  : Image.asset(
-                      'assets/images/drumly_logo.png',
-                      fit: BoxFit.cover,
-                    ),
-              const Spacer(),
-              Text(
-                widget.songModel.title ?? 'Unknown Title',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+        body: Column(
+          children: [
+            const Spacer(),
+            _currentDrumParts.isNotEmpty || _isPlaying
+                ? DrumOverlayView(
+                    selectedParts: _currentDrumParts,
+                    highlightColor: _randomColor,
+                  )
+                : Image.asset(
+                    'assets/images/drumly_logo.png',
+                    fit: BoxFit.cover,
+                  ),
+            const Spacer(),
+            Text(
+              widget.songModel.title ?? 'Unknown Title',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _controlButton(Icons.remove_circle_outline, () async {
-                      playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
-                      await _applySpeedAndReset(playerSpeed);
-                    }),
-                    _controlButton(
-                      _isPlaying ? Icons.pause : Icons.play_arrow,
-                      () async {
-                        setState(() {
-                          _isPlaying = !_isPlaying;
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _controlButton(Icons.remove_circle_outline, () async {
+                    playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
+                    await _applySpeedAndReset(playerSpeed);
+                  }),
+                  _controlButton(
+                    _isPlaying ? Icons.pause : Icons.play_arrow,
+                    () async {
+                      setState(() {
+                        _isPlaying = !_isPlaying;
+                      });
+                      if (_isPlaying) {
+                        await showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => const Countdown(),
+                        ).whenComplete(() async {
+                          _startNoteSync();
                         });
-                        if (_isPlaying) {
-                          await showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (_) => const Countdown(),
-                          ).whenComplete(() async {
-                            _startNoteSync();
-                          });
-                        }
-                      },
-                      iconSize: 52,
-                    ),
-                    _controlButton(Icons.add_circle, () async {
-                      playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
-                      await _applySpeedAndReset(playerSpeed);
-                    }),
-                  ],
-                ),
+                      }
+                    },
+                    iconSize: 52,
+                  ),
+                  _controlButton(Icons.add_circle, () async {
+                    playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
+                    await _applySpeedAndReset(playerSpeed);
+                  }),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
 }
