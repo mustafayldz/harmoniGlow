@@ -3,6 +3,7 @@ import 'package:drumly/constants.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/shared/common_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
@@ -57,7 +58,12 @@ class _SplashViewState extends State<SplashView>
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
+    // 4. tokeni kontrol et gerekirse tokeni yenile
+    if (token != null || token!.isNotEmpty) {
+      if (isJwtExpired(token)) {
+        final newToken = await getValidFirebaseToken();
+        await StorageService.saveFirebaseToken(newToken);
+      }
       await Navigator.pushReplacementNamed(context, '/home');
     } else {
       await Navigator.pushReplacementNamed(context, '/auth');
