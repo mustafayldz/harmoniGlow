@@ -4,6 +4,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/player/drum_part_badge.dart';
+import 'package:drumly/screens/player/player_shared.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
@@ -21,6 +22,7 @@ class BeatMakerPlayerView extends StatefulWidget {
 
 class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
   late AppProvider appProvider;
+  late BluetoothBloc bluetoothBloc;
 
   final List<String> _currentDrumParts = [];
   final List<int> _currentLedData = [];
@@ -31,22 +33,31 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
   bool _isPlaying = false;
   double playerSpeed = 1.0;
 
+  bool showSpeedText = false;
+  Timer? _speedTextTimer;
+  Color? turtleColor;
+  Color? rabbitColor;
+
   Color _randomColor = Colors.black;
+
+  static const int ledDuration = 200; // Default LED duration in milliseconds
 
   @override
   void initState() {
-    appProvider = Provider.of<AppProvider>(context, listen: false);
     super.initState();
+    appProvider = Provider.of<AppProvider>(context, listen: false);
+    bluetoothBloc = context.read<BluetoothBloc>();
+    _updateButtonColors();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _speedTextTimer?.cancel();
     super.dispose();
   }
 
   void _startNoteSync() {
-    final bluetoothBloc = context.read<BluetoothBloc>();
     _timer = Timer.periodic(Duration(milliseconds: (10 / playerSpeed).round()),
         (_) async {
       if (!mounted || !_isPlaying) return;
@@ -86,12 +97,50 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
     });
   }
 
-  Future<void> _applySpeedAndReset(double newSpeed) async {
+  void _updateButtonColors() {
     setState(() {
-      playerSpeed = newSpeed;
-      _timer?.cancel();
-      _startNoteSync();
+      turtleColor = null;
+      rabbitColor = null;
+      if (playerSpeed == 0.5) {
+        turtleColor = Colors.deepPurple[900];
+      } else if (playerSpeed == 0.75) {
+        turtleColor = Colors.deepPurple[300];
+      } else if (playerSpeed == 1.25) {
+        rabbitColor = Colors.deepPurple[300];
+      } else if (playerSpeed == 1.5) {
+        rabbitColor = Colors.deepPurple[900];
+      }
     });
+  }
+
+  void _showSpeedTextTemporarily() {
+    setState(() => showSpeedText = true);
+    _speedTextTimer?.cancel();
+    _speedTextTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => showSpeedText = false);
+    });
+  }
+
+  void _onTurtlePressed() async {
+    if (playerSpeed > 0.5) {
+      playerSpeed = (playerSpeed - 0.25).clamp(0.5, 1.5);
+      await _applySpeedAndReset();
+    }
+  }
+
+  void _onRabbitPressed() async {
+    if (playerSpeed < 1.5) {
+      playerSpeed = (playerSpeed + 0.25).clamp(0.5, 1.5);
+      await _applySpeedAndReset();
+    }
+  }
+
+  Future<void> _applySpeedAndReset() async {
+    await SendData().sendHexData(bluetoothBloc, splitToBytes(ledDuration));
+    _updateButtonColors();
+    _showSpeedTextTemporarily();
+    _timer?.cancel();
+    if (_isPlaying) _startNoteSync();
   }
 
   Widget _controlButton(
@@ -119,63 +168,95 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
       );
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: Column(
-          children: [
-            const Spacer(),
-            _currentDrumParts.isNotEmpty || _isPlaying
-                ? DrumOverlayView(
-                    selectedParts: _currentDrumParts,
-                    highlightColor: _randomColor,
-                  )
-                : Image.asset(
-                    'assets/images/drumly_logo.png',
-                    fit: BoxFit.cover,
-                  ),
-            const Spacer(),
-            Text(
-              widget.songModel.title ?? 'Unknown Title',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+
+    return Scaffold(
+      body: Stack(
+        alignment: AlignmentDirectional.bottomCenter,
+        children: [
+          Column(
+            children: [
+              SizedBox(
+                height: screenSize.height * 0.1,
+              ),
+              _currentDrumParts.isNotEmpty || _isPlaying
+                  ? DrumOverlayView(
+                      selectedParts: _currentDrumParts,
+                      highlightColor: _randomColor,
+                    )
+                  : Image.asset(
+                      'assets/images/drumly_logo.png',
+                      fit: BoxFit.cover,
+                    ),
+              const Spacer(),
+              Text(
+                widget.songModel.title ?? 'Unknown Title',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(
+                height: screenSize.height * 0.05,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    controlButton(
+                      imagePath: 'assets/images/icons/turtle.png',
+                      onPressed: _onTurtlePressed,
+                      backgroundColor: turtleColor,
+                    ),
+                    _controlButton(
+                      _isPlaying ? Icons.pause : Icons.play_arrow,
+                      () async {
+                        setState(() => _isPlaying = !_isPlaying);
+                        if (_isPlaying) {
+                          await showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Countdown(),
+                          ).whenComplete(() => _startNoteSync());
+                        } else {
+                          _timer?.cancel();
+                        }
+                      },
+                      iconSize: 52,
+                    ),
+                    controlButton(
+                      imagePath: 'assets/images/icons/rabbit.png',
+                      onPressed: _onRabbitPressed,
+                      backgroundColor: rabbitColor,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: screenSize.height * 0.05,
+              ),
+            ],
+          ),
+          if (showSpeedText)
+            Positioned(
+              bottom: 140,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Speed: ${playerSpeed.toStringAsFixed(2)}x',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _controlButton(Icons.remove_circle_outline, () async {
-                    playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
-                    await _applySpeedAndReset(playerSpeed);
-                  }),
-                  _controlButton(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    () async {
-                      setState(() {
-                        _isPlaying = !_isPlaying;
-                      });
-                      if (_isPlaying) {
-                        await showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (_) => const Countdown(),
-                        ).whenComplete(() async {
-                          _startNoteSync();
-                        });
-                      }
-                    },
-                    iconSize: 52,
-                  ),
-                  _controlButton(Icons.add_circle, () async {
-                    playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
-                    await _applySpeedAndReset(playerSpeed);
-                  }),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }

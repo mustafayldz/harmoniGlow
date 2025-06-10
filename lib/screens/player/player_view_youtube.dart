@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/player/drum_part_badge.dart';
+import 'package:drumly/screens/player/player_shared.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
@@ -38,6 +39,12 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
   final List<int> _currentData = [];
   final List<String> _sentDrumParts = [];
   Color _randomColor = Colors.black;
+
+  Color? turtleColor;
+  Color? rabbitColor;
+
+  bool showSpeedText = false;
+  Timer? _speedTextTimer;
 
   @override
   void initState() {
@@ -114,104 +121,159 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
     super.dispose();
   }
 
+  void _updateButtonColors() {
+    setState(() {
+      turtleColor = null;
+      rabbitColor = null;
+      if (playerSpeed == 0.5) {
+        turtleColor = Colors.deepPurple[900];
+      } else if (playerSpeed == 0.75) {
+        turtleColor = Colors.deepPurple[300];
+      } else if (playerSpeed == 1.25) {
+        rabbitColor = Colors.deepPurple[300];
+      } else if (playerSpeed == 1.5) {
+        rabbitColor = Colors.deepPurple[900];
+      }
+    });
+  }
+
+  void _showSpeedTextTemporarily() {
+    setState(() => showSpeedText = true);
+    _speedTextTimer?.cancel();
+    _speedTextTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => showSpeedText = false);
+    });
+  }
+
+  void _onTurtlePressed(BluetoothBloc bluetoothBloc) async {
+    if (playerSpeed > 0.5) {
+      playerSpeed = (playerSpeed - 0.25).clamp(0.5, 1.5);
+      await _applySpeedAndReset(bluetoothBloc);
+      _updateButtonColors();
+      _showSpeedTextTemporarily();
+    }
+  }
+
+  void _onRabbitPressed(BluetoothBloc bluetoothBloc) async {
+    if (playerSpeed < 1.5) {
+      playerSpeed = (playerSpeed + 0.25).clamp(0.5, 1.5);
+      await _applySpeedAndReset(bluetoothBloc);
+      _updateButtonColors();
+      _showSpeedTextTemporarily();
+    }
+  }
+
+  Future<void> _applySpeedAndReset(BluetoothBloc bluetoothBloc) async {
+    _controller.pause();
+    _controller.setPlaybackRate(playerSpeed);
+    final int ledDuration = (baseLedDuration / playerSpeed).round();
+    await SendData().sendHexData(bluetoothBloc, splitToBytes(ledDuration));
+    _updateButtonColors();
+    _showSpeedTextTemporarily();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final Size screenSize = MediaQuery.of(context).size;
     final bluetoothBloc = context.read<BluetoothBloc>();
     return Scaffold(
-      body: Column(
+      body: Stack(
+        alignment: Alignment.bottomCenter,
         children: [
-          // 1️⃣ Video player
-          YoutubePlayer(
-            controller: _controller,
-            showVideoProgressIndicator: true,
-          ),
+          Column(
+            children: [
+              SizedBox(
+                height: screenSize.height * 0.04,
+              ),
 
-          const Spacer(),
+              // 1️⃣ Display triggered drum parts
+              _sentDrumParts.isNotEmpty || _controller.value.isPlaying
+                  ? DrumOverlayView(
+                      selectedParts: _sentDrumParts,
+                      highlightColor: _randomColor,
+                    )
+                  : Image.asset('assets/images/drumly_logo.png'),
 
-          // 2️⃣ Display triggered drum parts
-          if (_sentDrumParts.isNotEmpty || _controller.value.isPlaying)
-            DrumOverlayView(
-              selectedParts: _sentDrumParts,
-              highlightColor: _randomColor,
-            ),
+              const Spacer(),
 
-          // 3️⃣ Basic play / pause buttons
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _controlButton(Icons.remove_circle_outline, () async {
-                  playerSpeed = (playerSpeed - 0.25).clamp(0.25, 2.0);
-                  await _applySpeedAndReset(bluetoothBloc, playerSpeed);
-                }),
-                _controlButton(
-                  _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                  () async {
-                    if (_controller.value.isPlaying) {
-                      _controller.pause();
-                      await SendData().sendHexData(bluetoothBloc, [0]);
-                    } else {
-                      await showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => const Countdown(),
-                      ).whenComplete(() async {
-                        if (mounted) {
-                          _controller.play();
-                        }
-                      });
-                    }
-                  },
-                  iconSize: 52,
+              // 2️⃣ Video player
+              SizedBox(
+                height: screenSize.height * 0.15,
+                child: YoutubePlayer(
+                  controller: _controller,
+                  showVideoProgressIndicator: true,
                 ),
-                _controlButton(Icons.add_circle, () async {
-                  playerSpeed = (playerSpeed + 0.25).clamp(0.25, 2.0);
-                  await _applySpeedAndReset(bluetoothBloc, playerSpeed);
-                }),
-              ],
-            ),
+              ),
+
+              SizedBox(
+                height: screenSize.height * 0.05,
+              ),
+
+              // 3️⃣ Basic play / pause buttons
+
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    controlButton(
+                      imagePath: 'assets/images/icons/turtle.png',
+                      onPressed: () => _onTurtlePressed(bluetoothBloc),
+                      backgroundColor: turtleColor,
+                    ),
+                    controlButton(
+                      icon: _controller.value.isPlaying
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      onPressed: () async {
+                        if (_controller.value.isPlaying) {
+                          _controller.pause();
+                          await SendData().sendHexData(bluetoothBloc, [0]);
+                        } else {
+                          await showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Countdown(),
+                          ).whenComplete(() async {
+                            if (mounted) {
+                              _controller.play();
+                            }
+                          });
+                        }
+                      },
+                      iconSize: 52,
+                    ),
+                    controlButton(
+                      imagePath: 'assets/images/icons/rabbit.png',
+                      onPressed: () => _onRabbitPressed(bluetoothBloc),
+                      backgroundColor: rabbitColor,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: screenSize.height * 0.05,
+              ),
+            ],
           ),
+          if (showSpeedText)
+            Positioned(
+              bottom: 140,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Speed: ${playerSpeed.toStringAsFixed(2)}x',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
-
-  Future<void> _applySpeedAndReset(
-    BluetoothBloc bluetoothBloc,
-    double newSpeed,
-  ) async {
-    _controller.pause();
-
-    _controller.setPlaybackRate(newSpeed);
-
-    final int ledDuration = (baseLedDuration / newSpeed).round();
-
-    await SendData().sendHexData(bluetoothBloc, splitToBytes(ledDuration));
-  }
-
-  Widget _controlButton(
-    IconData icon,
-    VoidCallback onPressed, {
-    double iconSize = 32,
-  }) =>
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: IconButton(
-          icon: Icon(icon, size: iconSize, color: Colors.black),
-          onPressed: onPressed,
-        ),
-      );
 }
