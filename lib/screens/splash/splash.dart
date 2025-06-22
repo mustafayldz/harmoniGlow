@@ -59,7 +59,7 @@ class _SplashViewState extends State<SplashView>
     if (!mounted) return;
 
     // 4. tokeni kontrol et gerekirse tokeni yenile
-    if (token != null || token!.isNotEmpty) {
+    if (token != null) {
       if (isJwtExpired(token)) {
         final newToken = await getValidFirebaseToken();
         await StorageService.saveFirebaseToken(newToken);
