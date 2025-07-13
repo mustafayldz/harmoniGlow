@@ -38,7 +38,7 @@
 	<array>
 		<string>bluetooth-central</string>
 		<string>remote-notification</string>
-		<string>background-processing</string>
+		<string>background-fetch</string>
 	</array>
 	<key>CFBundleLocalizations</key>
 	<array>
