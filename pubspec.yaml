@@ -32,6 +32,9 @@ dependencies:
   intl: ^0.19.0
   easy_localization: ^3.0.7+1
   audioplayers: ^6.4.0 #bunu beat maker için ekledim
+  firebase_messaging: ^15.1.6
+  flutter_local_notifications: ^18.0.1
+  top_snackbar_flutter: ^3.1.0
 
   flutter_localizations:
     sdk: flutter
