@@ -3,7 +3,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/hive/db_service.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/hive/models/note_model.dart';
-import 'package:drumly/screens/beat_maker/drum_player_manager.dart';
+import 'package:drumly/screens/beat_maker/just_audio_drum_manager.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
@@ -13,7 +13,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class BeatMakerViewmodel {
   final StorageService storageService = StorageService();
-  final DrumPlayerManager drumManager = DrumPlayerManager(); // Singleton
+  final JustAudioDrumManager drumManager = JustAudioDrumManager(); // Singleton
 
   bool _isRecording = false;
   String? _recordingId;
@@ -29,14 +29,15 @@ class BeatMakerViewmodel {
   Future<void> playSound(BuildContext context, String drumPart) async {
     if (_disposed || drumPart.trim().isEmpty) return;
 
-    drumManager.reinitialize();
+    await drumManager.reinitialize();
 
-    await drumManager.play(drumPart);
-    debugPrint('▶️ Played: $drumPart');
+    // ✅ Önce sesi çal - await olmadan hemen çal
+    drumManager.play(drumPart); // await kaldırıldı
+    debugPrint('▶️ Playing: $drumPart');
 
     final now = DateTime.now();
     if (_lastTapTime == null ||
-        now.difference(_lastTapTime!).inMilliseconds > 120) {
+        now.difference(_lastTapTime!).inMilliseconds > 50) {
       _pendingDrumParts.clear();
     }
 
@@ -44,7 +45,7 @@ class BeatMakerViewmodel {
     _pendingDrumParts.add(drumPart);
 
     _recordTimer?.cancel();
-    _recordTimer = Timer(const Duration(milliseconds: 120), () async {
+    _recordTimer = Timer(const Duration(milliseconds: 50), () async {
       final ledList = <int>[];
       final rgbList = <List<int>>[];
 

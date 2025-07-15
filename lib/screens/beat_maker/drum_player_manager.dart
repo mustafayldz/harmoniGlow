@@ -26,23 +26,45 @@ class DrumPlayerManager {
   final Map<String, int> _poolIndex = {};
   bool _initialized = false;
 
-  void _initPlayers() {
+  Future<void> _initPlayers() async {
     if (_initialized) return;
 
-    for (var key in _paths.keys) {
-      _playerPool[key] = List.generate(9, (_) {
-        final player = AudioPlayer();
-        player.setPlayerMode(PlayerMode.lowLatency);
-        return player;
-      });
-    }
+    try {
+      for (var key in _paths.keys) {
+        final path = _paths[key];
+        if (path == null) continue;
 
-    _initialized = true;
+        _playerPool[key] = await Future.wait(List.generate(3, (_) async {
+          // 3 player per drum part
+          final player = AudioPlayer();
+
+          try {
+            // iOS için PlayerMode.lowLatency kullan
+            await player.setPlayerMode(PlayerMode.lowLatency);
+
+            // Ses dosyasını pre-load et
+            await player.setSource(AssetSource(path));
+
+            debugPrint('✅ Preloaded $key successfully');
+            return player;
+          } catch (e) {
+            debugPrint('⚠️ Failed to preload $key: $e');
+            return player; // Boş player döndür
+          }
+        }));
+      }
+
+      _initialized = true;
+      debugPrint('✅ DrumPlayerManager initialized successfully');
+    } catch (e) {
+      debugPrint('❌ Error initializing DrumPlayerManager: $e');
+      _initialized = false;
+    }
   }
 
   /// Manuel yeniden başlatmak için (dispose sonrası)
-  void reinitialize() {
-    _initPlayers();
+  Future<void> reinitialize() async {
+    await _initPlayers();
   }
 
   Future<void> play(String drumPart) async {
@@ -52,16 +74,39 @@ class DrumPlayerManager {
     final pool = _playerPool[drumPart];
     if (pool == null || pool.isEmpty) return;
 
-    final index = _poolIndex[drumPart] ?? 0;
-    final player = pool[index % pool.length];
-    _poolIndex[drumPart] = (index + 1) % pool.length;
-
     try {
-      await player.stop(); // önceki sesi durdur
+      // Round-robin approach ile player seç
+      final index = _poolIndex[drumPart] ?? 0;
+      final player = pool[index];
+
+      // Next index for round-robin
+      _poolIndex[drumPart] = (index + 1) % pool.length;
+
+      // Player'ı durdur ve başa sar
+      await player.stop();
+      await player.seek(Duration.zero);
+
+      // Ses dosyasını tekrar yükle (iOS sorunu için)
       await player.setSource(AssetSource(path));
+
+      // Çal
       await player.resume();
+
+      debugPrint('🥁 Playing $drumPart with player $index');
     } catch (e) {
-      debugPrint('❌ Error playing $drumPart');
+      debugPrint('❌ Error playing $drumPart: $e');
+
+      // Fallback: yeni player oluştur
+      try {
+        final fallbackPlayer = AudioPlayer();
+        await fallbackPlayer.setPlayerMode(PlayerMode.lowLatency);
+        await fallbackPlayer.setSource(AssetSource(path));
+        await fallbackPlayer.resume();
+
+        debugPrint('🔄 Fallback player created for $drumPart');
+      } catch (e2) {
+        debugPrint('❌ Fallback also failed for $drumPart: $e2');
+      }
     }
   }
 
