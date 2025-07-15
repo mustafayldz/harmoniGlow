@@ -32,6 +32,7 @@
   "adjustDrum": "Davul ayarlarını yap",
   "beatMaker": "Beat Oluşturucu",
   "createBeats": "Kendi beat'lerini oluştur",
+  "customizeApp": "Uygulamayı özelleştir",
   "alreadyConnectedTo": "Zaten cihazına bağlı.",
   "disconnectAndScanAgain": "Bağlantıyı Kes ve Tekrar Tara",
   "noDevicesFound": "Hiçbir cihaz bulunamadı. Lütfen Bluetooth'un açık olduğundan emin olun.",

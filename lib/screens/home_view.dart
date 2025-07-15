@@ -22,14 +22,49 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   List<_CardData> _cards = [];
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _checkLocalStorage();
     _initCards();
+    _initAnimations();
+  }
+
+  void _initAnimations() {
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _initCards() {
@@ -38,43 +73,73 @@ class _HomeViewState extends State<HomeView> {
         key: 'training',
         title: 'training'.tr(),
         subtitle: 'trainWithMusic'.tr(),
-        color: AppColors.trainingGreen, // Yeşil
-        icon: Icons.multitrack_audio_sharp, // Öğretmen tahtası
+        color: AppColors.trainingGreen,
+        icon: Icons.school_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       _CardData(
         key: 'songs',
         title: 'songs'.tr(),
         subtitle: 'discoverSongs'.tr(),
-        color: AppColors.songsPink, // Pembe
-        icon: Icons.music_note, // Nota
+        color: AppColors.songsPink,
+        icon: Icons.music_note_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEC4899), Color(0xFFDB2777)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       _CardData(
         key: 'my beats',
         title: 'myBeats'.tr(),
         subtitle: 'listenToBeats'.tr(),
-        color: AppColors.beatsPurple, // Mor
-        icon: Icons.headphones, // Kulaklık
+        color: AppColors.beatsPurple,
+        icon: Icons.headphones_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFA855F7), Color(0xFF9333EA)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       _CardData(
         key: 'my drum',
         title: 'myDrum'.tr(),
         subtitle: 'adjustDrum'.tr(),
-        color: AppColors.drumBlue, // Mavi
-        icon: Icons.music_video, // Davul görünümlü ikon
+        color: AppColors.drumBlue,
+        icon: Icons.tune_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       _CardData(
         key: 'beat maker',
         title: 'beatMaker'.tr(),
         subtitle: 'createBeats'.tr(),
-        color: AppColors.makerOrange, // Turuncu
-        icon: Icons.tune, // Ayar çubuğu (beat kontrolü)
+        color: AppColors.makerOrange,
+        icon: Icons.create_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF97316), Color(0xFFEA580C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       _CardData(
         key: 'settings',
         title: 'settings'.tr(),
-        subtitle: '',
-        color: AppColors.settingsRed, // Kırmızı
-        icon: Icons.settings, // Ayarlar çarkı
+        subtitle: 'customizeApp'.tr(),
+        color: AppColors.settingsRed,
+        icon: Icons.settings_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
     ];
   }
@@ -95,155 +160,339 @@ class _HomeViewState extends State<HomeView> {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
     final deviceName = state.connectedDevice?.advName ?? 'Unknown Device';
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     // Rebuild localized cards when language changes
     _initCards();
 
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildBluetoothBanner(isConnected, deviceName),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                physics: const BouncingScrollPhysics(),
-                itemCount: _cards.length,
-                itemBuilder: (context, index) {
-                  final card = _cards[index];
-                  final destination = _getDestination(card.key, isConnected);
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => _handleTap(
-                        context,
-                        card.key,
-                        isConnected,
-                        destination,
-                      ),
-                      child: _buildCard(card),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBluetoothBanner(bool connected, String deviceName) =>
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const FindDevicesView()),
-        ),
-        child: Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: connected ? Colors.green[100] : Colors.red[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: connected ? Colors.green : Colors.red,
-              width: 1.5,
-            ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDarkMode
+                ? [
+                    const Color(0xFF0F172A), // Dark slate
+                    const Color(0xFF1E293B), // Lighter slate
+                    const Color(0xFF334155), // Even lighter
+                  ]
+                : [
+                    const Color(0xFFF8FAFC), // Light gray
+                    const Color(0xFFE2E8F0), // Slightly darker
+                    const Color(0xFFCBD5E1), // Even darker
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                connected
-                    ? Icons.bluetooth_connected
-                    : Icons.bluetooth_disabled,
-                color: connected ? Colors.green : Colors.red,
+        ),
+        child: SafeArea(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // App Bar
+              SliverToBoxAdapter(
+                child: AnimatedBuilder(
+                  animation: _fadeAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildModernAppBar(isDarkMode),
+                      ),
+                    );
+                  },
+                ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                connected ? 'connectedToDevice'.tr() : 'disconnected'.tr(),
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: connected ? Colors.green[800] : Colors.red[800],
+
+              // Bluetooth Status
+              SliverToBoxAdapter(
+                child: AnimatedBuilder(
+                  animation: _fadeAnimation,
+                  builder: (context, child) {
+                    return Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: _buildModernBluetoothBanner(
+                            isConnected, deviceName, isDarkMode),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Cards Grid
+              SliverPadding(
+                padding: const EdgeInsets.all(20),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.1,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final card = _cards[index];
+                      final destination =
+                          _getDestination(card.key, isConnected);
+
+                      return AnimatedBuilder(
+                        animation: _fadeAnimation,
+                        builder: (context, child) {
+                          return Opacity(
+                            opacity: _fadeAnimation.value,
+                            child: SlideTransition(
+                              position: Tween<Offset>(
+                                begin: Offset(0, 0.3 + (index * 0.1)),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: _animationController,
+                                curve: Interval(
+                                  index * 0.1,
+                                  1.0,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              )),
+                              child: _buildModernCard(
+                                  card, destination, isConnected, isDarkMode),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    childCount: _cards.length,
+                  ),
                 ),
               ),
             ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _buildCard(_CardData card) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        decoration: BoxDecoration(
-          color: card.color,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(13),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(card.icon, size: 32, color: Colors.white),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
+  Widget _buildModernAppBar(bool isDarkMode) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    card.title,
-                    style: const TextStyle(
-                      fontSize: 18,
+                    'Drumly',
+                    style: TextStyle(
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      foreground: Paint()
+                        ..shader = const LinearGradient(
+                          colors: [Color(0xFF60A5FA), Color(0xFF34D399)],
+                        ).createShader(const Rect.fromLTWH(0, 0, 200, 70)),
                     ),
                   ),
-                  if (card.subtitle.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        card.subtitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
                 ],
               ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDarkMode
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.black.withOpacity(0.2),
+                  ),
+                ),
+                child: Icon(
+                  Icons.notifications_outlined,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  size: 24,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernBluetoothBanner(
+      bool connected, String deviceName, bool isDarkMode) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: GestureDetector(
+        onTap: () => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const FindDevicesView()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: connected
+                  ? [const Color(0xFF22C55E), const Color(0xFF16A34A)]
+                  : [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: (connected ? Colors.green : Colors.red).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  connected
+                      ? Icons.bluetooth_connected_rounded
+                      : Icons.bluetooth_disabled_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      connected
+                          ? 'connectedToDevice'.tr()
+                          : 'disconnected'.tr(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (connected) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        deviceName,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withOpacity(0.7),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernCard(
+      _CardData card, Widget destination, bool isConnected, bool isDarkMode) {
+    return GestureDetector(
+      onTap: () =>
+          _handleModernTap(context, card.key, isConnected, destination),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: card.gradient,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: card.color.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
-      );
-
-  Widget _getDestination(String key, bool isConnected) {
-    switch (key) {
-      case 'training':
-        return const TrainingView();
-      case 'songs':
-        return const SongView();
-      case 'my drum':
-        return isConnected ? const DrumAdjustment() : const FindDevicesView();
-      case 'beat maker':
-        return const BeatMakerView();
-      case 'settings':
-        return const SettingView();
-      case 'my beats':
-        return const MyBeatsView();
-      default:
-        return const SizedBox.shrink();
-    }
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDarkMode
+                ? Colors.white.withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDarkMode
+                  ? Colors.white.withOpacity(0.2)
+                  : Colors.black.withOpacity(0.1),
+            ),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? Colors.white.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      card.icon,
+                      size: constraints.maxWidth * 0.2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: constraints.maxHeight * 0.08),
+                  Flexible(
+                    child: Text(
+                      card.title,
+                      style: TextStyle(
+                        fontSize: constraints.maxWidth * 0.1,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(height: constraints.maxHeight * 0.04),
+                  Flexible(
+                    child: Text(
+                      card.subtitle,
+                      style: TextStyle(
+                        fontSize: constraints.maxWidth * 0.08,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 
-  Future<void> _handleTap(
+  Future<void> _handleModernTap(
     BuildContext context,
     String key,
     bool isConnected,
@@ -278,6 +527,25 @@ class _HomeViewState extends State<HomeView> {
       debugPrint('Navigation error: $e\n$st');
     }
   }
+
+  Widget _getDestination(String key, bool isConnected) {
+    switch (key) {
+      case 'training':
+        return const TrainingView();
+      case 'songs':
+        return const SongView();
+      case 'my drum':
+        return isConnected ? const DrumAdjustment() : const FindDevicesView();
+      case 'beat maker':
+        return const BeatMakerView();
+      case 'settings':
+        return const SettingView();
+      case 'my beats':
+        return const MyBeatsView();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
 }
 
 class _CardData {
@@ -287,10 +555,12 @@ class _CardData {
     required this.subtitle,
     required this.color,
     required this.icon,
+    required this.gradient,
   });
   final String key;
   final String title;
   final String subtitle;
   final Color color;
   final IconData icon;
+  final LinearGradient gradient;
 }

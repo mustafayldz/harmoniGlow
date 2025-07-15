@@ -28,6 +28,15 @@ class AppColors {
   static const drumBlue = Color(0xFF3B82F6); // My Drum
   static const makerOrange = Color(0xFFF97316); // Beat Maker
   static const settingsRed = Color(0xFFEF4444); // Settings
+
+  // Modern gradient colors
+  static const gradientStart = Color(0xFF0F172A); // Dark slate
+  static const gradientMid = Color(0xFF1E293B); // Lighter slate
+  static const gradientEnd = Color(0xFF334155); // Even lighter
+
+  // Glass effect colors
+  static const glassWhite = Color(0x1AFFFFFF); // 10% white
+  static const glassBorder = Color(0x33FFFFFF); // 20% white
 }
 
 class ApiServiceUrl {

@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 
 class JustAudioDrumManager {
   factory JustAudioDrumManager() => _instance;
-  
+
   JustAudioDrumManager._internal() {
     _initPlayers();
   }
 
-  static final JustAudioDrumManager _instance = JustAudioDrumManager._internal();
+  static final JustAudioDrumManager _instance =
+      JustAudioDrumManager._internal();
 
   final Map<String, String> _paths = {
     'Hi-Hat': 'assets/sounds/open_hihat.m4a',
@@ -28,23 +29,23 @@ class JustAudioDrumManager {
 
   Future<void> _initPlayers() async {
     if (_initialized) return;
-    
+
     try {
       for (final drumPart in _paths.keys) {
         final path = _paths[drumPart];
         if (path == null) continue;
-        
+
         final pool = <AudioPlayer>[];
-        
+
         // Her davul parçası için 2 player oluştur
         for (int i = 0; i < 2; i++) {
           final player = AudioPlayer();
-          
+
           try {
             // Ses dosyasını pre-load et
             await player.setAsset(path);
             debugPrint('✅ Preloaded $drumPart player $i');
-            
+
             pool.add(player);
           } catch (e) {
             debugPrint('⚠️ Failed to preload $drumPart player $i: $e');
@@ -52,14 +53,13 @@ class JustAudioDrumManager {
             pool.add(player);
           }
         }
-        
+
         _playerPool[drumPart] = pool;
         _poolIndex[drumPart] = 0;
       }
-      
+
       _initialized = true;
       debugPrint('✅ JustAudioDrumManager initialized successfully');
-      
     } catch (e) {
       debugPrint('❌ Error initializing JustAudioDrumManager: $e');
       _initialized = false;
@@ -83,7 +83,7 @@ class JustAudioDrumManager {
       // Round-robin approach ile player seç
       final index = _poolIndex[drumPart] ?? 0;
       final player = pool[index];
-      
+
       // Next index for round-robin
       _poolIndex[drumPart] = (index + 1) % pool.length;
 
@@ -91,30 +91,28 @@ class JustAudioDrumManager {
       if (player.playing) {
         await player.stop();
       }
-      
+
       await player.seek(Duration.zero);
-      
+
       // Eğer asset yüklenmemişse, yükle
       if (player.audioSource == null) {
         await player.setAsset(path);
       }
-      
+
       // Çal
       await player.play();
-      
+
       debugPrint('🥁 Playing $drumPart with JustAudio player $index');
-      
     } catch (e) {
       debugPrint('❌ Error playing $drumPart: $e');
-      
+
       // Fallback: yeni player oluştur ve çal
       try {
         final fallbackPlayer = AudioPlayer();
         await fallbackPlayer.setAsset(path);
         await fallbackPlayer.play();
-        
+
         debugPrint('🔄 Fallback JustAudio player created for $drumPart');
-        
       } catch (e2) {
         debugPrint('❌ Fallback also failed for $drumPart: $e2');
       }
