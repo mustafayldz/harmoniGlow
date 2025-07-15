@@ -38,62 +38,62 @@ class NotificationHandler {
   /// Kullanım: _showNotificationDialog(context, message);
   // ignore: unused_element
   static void _showNotificationDialog(
-      BuildContext context, RemoteMessage message) {
+    BuildContext context,
+    RemoteMessage message,
+  ) {
     final title = message.notification?.title ?? 'Bildirim';
     final body = message.notification?.body ?? 'Yeni mesaj';
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.notifications_active,
-                color: Colors.blue[600],
-                size: 28,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          content: Text(
-            body,
-            style: const TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('KAPAT'),
+      builder: (BuildContext context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.notifications_active,
+              color: Colors.blue[600],
+              size: 28,
             ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Notification data'sına göre navigation yap
-                if (message.data.isNotEmpty) {
-                  _navigateBasedOnData(message.data);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                foregroundColor: Colors.white,
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
-              child: const Text('AÇ'),
             ),
           ],
-        );
-      },
+        ),
+        content: Text(
+          body,
+          style: const TextStyle(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('KAPAT'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Notification data'sına göre navigation yap
+              if (message.data.isNotEmpty) {
+                _navigateBasedOnData(message.data);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[600],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('AÇ'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -171,12 +171,10 @@ class NotificationHandler {
   /// Debug için token'ı manuel olarak yazdır
   static Future<void> printCurrentToken() async {
     final token = _notificationService.fcmToken;
-    print('🔔 Current FCM Token: $token');
 
     if (token == null) {
-      print('⚠️  Token null, yeniden alınmaya çalışılıyor...');
       final newToken = await _notificationService.getTokenManually();
-      print('🔄 Yeniden alınan token: $newToken');
+      debugPrint('🔄 Yeniden alınan token: $newToken');
     }
   }
 
@@ -184,11 +182,9 @@ class NotificationHandler {
   static void sendTestNotification() {
     final token = _notificationService.fcmToken;
     if (token != null) {
-      print('🧪 Test için FCM Token:');
-      print(token);
-      print('Bu token\'ı Firebase Console\'da kullanabilirsiniz!');
+      debugPrint('🔔 Test notification gönderiliyor: $token');
     } else {
-      print('❌ FCM Token bulunamadı!');
+      debugPrint('❌ FCM Token bulunamadı!');
     }
   }
 
@@ -230,7 +226,6 @@ class NotificationHandler {
         ),
         backgroundColor: Colors.blue[800],
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

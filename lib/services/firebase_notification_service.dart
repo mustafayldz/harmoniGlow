@@ -27,31 +27,23 @@ class FirebaseNotificationService {
   /// Firebase Messaging'i başlat
   Future<void> initialize() async {
     try {
-      print('🚀 Firebase Messaging başlatılıyor...');
-
-      // İzin iste
-      print('🚀 Permission isteniyor...');
       await _requestPermission();
 
       // iOS için APNS token'ı al
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        print('🍎 iOS platform - APNS token alınıyor...');
         await _getAPNSToken();
       }
 
       // Local notifications'ı başlat
-      print('🚀 Local notifications başlatılıyor...');
       await _initializeLocalNotifications();
 
       // FCM token'ı al
-      print('🚀 FCM token alınıyor...');
       await _getToken();
 
       // Token yenileme dinleyicisi
       _firebaseMessaging.onTokenRefresh.listen((token) {
         _fcmToken = token;
         onTokenRefresh?.call(token);
-        print('🔄 FCM Token yenilendi: $token');
         developer.log('FCM Token refreshed: $token', name: 'FCM');
       });
 
@@ -64,10 +56,8 @@ class FirebaseNotificationService {
       // Uygulama kapalıyken gelen mesajları kontrol et
       _checkInitialMessage();
 
-      print('✅ Firebase Messaging başarıyla başlatıldı');
       developer.log('Firebase Messaging initialized successfully', name: 'FCM');
     } catch (e) {
-      print('❌ Firebase Messaging başlatma hatası: $e');
       developer.log(
         'Firebase Messaging initialization failed',
         name: 'FCM',
@@ -78,18 +68,14 @@ class FirebaseNotificationService {
 
   /// İzin iste
   Future<void> _requestPermission() async {
-    print('🚀 Notification permission isteniyor...');
     final settings = await _firebaseMessaging.requestPermission();
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('✅ User granted permission');
       developer.log('User granted permission', name: 'FCM');
     } else if (settings.authorizationStatus ==
         AuthorizationStatus.provisional) {
-      print('⚠️  User granted provisional permission');
       developer.log('User granted provisional permission', name: 'FCM');
     } else {
-      print('❌ User declined or has not accepted permission');
       developer.log(
         'User declined or has not accepted permission',
         name: 'FCM',
@@ -133,22 +119,23 @@ class FirebaseNotificationService {
   /// FCM token'ı al
   Future<void> _getToken() async {
     try {
-      print('🚀 FCM Token alınmaya çalışılıyor...');
+      developer.log('FCM Token alınmaya çalışılıyor...', name: 'FCM');
 
       // iOS için APNS token'ın hazır olduğundan emin ol
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         final apnsToken = await _firebaseMessaging.getAPNSToken();
         if (apnsToken == null) {
-          print('⚠️  APNS token henüz hazır değil, bekleniyor...');
+          developer.log(
+            'APNS token henüz hazır değil, bekleniyor...',
+            name: 'FCM',
+          );
           await Future.delayed(const Duration(seconds: 1));
         }
       }
 
       _fcmToken = await _firebaseMessaging.getToken();
-      print('✅ FCM Token başarıyla alındı: $_fcmToken');
       developer.log('FCM Token: $_fcmToken', name: 'FCM');
     } catch (e) {
-      print('❌ FCM Token alma hatası: $e');
       developer.log('Failed to get FCM token', name: 'FCM', error: e);
     }
   }
@@ -272,11 +259,8 @@ class FirebaseNotificationService {
   /// FCM token'ı zorla yeniden al
   Future<String?> refreshToken() async {
     try {
-      print('🔄 FCM Token yeniden alınıyor...');
-
       // iOS için önce APNS token'ı kontrol et
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        print('🍎 iOS - Önce APNS token kontrol ediliyor...');
         await _getAPNSToken();
 
         // APNS token'ın kullanılabilir olması için biraz bekle
@@ -286,11 +270,9 @@ class FirebaseNotificationService {
       await _firebaseMessaging.deleteToken();
       await Future.delayed(const Duration(milliseconds: 500));
       _fcmToken = await _firebaseMessaging.getToken();
-      print('✅ FCM Token yeniden alındı: $_fcmToken');
       developer.log('FCM Token refreshed: $_fcmToken', name: 'FCM');
       return _fcmToken;
     } catch (e) {
-      print('❌ FCM Token yeniden alma hatası: $e');
       developer.log('Failed to refresh FCM token', name: 'FCM', error: e);
       return null;
     }
@@ -298,7 +280,6 @@ class FirebaseNotificationService {
 
   /// FCM token'ı manuel olarak al (public metod)
   Future<String?> getTokenManually() async {
-    print('🔄 FCM Token manuel olarak alınıyor...');
     await _getToken();
     return _fcmToken;
   }
@@ -306,29 +287,27 @@ class FirebaseNotificationService {
   /// iOS için APNS token'ı al
   Future<void> _getAPNSToken() async {
     try {
-      print('🍎 APNS token alınmaya çalışılıyor...');
-
       // APNS token'ı al
       final apnsToken = await _firebaseMessaging.getAPNSToken();
 
       if (apnsToken != null) {
-        print('✅ APNS token alındı: ${apnsToken.substring(0, 20)}...');
         developer.log('APNS Token: $apnsToken', name: 'FCM');
       } else {
-        print('⚠️  APNS token null - 2 saniye bekleniyor...');
         await Future.delayed(const Duration(seconds: 2));
 
         // Tekrar dene
         final retryApnsToken = await _firebaseMessaging.getAPNSToken();
         if (retryApnsToken != null) {
-          print(
-              '✅ APNS token (retry) alındı: ${retryApnsToken.substring(0, 20)}...');
+          developer.log(
+            'APNS token (retry) alındı: ${retryApnsToken.substring(0, 20)}...',
+            name: 'FCM',
+          );
         } else {
-          print('❌ APNS token hala null');
+          developer.log('APNS token hala null', name: 'FCM');
         }
       }
     } catch (e) {
-      print('❌ APNS token alma hatası: $e');
+      developer.log('APNS token alma hatası: $e', name: 'FCM');
       developer.log('Failed to get APNS token', name: 'FCM', error: e);
     }
   }

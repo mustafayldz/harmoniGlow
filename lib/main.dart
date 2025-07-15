@@ -33,85 +33,58 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   // İlk debug çıktısı
-  print('🚀🚀🚀 DRUMLY UYGULAMASI BAŞLATIYOR 🚀🚀🚀');
   debugPrint('🚀🚀🚀 DRUMLY UYGULAMASI BAŞLATIYOR 🚀🚀🚀');
 
   WidgetsFlutterBinding.ensureInitialized();
-  print('✅ WidgetsFlutterBinding başlatıldı');
 
   // Firebase'i başlat
-  print('🚀 Firebase başlatılıyor...');
   await Firebase.initializeApp();
-  print('✅ Firebase başlatıldı');
 
   // Background message handler'ı kaydet
-  print('🚀 Background message handler kaydediliyor...');
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  print('✅ Background message handler kaydedildi');
 
   // Firebase Notification Service'i başlat
-  print('🚀 Firebase Notification Service başlatılıyor...');
   await FirebaseNotificationService().initialize();
-  print('✅ Firebase Notification Service başlatıldı');
 
   // Notification handler'ı başlat
-  print('🚀 Notification Handler başlatılıyor...');
   NotificationHandler.initialize();
-  print('✅ Notification Handler başlatıldı');
 
   // Default topic'lere abone ol
-  print('🚀 Default topic\'lere abone oluyor...');
   await NotificationHandler.subscribeToDefaultTopics();
-  print('✅ Default topic\'lere abone olundu');
 
   // FCM Token'ı debug için yazdır
-  print('🔍 FCM Token kontrolü başlıyor...');
   final notificationService = FirebaseNotificationService();
 
   // İlk kontrol
   var token = notificationService.fcmToken;
-  print('🔔 Main\'de FCM Token (ilk): $token');
 
   // Eğer token null ise, daha agresif deneme
   if (token == null) {
-    print('⚠️  Token null, 2 saniye bekleniyor...');
     await Future.delayed(const Duration(seconds: 2));
 
     token = notificationService.fcmToken;
-    print('🔄 2 saniye sonra FCM Token: $token');
 
     if (token == null) {
-      print('⚠️  Hala null, manuel olarak alınmaya çalışılıyor...');
       token = await notificationService.getTokenManually();
-      print('🔄 Manuel alma sonrası FCM Token: $token');
 
       // Hala null ise refresh dene
       if (token == null) {
-        print('⚠️  Hala null, refresh deneniyor...');
         token = await notificationService.refreshToken();
-        print('🔄 Refresh sonrası FCM Token: $token');
 
         // Son deneme - 3 saniye daha bekle
         if (token == null) {
-          print('⚠️  Son deneme: 3 saniye daha bekleniyor...');
           await Future.delayed(const Duration(seconds: 3));
           token = notificationService.fcmToken;
-          print('🔄 Son deneme FCM Token: $token');
         }
       }
     }
   }
 
   if (token != null) {
-    print('🎉🎉🎉 BAŞARILI! FCM Token: $token');
-    print('📋 Bu token\'ı Firebase Console\'da test için kullanın!');
-    print('🔗 Token uzunluğu: ${token.length} karakter');
-
     // Test helper'ı çağır
     NotificationHandler.sendTestNotification();
   } else {
-    print('❌❌❌ FCM Token alınamadı!');
-    print('🔧 Sorun giderme: Firebase konfigürasyonunu kontrol edin');
+    debugPrint('🔧 Sorun giderme: Firebase konfigürasyonunu kontrol edin');
   }
 
   // Diğer servisleri başlat
