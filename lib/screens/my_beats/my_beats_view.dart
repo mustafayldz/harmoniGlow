@@ -124,7 +124,9 @@ class _MyBeatsViewState extends State<MyBeatsView> {
     );
   }
 
-  Widget _buildModernAppBar(BuildContext context, bool isDarkMode, MyBeatsViewModel vm) => Container(
+  Widget _buildModernAppBar(
+          BuildContext context, bool isDarkMode, MyBeatsViewModel vm) =>
+      Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
@@ -158,9 +160,10 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                   if (vm.beats.isNotEmpty)
                     Container(
                       margin: const EdgeInsets.only(left: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDarkMode 
+                        color: isDarkMode
                             ? Colors.white.withValues(alpha: 0.2)
                             : Colors.black.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -228,7 +231,8 @@ class _MyBeatsViewState extends State<MyBeatsView> {
         ),
       );
 
-  Widget _buildBeatsList(MyBeatsViewModel vm, BluetoothBloc bluetoothBloc, bool isDarkMode) => 
+  Widget _buildBeatsList(
+          MyBeatsViewModel vm, BluetoothBloc bluetoothBloc, bool isDarkMode) =>
       RefreshIndicator(
         onRefresh: () async {
           await vm.loadBeats();
@@ -370,7 +374,8 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: isDarkMode
                           ? Colors.blue.withValues(alpha: 0.2)
@@ -413,7 +418,8 @@ class _MyBeatsViewState extends State<MyBeatsView> {
     required IconData icon,
     required String label,
     required bool isDarkMode,
-  }) => Container(
+  }) =>
+      Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: isDarkMode
