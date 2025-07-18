@@ -74,9 +74,19 @@
   "error_loading_song_details": "Error loading song details",
   "toPlayThisSong": "To play this song, you first need to watch a support ad.",
   "accessOpenedFor": "Access opened for 2 hours.",
-  "adNotWatchedOrErrorOccurred": "Ad was not watched or an error occurred."
-
-
-
+  "adNotWatchedOrErrorOccurred": "Ad was not watched or an error occurred.",
+  "noNotesRecorded": "No notes recorded",
+  "notifications": "Notifications",
+  "notificationsCount": "notifications",
+  "clearAll": "Clear All",
+  "noNotifications": "No Notifications",
+  "allCaughtUp": "All caught up! No new notifications.",
+  "delete": "Delete",
+  "justNow": "Just now",
+  "minutesAgo": "m ago",
+  "hoursAgo": "h ago",
+  "daysAgo": "d ago",
+  "clearAllNotifications": "Clear All Notifications",
+  "clearAllConfirmation": "Are you sure you want to clear all notifications? This action cannot be undone."
 }
 

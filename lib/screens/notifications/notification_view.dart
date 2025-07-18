@@ -73,7 +73,7 @@ class _NotificationViewState extends State<NotificationView> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${notifications.length} notifications',
+                                  '${notifications.length} ${'notificationsCount'.tr()}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -89,9 +89,9 @@ class _NotificationViewState extends State<NotificationView> {
                                       notificationProvider,
                                     );
                                   },
-                                  child: const Text(
-                                    'Clear All',
-                                    style: TextStyle(
+                                  child: Text(
+                                    'clearAll'.tr(),
+                                    style: const TextStyle(
                                       color: Color(0xFFEF4444),
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -153,7 +153,7 @@ class _NotificationViewState extends State<NotificationView> {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                'Notifications',
+                'notifications'.tr(),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -187,7 +187,7 @@ class _NotificationViewState extends State<NotificationView> {
             ),
             const SizedBox(height: 24),
             Text(
-              'No Notifications',
+              'noNotifications'.tr(),
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -196,7 +196,7 @@ class _NotificationViewState extends State<NotificationView> {
             ),
             const SizedBox(height: 8),
             Text(
-              'All caught up! No new notifications.',
+              'allCaughtUp'.tr(),
               style: TextStyle(
                 fontSize: 16,
                 color: isDarkMode
@@ -322,13 +322,13 @@ class _NotificationViewState extends State<NotificationView> {
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            Icon(Icons.delete_outline, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete'),
+                            const Icon(Icons.delete_outline, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Text('delete'.tr()),
                           ],
                         ),
                       ),
@@ -361,13 +361,13 @@ class _NotificationViewState extends State<NotificationView> {
     final difference = now.difference(timestamp);
 
     if (difference.inMinutes < 1) {
-      return 'Just now';
+      return 'justNow'.tr();
     } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}m ago';
+      return '${difference.inMinutes}${'minutesAgo'.tr()}';
     } else if (difference.inDays < 1) {
-      return '${difference.inHours}h ago';
+      return '${difference.inHours}${'hoursAgo'.tr()}';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}d ago';
+      return '${difference.inDays}${'daysAgo'.tr()}';
     } else {
       return DateFormat('MMM dd, yyyy').format(timestamp);
     }
@@ -380,14 +380,14 @@ class _NotificationViewState extends State<NotificationView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All Notifications'),
-        content: const Text(
-          'Are you sure you want to clear all notifications? This action cannot be undone.',
+        title: Text('clearAllNotifications'.tr()),
+        content: Text(
+          'clearAllConfirmation'.tr(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text('cancel'.tr()),
           ),
           TextButton(
             onPressed: () {
@@ -395,7 +395,7 @@ class _NotificationViewState extends State<NotificationView> {
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Clear All'),
+            child: Text('clearAll'.tr()),
           ),
         ],
       ),

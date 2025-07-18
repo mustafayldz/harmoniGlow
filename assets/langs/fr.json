@@ -32,6 +32,7 @@
   "adjustDrum": "Ajuste les réglages de ta batterie",
   "beatMaker": "Créateur de Beats",
   "createBeats": "Crée tes propres beats",
+  "customizeApp": "Personnalise ton application",
   "alreadyConnectedTo": "Déjà connecté à",
   "disconnectAndScanAgain": "Déconnecter et recommencer la recherche",
   "noDevicesFound": "Aucun appareil trouvé. Veuillez vérifier que le Bluetooth est activé.",
@@ -59,7 +60,7 @@
   "watchAdToPlaySong": "Pour lire cette chanson pendant trois heures, vous devez d'abord regarder une publicité.",
   "decline": "Refuser",
   "accessOpenedTwoHours": "Accès ouvert pour 2 heures.",
-  "adNotWatchedOrError": "La publicité n’a pas été regardée ou une erreur s’est produite.",
+  "adNotWatchedOrError": "La publicité n'a pas été regardée ou une erreur s'est produite.",
   "accept": "Accepter",
   "language": "Langue",
   "titleCantbeEmpty": "Titre ne peut pas être vide",
@@ -73,6 +74,18 @@
   "error_loading_song_details": "Erreur lors du chargement des détails de la chanson",
   "toPlayThisSong": "Pour écouter cette chanson, vous devez d'abord regarder une publicité de soutien.",
   "accessOpenedFor": "Accès ouvert pour 2 heures.",
-  "adNotWatchedOrErrorOccurred": "La publicité n’a pas été regardée ou une erreur est survenue."
+  "adNotWatchedOrErrorOccurred": "La publicité n'a pas été regardée ou une erreur est survenue.",
+  "noNotesRecorded": "Aucune note enregistrée",
+  "notifications": "Notifications",
+  "notificationsCount": "notifications",
+  "clearAll": "Tout Effacer",
+  "noNotifications": "Aucune Notification",
+  "allCaughtUp": "Tout est à jour ! Aucune nouvelle notification.",
+  "delete": "Supprimer",
+  "justNow": "À l'instant",
+  "minutesAgo": "min",
+  "hoursAgo": "h",
+  "daysAgo": "j",
+  "clearAllNotifications": "Effacer Toutes les Notifications",
+  "clearAllConfirmation": "Êtes-vous sûr de vouloir effacer toutes les notifications ? Cette action ne peut pas être annulée."
 }
-

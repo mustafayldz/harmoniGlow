@@ -73,6 +73,19 @@
   "error_loading_song_details": "Error al cargar los detalles de la canción",
   "toPlayThisSong": "Para reproducir esta canción, primero debes ver un anuncio de apoyo.",
   "accessOpenedFor": "Acceso habilitado por 2 horas.",
-  "adNotWatchedOrErrorOccurred": "No se vio el anuncio o ocurrió un error."
+  "adNotWatchedOrErrorOccurred": "No se vio el anuncio o ocurrió un error.",
+  "noNotesRecorded": "No se grabaron notas",
+  "notifications": "Notificaciones",
+  "notificationsCount": "notificaciones",
+  "clearAll": "Limpiar Todo",
+  "noNotifications": "Sin Notificaciones",
+  "allCaughtUp": "¡Todo al día! No hay notificaciones nuevas.",
+  "delete": "Eliminar",
+  "justNow": "Ahora mismo",
+  "minutesAgo": "m hace",
+  "hoursAgo": "h hace",
+  "daysAgo": "d hace",
+  "clearAllNotifications": "Limpiar Todas las Notificaciones",
+  "clearAllConfirmation": "¿Estás seguro de que quieres limpiar todas las notificaciones? Esta acción no se puede deshacer."
 }
 

@@ -73,6 +73,19 @@
   "error_loading_song_details": "Ошибка при загрузке информации о песне",
   "toPlayThisSong": "Чтобы воспроизвести эту песню, сначала посмотрите рекламное видео.",
   "accessOpenedFor": "Доступ открыт на 2 часа.",
-  "adNotWatchedOrErrorOccurred": "Реклама не была просмотрена или произошла ошибка."
+  "adNotWatchedOrErrorOccurred": "Реклама не была просмотрена или произошла ошибка.",
+  "noNotesRecorded": "Ноты не записаны",
+  "notifications": "Уведомления",
+  "notificationsCount": "уведомлений",
+  "clearAll": "Очистить Все",
+  "noNotifications": "Нет Уведомлений",
+  "allCaughtUp": "Всё прочитано! Новых уведомлений нет.",
+  "delete": "Удалить",
+  "justNow": "Только что",
+  "minutesAgo": "мин назад",
+  "hoursAgo": "ч назад",
+  "daysAgo": "дн назад",
+  "clearAllNotifications": "Очистить Все Уведомления",
+  "clearAllConfirmation": "Вы уверены, что хотите очистить все уведомления? Это действие нельзя отменить."
 }
 

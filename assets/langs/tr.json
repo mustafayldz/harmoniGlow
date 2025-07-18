@@ -74,6 +74,19 @@
   "error_loading_song_details": "Şarkı detayları yüklenirken hata oluştu",
   "toPlayThisSong": "Bu şarkıyı çalmak için önce destek reklamını izlemeniz gerekiyor.",
   "accessOpenedFor": "Erişim 2 saatliğine açıldı.",
-  "adNotWatchedOrErrorOccurred": "Reklam izlenmedi veya bir hata oluştu."
+  "adNotWatchedOrErrorOccurred": "Reklam izlenmedi veya bir hata oluştu.",
+  "noNotesRecorded": "Hiç nota kaydedilmedi",
+  "notifications": "Bildirimler",
+  "notificationsCount": "bildirim",
+  "clearAll": "Tümünü Temizle",
+  "noNotifications": "Bildirim Yok",
+  "allCaughtUp": "Hepsi okundu! Yeni bildirim yok.",
+  "delete": "Sil",
+  "justNow": "Şimdi",
+  "minutesAgo": "dk önce",
+  "hoursAgo": "sa önce",
+  "daysAgo": "gün önce",
+  "clearAllNotifications": "Tüm Bildirimleri Temizle",
+  "clearAllConfirmation": "Tüm bildirimleri temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 }
 

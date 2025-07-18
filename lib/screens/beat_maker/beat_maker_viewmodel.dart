@@ -114,7 +114,7 @@ class BeatMakerViewmodel {
     if (!_isRecording || _recordingStartTime == null) return;
 
     if (_recordedNotes.isEmpty) {
-      showClassicSnackBar(context, 'No notes recorded');
+      showClassicSnackBar(context, 'noNotesRecorded'.tr());
       return;
     }
 
