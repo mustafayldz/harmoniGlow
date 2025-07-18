@@ -10,6 +10,7 @@ class TrainingViewModel extends ChangeNotifier {
   final Map<String, List<TraningModel>> _levelBeats = {};
   final Map<String, int> _levelPages = {};
   final Set<String> _loadedLevels = {};
+  final Map<String, bool> _hasMoreData = {}; // Track if level has more data
 
   static const int _pageSize = 20;
 
@@ -21,15 +22,30 @@ class TrainingViewModel extends ChangeNotifier {
   bool isLevelLoaded(String level) =>
       _loadedLevels.contains(level.toLowerCase());
 
+  bool hasMoreData(String level) => _hasMoreData[level.toLowerCase()] ?? true;
+
   Future<void> initBeginnerLevel() async {
     await fetchBeats(level: 'beginner', reset: true);
   }
 
   Future<void> fetchBeats({required String level, bool reset = false}) async {
+    final key = level.toLowerCase();
+
+    // Check if we already know there's no more data
+    if (!reset && !hasMoreData(key)) {
+      debugPrint('🛑 No more data available for level: $level');
+      return;
+    }
+
+    // Prevent multiple simultaneous requests for the same level
+    if (loading) {
+      debugPrint('🚫 Already loading, skipping request for level: $level');
+      return;
+    }
+
     loading = true;
     notifyListeners();
 
-    final key = level.toLowerCase();
     final currentPage = reset ? 0 : (_levelPages[key] ?? 0);
 
     try {
@@ -39,10 +55,31 @@ class TrainingViewModel extends ChangeNotifier {
         offset: currentPage * _pageSize,
       );
 
-      if (reset || !_levelBeats.containsKey(key)) {
-        _levelBeats[key] = fetched ?? [];
+      // If no new data received, mark as no more data available
+      if (fetched == null || fetched.isEmpty) {
+        debugPrint(
+            '📝 No more beats available for level: $level (empty response)');
+        _hasMoreData[key] = false;
+        return;
+      }
+
+      // If we got less than pageSize, probably no more data available
+      if (fetched.length < _pageSize) {
+        debugPrint(
+            '📝 Received ${fetched.length} beats (less than $_pageSize), marking as complete for level: $level');
+        _hasMoreData[key] = false;
       } else {
-        _levelBeats[key]!.addAll(fetched ?? []);
+        _hasMoreData[key] = true;
+      }
+
+      if (reset) {
+        _levelBeats[key] = fetched;
+        _hasMoreData[key] = fetched.length >= _pageSize; // Reset the flag
+      } else {
+        if (!_levelBeats.containsKey(key)) {
+          _levelBeats[key] = [];
+        }
+        _levelBeats[key]!.addAll(fetched);
       }
 
       _levelPages[key] = currentPage + 1;
