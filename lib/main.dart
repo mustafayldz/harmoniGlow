@@ -3,6 +3,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/locator.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/provider/user_provider.dart';
+import 'package:drumly/provider/notification_provider.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/notification_handler.dart';
@@ -58,6 +59,8 @@ void main() async {
   // İlk kontrol
   var token = notificationService.fcmToken;
 
+  debugPrint('🔔 ----------------FCM Token: $token');
+
   // Eğer token null ise, daha agresif deneme
   if (token == null) {
     await Future.delayed(const Duration(seconds: 2));
@@ -81,8 +84,7 @@ void main() async {
   }
 
   if (token != null) {
-    // Test helper'ı çağır
-    NotificationHandler.sendTestNotification();
+    debugPrint('🔧 Firebase token alındı');
   } else {
     debugPrint('🔧 Sorun giderme: Firebase konfigürasyonunu kontrol edin');
   }
@@ -116,6 +118,7 @@ class DrumlyApp extends StatelessWidget {
         providers: [
           ChangeNotifierProvider(create: (_) => UserProvider()),
           ChangeNotifierProvider(create: (_) => AppProvider()),
+          ChangeNotifierProvider(create: (_) => NotificationProvider()),
           RepositoryProvider(create: (_) => StorageService()),
           BlocProvider(create: (_) => BluetoothBloc()),
         ],

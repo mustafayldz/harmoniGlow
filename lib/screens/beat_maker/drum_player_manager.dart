@@ -34,24 +34,26 @@ class DrumPlayerManager {
         final path = _paths[key];
         if (path == null) continue;
 
-        _playerPool[key] = await Future.wait(List.generate(3, (_) async {
-          // 3 player per drum part
-          final player = AudioPlayer();
+        _playerPool[key] = await Future.wait(
+          List.generate(3, (_) async {
+            // 3 player per drum part
+            final player = AudioPlayer();
 
-          try {
-            // iOS için PlayerMode.lowLatency kullan
-            await player.setPlayerMode(PlayerMode.lowLatency);
+            try {
+              // iOS için PlayerMode.lowLatency kullan
+              await player.setPlayerMode(PlayerMode.lowLatency);
 
-            // Ses dosyasını pre-load et
-            await player.setSource(AssetSource(path));
+              // Ses dosyasını pre-load et
+              await player.setSource(AssetSource(path));
 
-            debugPrint('✅ Preloaded $key successfully');
-            return player;
-          } catch (e) {
-            debugPrint('⚠️ Failed to preload $key: $e');
-            return player; // Boş player döndür
-          }
-        }));
+              debugPrint('✅ Preloaded $key successfully');
+              return player;
+            } catch (e) {
+              debugPrint('⚠️ Failed to preload $key: $e');
+              return player; // Boş player döndür
+            }
+          }),
+        );
       }
 
       _initialized = true;
