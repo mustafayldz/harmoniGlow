@@ -369,24 +369,23 @@ class _SongViewState extends State<SongView> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Play butonu - kilitsiz şarkılar veya unlock edilmiş şarkılar için göster
-                      if (!song.isLocked || _isUnlocked(song.songId))
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                          child: IconButton(
-                            onPressed: () => _onPlayTap(song),
-                            icon: const Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.1),
+                        ),
+                        child: IconButton(
+                          onPressed: () => _onPlayTap(song),
+                          icon: const Icon(
+                            Icons.play_arrow,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
-                      // Lock butonu - sadece kilitli ve henüz unlock edilmemiş şarkılar için göster
+                      ),
+                      // Sadece kilitli şarkılarda ve henüz unlock edilmemişse unlock butonu göster
                       if (song.isLocked && !_isUnlocked(song.songId)) ...[
+                        const SizedBox(width: 8),
                         DecoratedBox(
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
@@ -397,7 +396,7 @@ class _SongViewState extends State<SongView> {
                           child: IconButton(
                             onPressed: () => _onUnlockTap(song),
                             icon: const Icon(
-                              Icons.lock,
+                              Icons.lock_open,
                               color: Colors.white,
                               size: 20,
                             ),
@@ -421,7 +420,7 @@ class _SongViewState extends State<SongView> {
   void _onPlayTap(SongModel song) async {
     final fullSong = await vm.fetchSongDetail(song.songId ?? '');
     if (fullSong != null && mounted) {
-      // Eğer şarkı kilitsiz ise veya unlock edilmişse bluetooth verisi gönder
+      // Eğer şarkı kilitsiz ise bluetooth verisi gönder
       if (!song.isLocked || _isUnlocked(song.songId)) {
         final bluetoothBloc = context.read<BluetoothBloc>();
         final state = bluetoothBloc.state;
@@ -480,7 +479,7 @@ class _SongViewState extends State<SongView> {
           ),
         ),
       ).whenComplete(() async {
-        // Eğer şarkı kilitsiz ise veya unlock edilmişse bluetooth stop verisi gönder
+        // Eğer şarkı kilitsiz ise bluetooth stop verisi gönder
         if (!song.isLocked || _isUnlocked(song.songId)) {
           final bluetoothBloc = context.read<BluetoothBloc>();
           final state = bluetoothBloc.state;

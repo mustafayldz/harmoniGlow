@@ -186,7 +186,9 @@ class _NotificationViewState extends State<NotificationView> {
                         return Container(
                           margin: const EdgeInsets.only(left: 12),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red,
                             borderRadius: BorderRadius.circular(12),
@@ -379,8 +381,10 @@ class _NotificationViewState extends State<NotificationView> {
                           value: 'markRead',
                           child: Row(
                             children: [
-                              const Icon(Icons.mark_email_read_outlined,
-                                  color: Colors.green),
+                              const Icon(
+                                Icons.mark_email_read_outlined,
+                                color: Colors.green,
+                              ),
                               const SizedBox(width: 8),
                               Text('markAsRead'.tr()),
                             ],
@@ -391,8 +395,10 @@ class _NotificationViewState extends State<NotificationView> {
                           value: 'markUnread',
                           child: Row(
                             children: [
-                              const Icon(Icons.mark_email_unread_outlined,
-                                  color: Colors.orange),
+                              const Icon(
+                                Icons.mark_email_unread_outlined,
+                                color: Colors.orange,
+                              ),
                               const SizedBox(width: 8),
                               Text('markAsUnread'.tr()),
                             ],

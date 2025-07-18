@@ -67,14 +67,13 @@ class NotificationModel {
 }
 
 class NotificationProvider with ChangeNotifier {
-  static const int maxNotifications = 20; // Maximum 20 notifications
-  final List<NotificationModel> _notifications = [];
-  int _unreadCount = 0;
-
   NotificationProvider() {
     // Load saved notifications when provider is created
     loadNotifications();
   }
+  static const int maxNotifications = 20; // Maximum 20 notifications
+  final List<NotificationModel> _notifications = [];
+  int _unreadCount = 0;
 
   List<NotificationModel> get notifications => _notifications;
   int get unreadCount => _unreadCount;
@@ -93,7 +92,8 @@ class NotificationProvider with ChangeNotifier {
 
       // Debug log when limit is reached
       debugPrint(
-          '📢 Notification limit reached (${maxNotifications}). Removed oldest: "${removedNotification.title}"');
+        '📢 Notification limit reached ($maxNotifications). Removed oldest: "${removedNotification.title}"',
+      );
 
       // Adjust unread count if the removed notification was unread
       if (!removedNotification.isRead) {
@@ -107,7 +107,8 @@ class NotificationProvider with ChangeNotifier {
     }
 
     debugPrint(
-        '📢 Added notification. Current count: ${_notifications.length}/${maxNotifications}');
+      '📢 Added notification. Current count: ${_notifications.length}/$maxNotifications',
+    );
 
     notifyListeners();
     _saveNotifications();
@@ -174,10 +175,8 @@ class NotificationProvider with ChangeNotifier {
       final notificationsJson =
           _notifications.map((notification) => notification.toJson()).toList();
       await prefs.setString('notifications', jsonEncode(notificationsJson));
-      print(
-          'DEBUG: Saved ${_notifications.length} notifications to SharedPreferences');
     } catch (e) {
-      print('ERROR: Failed to save notifications: $e');
+      debugPrint('ERROR: Failed to save notifications.');
     }
   }
 
@@ -198,8 +197,6 @@ class NotificationProvider with ChangeNotifier {
         // Ensure we don't exceed the limit after loading
         if (loadedNotifications.length > maxNotifications) {
           _notifications.addAll(loadedNotifications.take(maxNotifications));
-          print(
-              'DEBUG: Trimmed loaded notifications to $maxNotifications limit');
         } else {
           _notifications.addAll(loadedNotifications);
         }
@@ -208,14 +205,11 @@ class NotificationProvider with ChangeNotifier {
         _unreadCount =
             _notifications.where((notification) => !notification.isRead).length;
 
-        print(
-            'DEBUG: Loaded ${_notifications.length} notifications from SharedPreferences');
         notifyListeners();
       } else {
-        print('DEBUG: No saved notifications found');
+        debugPrint('DEBUG: No saved notifications found');
       }
     } catch (e) {
-      print('ERROR: Failed to load notifications: $e');
       _notifications.clear();
       _unreadCount = 0;
     }

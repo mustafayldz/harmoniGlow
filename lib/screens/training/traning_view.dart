@@ -225,7 +225,8 @@ class _TrainingBody extends StatelessWidget {
               if (scrollInfo is ScrollEndNotification &&
                   !vm.loading &&
                   vm.hasMoreData(
-                      levelName) && // Check if more data is available
+                    levelName,
+                  ) && // Check if more data is available
                   scrollInfo.metrics.pixels >=
                       scrollInfo.metrics.maxScrollExtent - 200) {
                 // Only load if we have some beats already (prevents initial empty state from triggering)
@@ -234,18 +235,20 @@ class _TrainingBody extends StatelessWidget {
                   vm.fetchBeats(level: levelName);
                 } else {
                   debugPrint(
-                      '🚫 Empty beat list, skipping load more for level: $levelName');
+                    '🚫 Empty beat list, skipping load more for level: $levelName',
+                  );
                 }
               } else if (scrollInfo is ScrollEndNotification &&
                   !vm.hasMoreData(levelName)) {
                 debugPrint(
-                    '✋ No more data available for level: $levelName, skipping request');
+                  '✋ No more data available for level: $levelName, skipping request',
+                );
               }
               return false;
             },
             child: RefreshIndicator(
               onRefresh: () async {
-                vm.fetchBeats(level: levelName, reset: true);
+                await vm.fetchBeats(level: levelName, reset: true);
               },
               child: ListView.builder(
                 padding:
@@ -268,7 +271,12 @@ class _TrainingBody extends StatelessWidget {
 
                   final beat = levelBeats[index];
                   return _buildModernBeatCard(
-                      context, beat, vm, bluetoothBloc, isDarkMode);
+                    context,
+                    beat,
+                    vm,
+                    bluetoothBloc,
+                    isDarkMode,
+                  );
                 },
               ),
             ),
@@ -405,7 +413,6 @@ class _TrainingBody extends StatelessWidget {
               color: isDarkMode
                   ? Colors.white.withValues(alpha: 0.1)
                   : Colors.black.withValues(alpha: 0.1),
-              width: 1,
             ),
             boxShadow: [
               BoxShadow(

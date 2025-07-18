@@ -125,7 +125,10 @@ class _MyBeatsViewState extends State<MyBeatsView> {
   }
 
   Widget _buildModernAppBar(
-          BuildContext context, bool isDarkMode, MyBeatsViewModel vm) =>
+    BuildContext context,
+    bool isDarkMode,
+    MyBeatsViewModel vm,
+  ) =>
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
@@ -161,7 +164,9 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                     Container(
                       margin: const EdgeInsets.only(left: 12),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: isDarkMode
                             ? Colors.white.withValues(alpha: 0.2)
@@ -232,7 +237,10 @@ class _MyBeatsViewState extends State<MyBeatsView> {
       );
 
   Widget _buildBeatsList(
-          MyBeatsViewModel vm, BluetoothBloc bluetoothBloc, bool isDarkMode) =>
+    MyBeatsViewModel vm,
+    BluetoothBloc bluetoothBloc,
+    bool isDarkMode,
+  ) =>
       RefreshIndicator(
         onRefresh: () async {
           await vm.loadBeats();
@@ -256,12 +264,11 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: Colors.red.withValues(alpha: 0.3),
-                      width: 1,
                     ),
                   ),
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
+                  child: const Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
@@ -269,7 +276,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                         color: Colors.red,
                         size: 28,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         'Delete',
                         style: TextStyle(
@@ -313,7 +320,6 @@ class _MyBeatsViewState extends State<MyBeatsView> {
             color: isDarkMode
                 ? Colors.white.withValues(alpha: 0.1)
                 : Colors.black.withValues(alpha: 0.1),
-            width: 1,
           ),
           boxShadow: [
             BoxShadow(
@@ -384,7 +390,7 @@ class _MyBeatsViewState extends State<MyBeatsView> {
                     ),
                     child: Text(
                       '${beat.bpm ?? 0} BPM',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.blue,

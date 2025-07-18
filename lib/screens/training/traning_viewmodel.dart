@@ -58,7 +58,8 @@ class TrainingViewModel extends ChangeNotifier {
       // If no new data received, mark as no more data available
       if (fetched == null || fetched.isEmpty) {
         debugPrint(
-            '📝 No more beats available for level: $level (empty response)');
+          '📝 No more beats available for level: $level (empty response)',
+        );
         _hasMoreData[key] = false;
         return;
       }
@@ -66,7 +67,8 @@ class TrainingViewModel extends ChangeNotifier {
       // If we got less than pageSize, probably no more data available
       if (fetched.length < _pageSize) {
         debugPrint(
-            '📝 Received ${fetched.length} beats (less than $_pageSize), marking as complete for level: $level');
+          '📝 Received ${fetched.length} beats (less than $_pageSize), marking as complete for level: $level',
+        );
         _hasMoreData[key] = false;
       } else {
         _hasMoreData[key] = true;
