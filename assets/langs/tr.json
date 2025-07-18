@@ -87,6 +87,9 @@
   "hoursAgo": "sa önce",
   "daysAgo": "gün önce",
   "clearAllNotifications": "Tüm Bildirimleri Temizle",
-  "clearAllConfirmation": "Tüm bildirimleri temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+  "clearAllConfirmation": "Tüm bildirimleri temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+  "notificationLimit": "Maksimum 20 bildirim - en eskiler otomatik silinir",
+  "markAsRead": "Okundu Olarak İşaretle",
+  "markAsUnread": "Okunmadı Olarak İşaretle"
 }
 

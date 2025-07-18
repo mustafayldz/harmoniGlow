@@ -14,10 +14,7 @@ class _NotificationViewState extends State<NotificationView> {
   @override
   void initState() {
     super.initState();
-    // Mark all notifications as read when viewing the page
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<NotificationProvider>().markAllAsRead();
-    });
+    // Removed automatic mark all as read - let user control this manually
   }
 
   @override
@@ -73,7 +70,7 @@ class _NotificationViewState extends State<NotificationView> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '${notifications.length} ${'notificationsCount'.tr()}',
+                                  '${notifications.length}/${notificationProvider.maxNotificationLimit} ${'notificationsCount'.tr()}',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -98,6 +95,26 @@ class _NotificationViewState extends State<NotificationView> {
                                   ),
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+
+                        // Info text about limit
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              left: 20,
+                              right: 20,
+                              bottom: 8,
+                            ),
+                            child: Text(
+                              'notificationLimit'.tr(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.5)
+                                    : Colors.black.withValues(alpha: 0.5),
+                              ),
                             ),
                           ),
                         ),
@@ -152,13 +169,42 @@ class _NotificationViewState extends State<NotificationView> {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                'notifications'.tr(),
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                ),
+              child: Row(
+                children: [
+                  Text(
+                    'notifications'.tr(),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  Consumer<NotificationProvider>(
+                    builder: (context, notificationProvider, child) {
+                      final unreadCount = notificationProvider.unreadCount;
+                      if (unreadCount > 0) {
+                        return Container(
+                          margin: const EdgeInsets.only(left: 12),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ],
               ),
             ),
           ],
@@ -316,12 +362,42 @@ class _NotificationViewState extends State<NotificationView> {
                     ),
                     onSelected: (value) {
                       switch (value) {
+                        case 'markRead':
+                          provider.markAsRead(notification.id);
+                          break;
+                        case 'markUnread':
+                          provider.markAsUnread(notification.id);
+                          break;
                         case 'delete':
                           provider.removeNotification(notification.id);
                           break;
                       }
                     },
                     itemBuilder: (context) => [
+                      if (!notification.isRead)
+                        PopupMenuItem(
+                          value: 'markRead',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.mark_email_read_outlined,
+                                  color: Colors.green),
+                              const SizedBox(width: 8),
+                              Text('markAsRead'.tr()),
+                            ],
+                          ),
+                        ),
+                      if (notification.isRead)
+                        PopupMenuItem(
+                          value: 'markUnread',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.mark_email_unread_outlined,
+                                  color: Colors.orange),
+                              const SizedBox(width: 8),
+                              Text('markAsUnread'.tr()),
+                            ],
+                          ),
+                        ),
                       PopupMenuItem(
                         value: 'delete',
                         child: Row(

@@ -87,6 +87,9 @@
   "hoursAgo": "h ago",
   "daysAgo": "d ago",
   "clearAllNotifications": "Clear All Notifications",
-  "clearAllConfirmation": "Are you sure you want to clear all notifications? This action cannot be undone."
+  "clearAllConfirmation": "Are you sure you want to clear all notifications? This action cannot be undone.",
+  "notificationLimit": "Max 20 notifications - oldest will be automatically removed",
+  "markAsRead": "Mark as Read",
+  "markAsUnread": "Mark as Unread"
 }
 

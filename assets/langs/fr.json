@@ -87,5 +87,8 @@
   "hoursAgo": "h",
   "daysAgo": "j",
   "clearAllNotifications": "Effacer Toutes les Notifications",
-  "clearAllConfirmation": "Êtes-vous sûr de vouloir effacer toutes les notifications ? Cette action ne peut pas être annulée."
+  "clearAllConfirmation": "Êtes-vous sûr de vouloir effacer toutes les notifications ? Cette action ne peut pas être annulée.",
+  "notificationLimit": "Maximum 20 notifications - les plus anciennes seront supprimées automatiquement",
+  "markAsRead": "Marquer comme Lu",
+  "markAsUnread": "Marquer comme Non Lu"
 }
