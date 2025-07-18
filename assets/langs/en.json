@@ -90,6 +90,7 @@
   "clearAllConfirmation": "Are you sure you want to clear all notifications? This action cannot be undone.",
   "notificationLimit": "Max 20 notifications - oldest will be automatically removed",
   "markAsRead": "Mark as Read",
-  "markAsUnread": "Mark as Unread"
+  "markAsUnread": "Mark as Unread",
+  "bluetoothNotConnected": "Bluetooth not connected"
 }
 

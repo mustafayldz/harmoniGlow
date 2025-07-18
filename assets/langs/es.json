@@ -89,6 +89,7 @@
   "clearAllConfirmation": "¿Estás seguro de que quieres limpiar todas las notificaciones? Esta acción no se puede deshacer.",
   "notificationLimit": "Máximo 20 notificaciones - las más antiguas se eliminarán automáticamente",
   "markAsRead": "Marcar como Leído",
-  "markAsUnread": "Marcar como No Leído"
+  "markAsUnread": "Marcar como No Leído",
+  "bluetoothNotConnected": "Bluetooth no conectado"
 }
 
