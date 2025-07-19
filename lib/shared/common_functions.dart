@@ -75,7 +75,8 @@ Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
                 onPressed: () async {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-                  final bool earned = await AdServiceReward().showRewardedAd();
+                  final bool earned = await AdServiceReward()
+                      .showRewardedAdWithConfetti(context);
 
                   if (earned) {
                     await addRecord(songId);
