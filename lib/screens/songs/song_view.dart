@@ -1,5 +1,3 @@
-// 📁 song_view.dart - TAMAMEN DÜZELTİLMİŞ VERSİYON
-
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
@@ -108,115 +106,49 @@ class _SongViewState extends State<SongView> {
     final bluetoothBloc = context.read<BluetoothBloc>();
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return ChangeNotifierProvider<SongViewModel>.value(
       value: vm,
       child: Consumer<SongViewModel>(
         builder: (context, vm, _) => Scaffold(
-          extendBodyBehindAppBar: true,
-          appBar: AppBar(
-            title: Text(
-              'songs'.tr(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-          ),
           body: DecoratedBox(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A1A2E),
-                  Color(0xFF16213E),
-                  Color(0xFF0F3460),
-                ],
+                colors: isDarkMode
+                    ? [
+                        const Color(0xFF0F172A), // Dark slate
+                        const Color(0xFF1E293B), // Lighter slate
+                        const Color(0xFF334155), // Even lighter
+                      ]
+                    : [
+                        const Color(0xFFF8FAFC), // Light gray
+                        const Color(0xFFE2E8F0), // Slightly darker
+                        const Color(0xFFCBD5E1), // Even darker
+                      ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
             child: SafeArea(
               child: Column(
                 children: [
-                  // Modern Search Section
-                  Container(
-                    margin: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withValues(alpha: 0.1),
-                          Colors.white.withValues(alpha: 0.05),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: Colors.white.withValues(alpha: 0.1),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: TextField(
-                                controller: _searchController,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'searchBySong'.tr(),
-                                  hintStyle: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                  ),
-                                  prefixIcon: Icon(
-                                    Icons.search,
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 12,
-                                  ),
-                                  border: InputBorder.none,
-                                ),
-                                onSubmitted: (_) => _onSearchPressed(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                              ),
-                            ),
-                            child: IconButton(
-                              onPressed: _onSearchPressed,
-                              icon: const Icon(
-                                Icons.search,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Modern App Bar (Training tarzı)
+                  _buildModernAppBar(context, isDarkMode),
+
+                  // Modern Search Section (Training tarzı)
+                  _buildModernSearchSection(context, isDarkMode),
+
                   // Songs List
                   Expanded(
                     child: vm.songs.isEmpty && !vm.isLoading
-                        ? _buildEmptyState()
-                        : _buildSongsList(vm, isConnected, bluetoothBloc),
+                        ? _buildEmptyState(isDarkMode)
+                        : _buildSongsList(
+                            vm,
+                            isConnected,
+                            bluetoothBloc,
+                            isDarkMode,
+                          ),
                   ),
                 ],
               ),
@@ -227,245 +159,411 @@ class _SongViewState extends State<SongView> {
     );
   }
 
-  Widget _buildEmptyState() => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  /// 🎨 Modern App Bar - Training tarzı
+  Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
+            DecoratedBox(
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.music_note,
-                size: 64,
-                color: Colors.white.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'empty'.tr(),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.8),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Explore amazing songs and beats',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 14,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'songs'.tr(),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
             ),
           ],
         ),
       );
 
+  /// 🔍 Modern Search Section - Training tarzı
+  Widget _buildModernSearchSection(BuildContext context, bool isDarkMode) =>
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  fontSize: 16,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'searchBySong'.tr(),
+                  hintStyle: TextStyle(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.6),
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.6),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: InputBorder.none,
+                ),
+                onSubmitted: (_) => _onSearchPressed(),
+              ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                onPressed: _onSearchPressed,
+                icon: Icon(
+                  Icons.search_rounded,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// 🎵 Empty State - Training tarzı
+  Widget _buildEmptyState(bool isDarkMode) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Icon(
+                Icons.music_note_rounded,
+                size: 64,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : Colors.black.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'empty'.tr(),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'Explore amazing songs and beats',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : Colors.black.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// 📝 Songs List - Training tarzı
   Widget _buildSongsList(
     SongViewModel vm,
     bool isConnected,
     BluetoothBloc bluetoothBloc,
+    bool isDarkMode,
   ) =>
-      ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: vm.songs.length + (vm.hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index >= vm.songs.length) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-            );
+      NotificationListener<ScrollNotification>(
+        onNotification: (scrollInfo) {
+          if (scrollInfo is ScrollEndNotification &&
+              !vm.isLoading &&
+              vm.hasMore &&
+              scrollInfo.metrics.pixels >=
+                  scrollInfo.metrics.maxScrollExtent - 200) {
+            vm.fetchMoreSongs();
           }
-
-          final song = vm.songs[index];
-
-          // 🔐 FUTURE BUILDER ile kilit durumu kontrolü
-          return FutureBuilder<bool>(
-            future: _isSongLocked(song, isConnected),
-            builder: (context, snapshot) {
-              final isLocked =
-                  snapshot.data ?? song.isLocked; // Default: API'den gelen
-
-              return _buildModernSongCard(
-                song,
-                isConnected,
-                bluetoothBloc,
-                vm,
-                isLocked,
-              );
-            },
-          );
+          return false;
         },
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          itemCount: vm.songs.length + (vm.isLoading ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= vm.songs.length) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                alignment: Alignment.center,
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+              );
+            }
+
+            final song = vm.songs[index];
+
+            // 🔐 FUTURE BUILDER ile kilit durumu kontrolü
+            return FutureBuilder<bool>(
+              future: _isSongLocked(song, isConnected),
+              builder: (context, snapshot) {
+                final isLocked = snapshot.data ?? song.isLocked;
+
+                return _buildModernSongCard(
+                  context,
+                  song,
+                  isConnected,
+                  bluetoothBloc,
+                  vm,
+                  isLocked,
+                  isDarkMode,
+                );
+              },
+            );
+          },
+        ),
       );
 
+  /// 🎵 Modern Song Card - Training tarzı
   Widget _buildModernSongCard(
+    BuildContext context,
     SongModel song,
     bool isConnected,
     BluetoothBloc bluetoothBloc,
     SongViewModel vm,
     bool isLocked,
+    bool isDarkMode,
   ) =>
-      Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              Colors.white.withValues(alpha: 0.1),
-              Colors.white.withValues(alpha: 0.05),
+      GestureDetector(
+        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDarkMode
+                  ? [
+                      const Color(0xFF1E293B).withValues(alpha: 0.8),
+                      const Color(0xFF334155).withValues(alpha: 0.6),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.9),
+                      const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDarkMode
+                    ? Colors.black.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () =>
-                _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Song Image
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Song Icon/Image
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : Colors.black.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        isLocked
+                            ? Icons.lock_rounded
+                            : Icons.play_arrow_rounded,
+                        color: isDarkMode ? Colors.white : Colors.black,
+                        size: 24,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.music_note,
-                      color: Colors.white,
-                      size: 24,
+                    const SizedBox(width: 16),
+                    // Song Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${song.artist ?? 'unknown'.tr()} – ${song.title ?? '—'}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isLocked ? 'Locked Song' : 'Available Song',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.7)
+                                  : Colors.black.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Song Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${song.artist ?? 'unknown'.tr()} – ${song.title ?? '—'}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    // Lock/Play Action
+                    if (isLocked)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            if (song.bpm != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: const Color(0xFF6366F1)
-                                      .withValues(alpha: 0.2),
-                                ),
-                                child: Text(
-                                  '${song.bpm} BPM',
-                                  style: const TextStyle(
-                                    color: Color(0xFF6366F1),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            if (song.bpm != null &&
-                                song.durationSeconds != null)
-                              const SizedBox(width: 8),
-                            if (song.durationSeconds != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                ),
-                                child: Text(
-                                  vm.formatDuration(song.durationSeconds),
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        child: const Icon(
+                          Icons.lock_rounded,
+                          color: Color(0xFFF59E0B),
+                          size: 20,
                         ),
-                      ],
-                    ),
-                  ),
-                  // Action Buttons
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 🔐 Lock butonu - sadece kilitli şarkılar için
-                      if (isLocked)
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                          child: IconButton(
-                            onPressed: () => _onUnlockTap(song),
-                            icon: const Icon(
-                              Icons.lock,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      // ▶️ Play butonu - kilitsiz şarkılar için
-                      if (!isLocked)
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                          child: IconButton(
-                            onPressed: () => _onPlayTap(
-                              song,
-                              isConnected,
-                              bluetoothBloc,
-                              vm,
-                            ),
-                            icon: const Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
+                        child: Icon(
+                          Icons.play_arrow_rounded,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          size: 20,
                         ),
-                    ],
-                  ),
-                ],
-              ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Info Chips
+                Row(
+                  children: [
+                    if (song.bpm != null)
+                      _buildInfoChip(
+                        icon: Icons.speed_rounded,
+                        label: '${song.bpm} BPM',
+                        isDarkMode: isDarkMode,
+                      ),
+                    if (song.bpm != null && song.durationSeconds != null)
+                      const SizedBox(width: 12),
+                    if (song.durationSeconds != null)
+                      _buildInfoChip(
+                        icon: Icons.timer_outlined,
+                        label: vm.formatDuration(song.durationSeconds),
+                        isDarkMode: isDarkMode,
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
+        ),
+      );
+
+  /// 🏷️ Info Chip - Training tarzı
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required bool isDarkMode,
+  }) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.1)
+              : Colors.black.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 12,
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : Colors.black.withValues(alpha: 0.6),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.6)
+                    : Colors.black.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
         ),
       );
 
@@ -507,56 +605,50 @@ class _SongViewState extends State<SongView> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.95,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (context) => ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          child: DecoratedBox(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A1A2E),
-                  Color(0xFF16213E),
-                  Color(0xFF0F3460),
+        builder: (context) {
+          final theme = Theme.of(context);
+          return ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: ColoredBox(
+              color: theme.scaffoldBackgroundColor,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.grey[600]
+                          : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.9,
+                    child: DraggableScrollableSheet(
+                      initialChildSize: 1.0,
+                      minChildSize: 0.3,
+                      expand: false,
+                      builder: (context, scrollCtrl) =>
+                          YoutubeSongPlayer(song: fullSong),
+                    ),
+                  ),
                 ],
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.9,
-                  child: DraggableScrollableSheet(
-                    initialChildSize: 1.0,
-                    minChildSize: 0.3,
-                    expand: false,
-                    builder: (context, scrollCtrl) =>
-                        YoutubeSongPlayer(song: fullSong),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+          );
+        },
       ).whenComplete(() async {
         await SendData().sendHexData(bluetoothBloc, [0]);
       });
     }
   }
 
-  /// 🎵 Şarkı tap - ana giriş noktası
   void _onSongTap(
     SongModel song,
     bool isConnected,
