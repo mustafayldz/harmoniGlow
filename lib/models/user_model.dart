@@ -20,6 +20,7 @@ class UserModel {
     this.lastLogin,
     this.name,
     this.userId,
+    this.firebaseToken,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -41,6 +42,7 @@ class UserModel {
             : DateTime.parse(json['last_login']),
         name: json['name'],
         userId: json['user_id'],
+        firebaseToken: json['firebase_token'],
       );
   String? id;
   List<dynamic>? assignedSongIds;
@@ -50,6 +52,7 @@ class UserModel {
   DateTime? lastLogin;
   String? name;
   String? userId;
+  String? firebaseToken;
 
   Map<String, dynamic> toJson() => {
         '_id': id,
@@ -64,5 +67,6 @@ class UserModel {
         'last_login': lastLogin?.toIso8601String(),
         'name': name,
         'user_id': userId,
+        'firebase_token': firebaseToken,
       };
 }

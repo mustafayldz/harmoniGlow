@@ -100,6 +100,18 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ),
       ),
       _CardData(
+        key: 'beat maker',
+        title: 'beatMaker'.tr(),
+        subtitle: 'createBeats'.tr(),
+        color: AppColors.makerOrange,
+        icon: Icons.create_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF97316), Color(0xFFEA580C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      _CardData(
         key: 'my beats',
         title: 'myBeats'.tr(),
         subtitle: 'listenToBeats'.tr(),
@@ -119,18 +131,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         icon: Icons.tune_outlined,
         gradient: const LinearGradient(
           colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      _CardData(
-        key: 'beat maker',
-        title: 'beatMaker'.tr(),
-        subtitle: 'createBeats'.tr(),
-        color: AppColors.makerOrange,
-        icon: Icons.create_outlined,
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF97316), Color(0xFFEA580C)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

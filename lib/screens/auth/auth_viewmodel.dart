@@ -58,7 +58,17 @@ class AuthViewModel extends ChangeNotifier {
       if (value.user != null) {
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
-        await userService.getUser(context);
+
+        // Backend'e kullanıcı bilgilerini gönder/güncelle
+        final user = await userService.createOrUpdateUser(
+          context,
+          firebaseToken: idToken,
+          email: email,
+        );
+
+        if (user != null) {
+          debugPrint('✅ User login successful: ${user.email}');
+        }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushNamed(context, '/home');
@@ -94,6 +104,23 @@ class AuthViewModel extends ChangeNotifier {
       if (name.isNotEmpty && cred.user != null) {
         await cred.user!.updateDisplayName(name);
         await Future.microtask(() => cred.user!.reload());
+
+        // Firebase token'ı al ve backend'e kullanıcı oluştur
+        final idToken = await cred.user!.getIdToken();
+        if (idToken != null) {
+          await StorageService.saveFirebaseToken(idToken);
+
+          final user = await userService.createOrUpdateUser(
+            context,
+            firebaseToken: idToken,
+            email: email,
+            name: name,
+          );
+
+          if (user != null) {
+            debugPrint('✅ User registration successful: ${user.email}');
+          }
+        }
       }
       toggleMode(true);
     } catch (e) {

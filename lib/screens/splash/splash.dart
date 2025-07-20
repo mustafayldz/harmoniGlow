@@ -2,11 +2,13 @@ import 'dart:async';
 import 'package:drumly/constants.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/hive/models/note_model.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -64,6 +66,11 @@ class _SplashViewState extends State<SplashView>
         final newToken = await getValidFirebaseToken();
         await StorageService.saveFirebaseToken(newToken);
       }
+
+      // 5. User initialization - backend ile sync
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      await userProvider.initializeUser(context);
+
       await Navigator.pushReplacementNamed(context, '/home');
     } else {
       await Navigator.pushReplacementNamed(context, '/auth');

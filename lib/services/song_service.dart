@@ -13,8 +13,21 @@ class SongService {
   String getBaseUrlSongTypes() => ApiServiceUrl.songTypes;
   String getBaseUrlBeats() => ApiServiceUrl.beat;
 
+  // Yeni endpoint'ler için base URL'ler
+  String getSearchUrl() => '${ApiServiceUrl.song}search';
+  String getSuggestionsUrl() => '${ApiServiceUrl.song}suggestions';
+  String getPopularUrl() => '${ApiServiceUrl.song}popular';
+
+  // Debug metodu - URL'leri kontrol et
+  void debugUrls() {
+    debugPrint('🔗 Search URL: ${getSearchUrl()}');
+    debugPrint('🔗 Suggestions URL: ${getSuggestionsUrl()}');
+    debugPrint('🔗 Popular URL: ${getPopularUrl()}');
+    debugPrint('🔗 Base Song URL: ${getBaseUrlSong()}');
+  }
+
   /*----------------------------------------------------------------------
-                  Get Songs
+                  Get Songs (Eski method - backward compatibility)
 ----------------------------------------------------------------------*/
   Future<List<SongModel>?> getSongs(
     BuildContext context, {
@@ -35,6 +48,8 @@ class SongService {
         if (songtypeId != null) 'songtype_id': '$songtypeId',
         if (artist != null && artist.isNotEmpty) 'artist': artist,
         if (query != null && query.isNotEmpty) 'q': query,
+        // Arama terimini sanatçı parametresi olarak da gönder
+        if (query != null && query.isNotEmpty) 'artist': query,
       };
 
       // Final URL oluştur
@@ -58,6 +73,148 @@ class SongService {
       return songs;
     } catch (e) {
       debugPrint('❌ Error in getSongs: $e');
+      return null;
+    }
+  }
+
+  /*----------------------------------------------------------------------
+                  Search Songs - YENİ /api/songs/search
+----------------------------------------------------------------------*/
+  Future<List<SongModel>?> searchSongs(
+    BuildContext context, {
+    required String query,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final String url = getSearchUrl();
+    final List<SongModel> songs = <SongModel>[];
+
+    try {
+      debugPrint('🔍 Searching for: "$query" (limit: $limit, offset: $offset)');
+
+      final Map<String, String> queryParams = {
+        'q': query,
+        'limit': '$limit',
+        'offset': '$offset',
+      };
+
+      final uri = Uri.parse(url).replace(queryParameters: queryParams);
+      debugPrint('🔗 Full URL: ${uri.toString()}');
+
+      final response = await RequestHelper.requestAsync(
+        context,
+        RequestType.get,
+        uri.toString(),
+      );
+
+      if (response == null || response.isEmpty) {
+        debugPrint('❌ Search: Empty or null response');
+        return null;
+      }
+
+      debugPrint('✅ Search: Response received (${response.length} chars)');
+      final decoded = json.decode(response);
+      if (decoded is Map && decoded.containsKey('data')) {
+        for (var item in decoded['data']) {
+          songs.add(SongModel.fromJson(item));
+        }
+        debugPrint('📦 Search: Found ${songs.length} songs');
+      }
+      return songs;
+    } catch (e) {
+      debugPrint('❌ Error in searchSongs: $e');
+      return null;
+    }
+  }
+
+  /*----------------------------------------------------------------------
+                  Get Search Suggestions - YENİ /api/songs/suggestions
+----------------------------------------------------------------------*/
+  Future<List<String>?> getSearchSuggestions(
+    BuildContext context, {
+    required String query,
+    int limit = 10,
+    int offset = 0,
+  }) async {
+    final String url = getSuggestionsUrl();
+
+    try {
+      final Map<String, String> queryParams = {
+        'q': query,
+        'limit': '$limit',
+        'offset': '$offset',
+      };
+
+      final uri = Uri.parse(url).replace(queryParameters: queryParams);
+      final response = await RequestHelper.requestAsync(
+        context,
+        RequestType.get,
+        uri.toString(),
+      );
+
+      if (response == null || response.isEmpty) {
+        return null;
+      }
+
+      final decoded = json.decode(response);
+      if (decoded is List) {
+        return decoded.map((item) => item.toString()).toList();
+      } else if (decoded is Map && decoded.containsKey('data')) {
+        return (decoded['data'] as List)
+            .map((item) => item.toString())
+            .toList();
+      }
+      return null;
+    } catch (e) {
+      debugPrint('❌ Error in getSearchSuggestions: $e');
+      return null;
+    }
+  }
+
+  /*----------------------------------------------------------------------
+                  Get Popular Songs - YENİ /api/songs/popular
+----------------------------------------------------------------------*/
+  Future<List<SongModel>?> getPopularSongs(
+    BuildContext context, {
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final String url = getPopularUrl();
+    final List<SongModel> songs = <SongModel>[];
+
+    try {
+      debugPrint('🔥 Getting popular songs (limit: $limit, offset: $offset)');
+
+      final Map<String, String> queryParams = {
+        'limit': '$limit',
+        'offset': '$offset',
+      };
+
+      final uri = Uri.parse(url).replace(queryParameters: queryParams);
+      debugPrint('🔗 Popular URL: ${uri.toString()}');
+
+      final response = await RequestHelper.requestAsync(
+        context,
+        RequestType.get,
+        uri.toString(),
+      );
+
+      if (response == null || response.isEmpty) {
+        debugPrint('❌ Popular: Empty or null response');
+        return null;
+      }
+
+      debugPrint('✅ Popular: Response received (${response.length} chars)');
+      final decoded = json.decode(response);
+      if (decoded is Map && decoded.containsKey('data')) {
+        for (var item in decoded['data']) {
+          songs.add(SongModel.fromJson(item));
+        }
+        debugPrint('📦 Popular: Found ${songs.length} songs');
+      }
+      return songs;
+    } catch (e) {
+      debugPrint('❌ Error in getPopularSongs: $e');
       return null;
     }
   }
