@@ -10,6 +10,7 @@ import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
 class BeatMakerPlayerView extends StatefulWidget {
@@ -185,9 +186,9 @@ class _BeatMakerPlayerViewState extends State<BeatMakerPlayerView> {
                       selectedParts: _currentDrumParts,
                       highlightColor: _randomColor,
                     )
-                  : Image.asset(
-                      'assets/images/drumly_logo.png',
-                      fit: BoxFit.cover,
+                  : Lottie.asset(
+                      'assets/animation/drummer.json',
+                      fit: BoxFit.fitWidth,
                     ),
               const Spacer(),
               Text(

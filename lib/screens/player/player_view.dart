@@ -12,6 +12,7 @@ import 'package:drumly/shared/send_data.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
 class PlayerView extends StatefulWidget {
@@ -202,7 +203,10 @@ class _PlayerViewState extends State<PlayerView> {
                       selectedParts: sentDrumParts,
                       highlightColor: rondomColor,
                     )
-                  : Image.asset('assets/images/drumly_logo.png'),
+                  : Lottie.asset(
+                      'assets/animation/drummer.json',
+                      fit: BoxFit.fitWidth,
+                    ),
               const Spacer(),
               Text(
                 widget.songModel.title ?? 'Unknown Title',

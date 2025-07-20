@@ -34,6 +34,7 @@ dependencies:
   audioplayers: ^6.4.0 #bunu beat maker için ekledim
   firebase_messaging: ^15.1.6
   flutter_local_notifications: ^18.0.1
+  lottie: ^3.2.0
 
   flutter_localizations:
     sdk: flutter
@@ -64,3 +65,4 @@ flutter:
     - assets/images/icons/
     - assets/sounds/
     - assets/langs/
+    - assets/animation/
