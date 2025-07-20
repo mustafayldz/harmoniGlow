@@ -292,10 +292,6 @@ class _SettingViewBody extends StatelessWidget {
                                   color: Colors.white,
                                 ),
                                 underline: const SizedBox(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
                                 borderRadius: BorderRadius.circular(12),
                                 onChanged: (Locale? newLocale) async {
                                   if (newLocale != null) {

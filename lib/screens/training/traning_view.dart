@@ -175,10 +175,7 @@ class _TrainingViewState extends State<TrainingView>
           tabs: trainingLevels
               .map(
                 (level) => Tab(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(capitalizeFirst(level.name.tr())),
-                  ),
+                  child: Text(capitalizeFirst(level.name.tr())),
                 ),
               )
               .toList(),
