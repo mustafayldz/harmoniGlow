@@ -98,11 +98,11 @@ void main() async {
     }
   }
 
-  if (token != null) {
-    debugPrint('🔧 Firebase token alındı');
-  } else {
-    debugPrint('🔧 Sorun giderme: Firebase konfigürasyonunu kontrol edin');
-  }
+  // if (token != null) {
+  //   debugPrint('🔧 Firebase token alındı');
+  // } else {
+  //   debugPrint('🔧 Sorun giderme: Firebase konfigürasyonunu kontrol edin');
+  // }
 
   // Diğer servisleri başlat
   setupLocator();

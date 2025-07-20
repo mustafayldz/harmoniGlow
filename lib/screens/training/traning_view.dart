@@ -172,6 +172,7 @@ class _TrainingViewState extends State<TrainingView>
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
+          tabAlignment: TabAlignment.start,
           tabs: trainingLevels
               .map(
                 (level) => Tab(
