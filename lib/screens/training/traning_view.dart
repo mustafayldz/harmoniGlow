@@ -378,7 +378,7 @@ class _TrainingBody extends StatelessWidget {
                           minChildSize: 0.3,
                           expand: false,
                           builder: (context, scrollCtrl) =>
-                              PlayerView(beatNotes),
+                              PlayerView(beatNotes, hideTimeControls: true),
                         ),
                       ),
                     ],

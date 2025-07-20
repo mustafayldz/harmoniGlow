@@ -15,8 +15,10 @@ import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
 class PlayerView extends StatefulWidget {
-  const PlayerView(this.songModel, {super.key});
+  const PlayerView(this.songModel, {super.key, this.hideTimeControls = false});
   final TraningModel songModel;
+  final bool
+      hideTimeControls; // Süre göstergesi ve progress bar'ı gizlemek için
 
   @override
   State<PlayerView> createState() => _PlayerViewState();
@@ -69,12 +71,13 @@ class _PlayerViewState extends State<PlayerView> {
 
       _player.processingStateStream.listen((state) async {
         if (state == ProcessingState.completed) {
+          // Şarkı bitti - loop yapmak yerine durdur
           await _player.seek(Duration.zero);
           setState(() {
             prevPos = Duration.zero;
             _sentNoteIndices.clear();
           });
-          await _player.play();
+          // await _player.play(); // Bu satırı kaldırarak loop'u durdur
         }
       });
     } catch (e, stack) {
@@ -206,29 +209,30 @@ class _PlayerViewState extends State<PlayerView> {
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    Slider(
-                      max: _duration.inSeconds.toDouble(),
-                      value: _position.inSeconds
-                          .clamp(0, _duration.inSeconds)
-                          .toDouble(),
-                      onChanged: (value) =>
-                          _player.seek(Duration(seconds: value.toInt())),
-                      allowedInteraction: SliderInteraction.tapAndSlide,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_formatDuration(_position)),
-                        Text(_formatDuration(_duration)),
-                      ],
-                    ),
-                  ],
+              if (!widget.hideTimeControls) // Süre kontrollerini gizle
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      Slider(
+                        max: _duration.inSeconds.toDouble(),
+                        value: _position.inSeconds
+                            .clamp(0, _duration.inSeconds)
+                            .toDouble(),
+                        onChanged: (value) =>
+                            _player.seek(Duration(seconds: value.toInt())),
+                        allowedInteraction: SliderInteraction.tapAndSlide,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(_formatDuration(_position)),
+                          Text(_formatDuration(_duration)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               SizedBox(
                 height: screenSize.height * 0.05,
               ),

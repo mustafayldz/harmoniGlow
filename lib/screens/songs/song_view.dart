@@ -459,48 +459,9 @@ class _SongViewState extends State<SongView> {
                               color: isDarkMode ? Colors.white : Colors.black,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            isLocked ? 'Locked Song' : 'Available Song',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : Colors.black.withValues(alpha: 0.7),
-                            ),
-                          ),
                         ],
                       ),
                     ),
-                    // Lock/Play Action
-                    if (isLocked)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.lock_rounded,
-                          color: Color(0xFFF59E0B),
-                          size: 20,
-                        ),
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.1)
-                              : Colors.black.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.play_arrow_rounded,
-                          color: isDarkMode ? Colors.white : Colors.black,
-                          size: 20,
-                        ),
-                      ),
                   ],
                 ),
                 const SizedBox(height: 16),
