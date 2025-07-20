@@ -1,14 +1,15 @@
+// 📁 song_view.dart - TAMAMEN DÜZELTİLMİŞ VERSİYON
+
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/constants.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
-import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SongView extends StatefulWidget {
   const SongView({super.key});
@@ -19,7 +20,6 @@ class SongView extends StatefulWidget {
 
 class _SongViewState extends State<SongView> {
   late final SongViewModel vm;
-  late final LazyBox _lazyBox;
 
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -30,7 +30,6 @@ class _SongViewState extends State<SongView> {
     super.initState();
     vm = SongViewModel();
     vm.init(context);
-    _lazyBox = Hive.lazyBox(Constants.lockSongBox);
     vm.fetchInitialSongsWithCache(context);
     _scrollController.addListener(_onScroll);
   }
@@ -49,6 +48,50 @@ class _SongViewState extends State<SongView> {
         !vm.isLoading) {
       vm.fetchMoreSongs();
     }
+  }
+
+  /// 🔐 KILIT DURUMU KONTROLÜ - Tüm kurallar burada
+  Future<bool> _isSongLocked(SongModel song, bool isBluetoothConnected) async {
+    // 📱 1. API'den gelen şarkı zaten kilitsiz ise -> KİLİTSİZ
+    if (!song.isLocked) return false;
+
+    // 🔵 2. Bluetooth bağlı ise -> KİLİTSİZ
+    if (isBluetoothConnected) return false;
+
+    // ⏰ 3. Shared Preferences'dan 2 saatlik unlock kontrolü
+    return !(await _hasValidUnlock(song.songId));
+  }
+
+  /// ⏰ 2 saatlik unlock kontrolü
+  Future<bool> _hasValidUnlock(String? songId) async {
+    if (songId == null) return false;
+
+    final prefs = await SharedPreferences.getInstance();
+    final unlockTimeKey = 'unlock_time_$songId';
+    final unlockTime = prefs.getInt(unlockTimeKey);
+
+    if (unlockTime == null) return false;
+
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    final twoHoursInMs = 2 * 60 * 60 * 1000; // 2 saat
+
+    // 2 saat geçti mi kontrol et
+    if (currentTime - unlockTime > twoHoursInMs) {
+      // Süresi dolmuş, temizle
+      await prefs.remove(unlockTimeKey);
+      return false;
+    }
+
+    return true; // Hala geçerli
+  }
+
+  /// 🎁 Rewarded reklam sonrası unlock kaydet
+  Future<void> _saveUnlockTime(String songId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final unlockTimeKey = 'unlock_time_$songId';
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+
+    await prefs.setInt(unlockTimeKey, currentTime);
   }
 
   void _onSearchPressed() {
@@ -229,7 +272,7 @@ class _SongViewState extends State<SongView> {
       ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: vm.songs.length + (vm.isLoading ? 1 : 0),
+        itemCount: vm.songs.length + (vm.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= vm.songs.length) {
             return Container(
@@ -243,7 +286,23 @@ class _SongViewState extends State<SongView> {
           }
 
           final song = vm.songs[index];
-          return _buildModernSongCard(song, isConnected, bluetoothBloc, vm);
+
+          // 🔐 FUTURE BUILDER ile kilit durumu kontrolü
+          return FutureBuilder<bool>(
+            future: _isSongLocked(song, isConnected),
+            builder: (context, snapshot) {
+              final isLocked =
+                  snapshot.data ?? song.isLocked; // Default: API'den gelen
+
+              return _buildModernSongCard(
+                song,
+                isConnected,
+                bluetoothBloc,
+                vm,
+                isLocked,
+              );
+            },
+          );
         },
       );
 
@@ -252,6 +311,7 @@ class _SongViewState extends State<SongView> {
     bool isConnected,
     BluetoothBloc bluetoothBloc,
     SongViewModel vm,
+    bool isLocked,
   ) =>
       Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -271,7 +331,8 @@ class _SongViewState extends State<SongView> {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm),
+            onTap: () =>
+                _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -299,7 +360,7 @@ class _SongViewState extends State<SongView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          song.title ?? '',
+                          '${song.artist ?? 'unknown'.tr()} – ${song.title ?? '—'}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -309,37 +370,8 @@ class _SongViewState extends State<SongView> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          song.artist ?? '',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 14,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: Colors.white.withValues(alpha: 0.1),
-                              ),
-                              child: Text(
-                                vm.formatDuration(song.durationSeconds),
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
                             if (song.bpm != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(
@@ -360,6 +392,28 @@ class _SongViewState extends State<SongView> {
                                   ),
                                 ),
                               ),
+                            if (song.bpm != null &&
+                                song.durationSeconds != null)
+                              const SizedBox(width: 8),
+                            if (song.durationSeconds != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                ),
+                                child: Text(
+                                  vm.formatDuration(song.durationSeconds),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ],
@@ -369,30 +423,12 @@ class _SongViewState extends State<SongView> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Play butonu - kilitsiz şarkılar veya unlock edilmiş şarkılar için göster
-                      if (!song.isLocked || _isUnlocked(song.songId))
+                      // 🔐 Lock butonu - sadece kilitli şarkılar için
+                      if (isLocked)
                         DecoratedBox(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                          child: IconButton(
-                            onPressed: () => _onPlayTap(song),
-                            icon: const Icon(
-                              Icons.play_arrow,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      // Lock butonu - sadece kilitli ve henüz unlock edilmemiş şarkılar için göster
-                      if (song.isLocked && !_isUnlocked(song.songId)) ...[
-                        DecoratedBox(
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                            ),
                           ),
                           child: IconButton(
                             onPressed: () => _onUnlockTap(song),
@@ -403,7 +439,27 @@ class _SongViewState extends State<SongView> {
                             ),
                           ),
                         ),
-                      ],
+                      // ▶️ Play butonu - kilitsiz şarkılar için
+                      if (!isLocked)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          child: IconButton(
+                            onPressed: () => _onPlayTap(
+                              song,
+                              isConnected,
+                              bluetoothBloc,
+                              vm,
+                            ),
+                            icon: const Icon(
+                              Icons.play_arrow,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -413,25 +469,40 @@ class _SongViewState extends State<SongView> {
         ),
       );
 
-  bool _isUnlocked(String? songId) {
-    if (songId == null) return false;
-    return _lazyBox.containsKey(songId);
+  /// 🎁 Rewarded reklam göster ve unlock yap
+  void _onUnlockTap(SongModel song) async {
+    final success = await showAdConsentSnackBar(context, song.songId ?? '');
+    if (success && song.songId != null) {
+      // 2 saatlik unlock zamanını kaydet
+      await _saveUnlockTime(song.songId!);
+
+      // UI'ı güncelle
+      setState(() {});
+    }
   }
 
-  void _onPlayTap(SongModel song) async {
+  /// ▶️ Play butonu tap
+  void _onPlayTap(
+    SongModel song,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    SongViewModel vm,
+  ) async {
+    await SendData().sendHexData(
+      bluetoothBloc,
+      splitToBytes(100),
+    );
+
     final fullSong = await vm.fetchSongDetail(song.songId ?? '');
-    if (fullSong != null && mounted) {
-      // Eğer şarkı kilitsiz ise veya unlock edilmişse bluetooth verisi gönder
-      if (!song.isLocked || _isUnlocked(song.songId)) {
-        final bluetoothBloc = context.read<BluetoothBloc>();
-        final state = bluetoothBloc.state;
-        final isConnected = state.isConnected;
+    if (fullSong == null) {
+      showClassicSnackBar(
+        context,
+        tr('error_loading_song_detail'),
+      );
+      return;
+    }
 
-        if (isConnected) {
-          await SendData().sendHexData(bluetoothBloc, [1]);
-        }
-      }
-
+    if (mounted) {
       await showModalBottomSheet(
         context: context,
         isScrollControlled: true,
@@ -480,100 +551,25 @@ class _SongViewState extends State<SongView> {
           ),
         ),
       ).whenComplete(() async {
-        // Eğer şarkı kilitsiz ise veya unlock edilmişse bluetooth stop verisi gönder
-        if (!song.isLocked || _isUnlocked(song.songId)) {
-          final bluetoothBloc = context.read<BluetoothBloc>();
-          final state = bluetoothBloc.state;
-          final isConnected = state.isConnected;
-
-          if (isConnected) {
-            await SendData().sendHexData(bluetoothBloc, [0]);
-          }
-        }
+        await SendData().sendHexData(bluetoothBloc, [0]);
       });
     }
   }
 
-  void _onUnlockTap(SongModel song) async {
-    final success = await showAdConsentSnackBar(context, song.songId ?? '');
-    if (success) {
-      await _lazyBox.put(song.songId ?? '', true);
-      setState(() {});
-    }
-  }
-
+  /// 🎵 Şarkı tap - ana giriş noktası
   void _onSongTap(
     SongModel song,
     bool isConnected,
     BluetoothBloc bluetoothBloc,
     SongViewModel vm,
+    bool isLocked,
   ) async {
-    // Eğer şarkı API'den kilitsiz geliyorsa veya kullanıcı unlock etmişse player'a git
-    if (!song.isLocked || _isUnlocked(song.songId)) {
-      final fullSong = await vm.fetchSongDetail(song.songId ?? '');
-      if (fullSong != null && mounted) {
-        // Bluetooth bağlıysa veri gönder
-        if (isConnected) {
-          await SendData().sendHexData(bluetoothBloc, [1]);
-        }
-
-        await showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.95,
-          ),
-          builder: (context) => ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF1A1A2E),
-                    Color(0xFF16213E),
-                    Color(0xFF0F3460),
-                  ],
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.9,
-                    child: DraggableScrollableSheet(
-                      initialChildSize: 1.0,
-                      minChildSize: 0.3,
-                      expand: false,
-                      builder: (context, scrollCtrl) =>
-                          YoutubeSongPlayer(song: fullSong),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ).whenComplete(() async {
-          // Bluetooth bağlıysa stop verisi gönder
-          if (isConnected) {
-            await SendData().sendHexData(bluetoothBloc, [0]);
-          }
-        });
-      }
-    } else {
-      // Şarkı kilitli, unlock işlemi yap
+    if (isLocked) {
+      // Kilitli şarkı - unlock için reklam göster
       _onUnlockTap(song);
+    } else {
+      // Kilitsiz şarkı - direkt player'a git
+      _onPlayTap(song, isConnected, bluetoothBloc, vm);
     }
   }
 }
