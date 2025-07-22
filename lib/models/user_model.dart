@@ -21,6 +21,7 @@ class UserModel {
     this.name,
     this.userId,
     this.firebaseToken,
+    this.fcmToken,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -43,6 +44,7 @@ class UserModel {
         name: json['name'],
         userId: json['user_id'],
         firebaseToken: json['firebase_token'],
+        fcmToken: json['fcm_token'],
       );
   String? id;
   List<dynamic>? assignedSongIds;
@@ -53,6 +55,7 @@ class UserModel {
   String? name;
   String? userId;
   String? firebaseToken;
+  String? fcmToken;
 
   Map<String, dynamic> toJson() => {
         '_id': id,
@@ -68,5 +71,6 @@ class UserModel {
         'name': name,
         'user_id': userId,
         'firebase_token': firebaseToken,
+        'fcm_token': fcmToken,
       };
 }

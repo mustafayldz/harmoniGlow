@@ -10,14 +10,14 @@ class SongViewModel extends ChangeNotifier {
   late BuildContext context;
 
   List<SongModel> _songs = [];
-  List<SongModel> _popularSongs = [];
+  final List<SongModel> _popularSongs = [];
   List<String> _suggestions = [];
   int limit = 20;
   int _offset = 0;
   bool _hasMore = true;
   bool _isLoading = false;
-  bool _isLoadingPopular = false;
-  bool _isLoadingSuggestions = false;
+  final bool _isLoadingPopular = false;
+  final bool _isLoadingSuggestions = false;
   String? _activeQuery;
 
   List<SongModel> get songs => _songs;
@@ -89,7 +89,7 @@ class SongViewModel extends ChangeNotifier {
         );
       } else {
         // Popüler şarkıları getir
-        result = await _songService.getPopularSongs(
+        result = await _songService.getSongs(
           context,
           limit: limit,
           offset: _offset,
@@ -108,56 +108,6 @@ class SongViewModel extends ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
-  }
-
-  /// 🔥 Popüler şarkıları getir
-  Future<void> fetchPopularSongs() async {
-    _isLoadingPopular = true;
-    notifyListeners();
-
-    try {
-      final result = await _songService.getPopularSongs(
-        context,
-        limit: 10,
-        offset: 0,
-      );
-      if (result != null) {
-        _popularSongs = result;
-      }
-    } catch (e) {
-      debugPrint('🔥 Popular songs fetch error: \$e');
-    }
-
-    _isLoadingPopular = false;
-    notifyListeners();
-  }
-
-  /// 💡 Arama önerileri getir
-  Future<void> fetchSuggestions(String query) async {
-    if (query.trim().length < 2) {
-      _suggestions = [];
-      notifyListeners();
-      return;
-    }
-
-    _isLoadingSuggestions = true;
-    notifyListeners();
-
-    try {
-      final result = await _songService.getSearchSuggestions(
-        context,
-        query: query.trim(),
-        limit: 10,
-      );
-      if (result != null) {
-        _suggestions = result;
-      }
-    } catch (e) {
-      debugPrint('💡 Suggestions fetch error: \$e');
-    }
-
-    _isLoadingSuggestions = false;
     notifyListeners();
   }
 

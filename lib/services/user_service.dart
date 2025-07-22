@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:drumly/constants.dart';
 import 'package:drumly/models/user_model.dart';
 import 'package:drumly/shared/enums.dart';
@@ -39,6 +37,7 @@ class UserService {
     required String firebaseToken,
     String? name,
     String? email,
+    String? fcmToken,
   }) async {
     final String url = getBaseUrlUser();
 
@@ -47,14 +46,12 @@ class UserService {
         'firebase_token': firebaseToken,
         if (name != null && name.isNotEmpty) 'name': name,
         if (email != null && email.isNotEmpty) 'email': email,
+        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
       };
-
-      debugPrint(
-          '🔥 Creating/Updating user with token: ${firebaseToken.substring(0, 20)}...');
 
       final response = await RequestHelper.requestAsync(
         context,
-        RequestType.post,
+        RequestType.post, // POST metodu kullanıyoruz
         url,
         userData,
       );
@@ -62,12 +59,18 @@ class UserService {
       if (response != null && response.isNotEmpty) {
         debugPrint('✅ User created/updated successfully');
         return userModelFromJson(response);
+      } else {
+        debugPrint('❌ Empty or null response from backend');
+        return null;
       }
     } catch (e) {
       debugPrint('❌ Error in createOrUpdateUser: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+      if (e is Exception) {
+        debugPrint('❌ Exception details: ${e.toString()}');
+      }
       return null;
     }
-    return null;
   }
 
   /*----------------------------------------------------------------------
@@ -106,24 +109,37 @@ class UserService {
   }
 
   /*----------------------------------------------------------------------
-                  Get All Users (Admin only)
+                  Update FCM Token Only
 ----------------------------------------------------------------------*/
-  Future<List<UserModel>?> getAllUsers(BuildContext context) async {
-    final String url = getBaseUrlUser();
+  Future<UserModel?> updateFCMToken(
+    BuildContext context, {
+    required String fcmToken,
+  }) async {
+    final String url = '${getBaseUrlUser()}me/fcm-token';
 
     try {
-      final response =
-          await RequestHelper.requestAsync(context, RequestType.get, url);
+      final Map<String, dynamic> tokenData = {
+        'fcm_token': fcmToken,
+      };
 
-      if (response == null || response == '' || response.isEmpty) {
-        return null;
+      debugPrint('🔔 Updating FCM token via: $url');
+      debugPrint('🔔 FCM Token: ${fcmToken.substring(0, 20)}...');
+
+      final response = await RequestHelper.requestAsync(
+        context,
+        RequestType.put,
+        url,
+        tokenData,
+      );
+
+      if (response != null && response.isNotEmpty) {
+        debugPrint('✅ FCM token updated successfully');
+        return userModelFromJson(response);
       }
-
-      final List<dynamic> jsonList = json.decode(response);
-      return jsonList.map((json) => UserModel.fromJson(json)).toList();
     } catch (e) {
-      debugPrint('❌ Error in getAllUsers: $e');
+      debugPrint('❌ Error in updateFCMToken: $e');
       return null;
     }
+    return null;
   }
 }

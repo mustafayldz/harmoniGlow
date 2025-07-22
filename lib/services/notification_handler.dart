@@ -1,6 +1,7 @@
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/main.dart'; // navigatorKey için
 import 'package:drumly/provider/notification_provider.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/notifications/notification_view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -86,12 +87,20 @@ class NotificationHandler {
 
   /// Token'ı sunucuya gönder
   static void _sendTokenToServer(String token) {
-    // API call yapın
-    debugPrint('Sending token to server: $token');
+    debugPrint('🔔 Sending FCM token to server: $token');
 
-    // Örnek implementation:
-    // final userService = GetIt.instance<UserService>();
-    // userService.updateFCMToken(token);
+    // Context'i al ve UserProvider'a gönder
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (userProvider.isLoggedIn) {
+        userProvider.updateFCMToken(context, token);
+      } else {
+        debugPrint('❌ User not logged in, cannot update FCM token');
+      }
+    } else {
+      debugPrint('❌ Context not available, cannot update FCM token');
+    }
   }
 
   /// Topic'lere abone ol

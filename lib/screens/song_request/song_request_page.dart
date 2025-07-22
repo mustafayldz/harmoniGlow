@@ -2,6 +2,7 @@ import 'package:drumly/models/song_request_model.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/services/song_request_service.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -487,13 +488,23 @@ class _SongRequestPageState extends State<SongRequestPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Firebase Auth'dan user bilgilerini al
+      final firebaseUser = FirebaseAuth.instance.currentUser;
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final user = userProvider.userModel;
 
+      debugPrint(
+        '🎵 Firebase User: ${firebaseUser?.uid}, Email: ${firebaseUser?.email}',
+      );
+      debugPrint('🎵 User Provider: ${user?.userId}, Email: ${user?.email}');
+
       final request = SongRequestModel(
-        userId: user?.userId,
-        userEmail: user?.email,
-        userName: user?.name,
+        // Firebase Auth bilgilerini kullan
+        userId: firebaseUser?.uid ?? user?.userId,
+        userEmail: firebaseUser?.email ?? user?.email,
+        userName: firebaseUser?.displayName ??
+            user?.name ??
+            firebaseUser?.email?.split('@').first,
         artistName: _artistController.text.trim(),
         songTitle: _songTitleController.text.trim(),
         songLink: _songLinkController.text.trim().isEmpty
@@ -516,6 +527,8 @@ class _SongRequestPageState extends State<SongRequestPage> {
             : _descriptionController.text.trim(),
         priority: _selectedPriority,
       );
+
+      debugPrint('🎵 Final request data: ${request.toJson()}');
 
       final success =
           await _songRequestService.createSongRequest(context, request);

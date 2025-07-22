@@ -33,6 +33,7 @@ class _SongViewState extends State<SongView>
     vm = SongViewModel();
     vm.init(context);
     vm.fetchInitialSongsWithCache(context);
+
     _scrollController.addListener(_onScroll);
   }
 
@@ -104,7 +105,6 @@ class _SongViewState extends State<SongView>
       vm.clearSongs();
       if (query.isEmpty) {
         // Boş arama - popüler şarkıları getir
-        vm.fetchPopularSongs();
       } else {
         // Arama terimi var - yeni search API'sini kullan
         vm.fetchInitialSongsWithQuery(query: query);
@@ -159,14 +159,12 @@ class _SongViewState extends State<SongView>
                       controller: _tabController,
                       children: [
                         // All Songs Tab
-                        vm.songs.isEmpty && !vm.isLoading
-                            ? _buildEmptyState(isDarkMode)
-                            : _buildSongsList(
-                                vm,
-                                isConnected,
-                                bluetoothBloc,
-                                isDarkMode,
-                              ),
+                        _buildAllSongsTab(
+                          vm,
+                          isConnected,
+                          bluetoothBloc,
+                          isDarkMode,
+                        ),
                         // Own Songs Tab
                         _buildOwnSongsTab(context, isDarkMode),
                       ],
@@ -362,64 +360,6 @@ class _SongViewState extends State<SongView>
               _buildSongRequestButton(isDarkMode),
             ],
           ],
-        ),
-      );
-
-  /// 📝 Songs List - Training tarzı
-  Widget _buildSongsList(
-    SongViewModel vm,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    bool isDarkMode,
-  ) =>
-      NotificationListener<ScrollNotification>(
-        onNotification: (scrollInfo) {
-          if (scrollInfo is ScrollEndNotification &&
-              !vm.isLoading &&
-              vm.hasMore &&
-              scrollInfo.metrics.pixels >=
-                  scrollInfo.metrics.maxScrollExtent - 200) {
-            vm.fetchMoreSongs();
-          }
-          return false;
-        },
-        child: ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          itemCount: vm.songs.length + (vm.isLoading ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index >= vm.songs.length) {
-              return Container(
-                padding: const EdgeInsets.all(20),
-                alignment: Alignment.center,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isDarkMode ? Colors.white : Colors.black,
-                  ),
-                ),
-              );
-            }
-
-            final song = vm.songs[index];
-
-            // 🔐 FUTURE BUILDER ile kilit durumu kontrolü
-            return FutureBuilder<bool>(
-              future: _isSongLocked(song, isConnected),
-              builder: (context, snapshot) {
-                final isLocked = snapshot.data ?? song.isLocked;
-
-                return _buildModernSongCard(
-                  context,
-                  song,
-                  isConnected,
-                  bluetoothBloc,
-                  vm,
-                  isLocked,
-                  isDarkMode,
-                );
-              },
-            );
-          },
         ),
       );
 
@@ -711,39 +651,38 @@ class _SongViewState extends State<SongView>
       );
 
   /// 🎵 Own Songs Tab Content
-  Widget _buildOwnSongsTab(BuildContext context, bool isDarkMode) {
-    return Consumer<UserProvider>(
-      builder: (context, userProvider, child) {
-        final user = userProvider.userModel;
+  Widget _buildOwnSongsTab(BuildContext context, bool isDarkMode) =>
+      Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          final user = userProvider.userModel;
 
-        if (user == null) {
-          return _buildEmptyOwnSongs(isDarkMode, 'no_user_data'.tr());
-        }
+          if (user == null) {
+            return _buildEmptyOwnSongs(isDarkMode, 'no_user_data'.tr());
+          }
 
-        final assignedSongIds = user.assignedSongIds ?? [];
+          final assignedSongIds = user.assignedSongIds ?? [];
 
-        if (assignedSongIds.isEmpty) {
-          return _buildEmptyOwnSongs(isDarkMode, 'no_assigned_songs'.tr());
-        }
+          if (assignedSongIds.isEmpty) {
+            return _buildEmptyOwnSongs(isDarkMode, 'no_assigned_songs'.tr());
+          }
 
-        // Debug assigned songs
-        vm.debugAssignedSongs(assignedSongIds);
+          // Debug assigned songs
+          vm.debugAssignedSongs(assignedSongIds);
 
-        // SongViewModel'den assigned songs'ları al
-        final ownSongs = vm.getAssignedSongs(assignedSongIds);
+          // SongViewModel'den assigned songs'ları al
+          final ownSongs = vm.getAssignedSongs(assignedSongIds);
 
-        if (ownSongs.isEmpty) {
-          // Eğer assigned songs bulunamazsa, şarkıları yükle
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            vm.fetchAssignedSongs(assignedSongIds);
-          });
-          return _buildEmptyOwnSongs(isDarkMode, 'loading_own_songs'.tr());
-        }
+          if (ownSongs.isEmpty) {
+            // Eğer assigned songs bulunamazsa, şarkıları yükle
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              vm.fetchAssignedSongs(assignedSongIds);
+            });
+            return _buildEmptyOwnSongs(isDarkMode, 'loading_own_songs'.tr());
+          }
 
-        return _buildOwnSongsList(ownSongs, context, isDarkMode);
-      },
-    );
-  }
+          return _buildOwnSongsList(ownSongs, context, isDarkMode);
+        },
+      );
 
   /// 🎵 Empty Own Songs State
   Widget _buildEmptyOwnSongs(bool isDarkMode, String message) => Center(
@@ -775,7 +714,10 @@ class _SongViewState extends State<SongView>
 
   /// 🎵 Own Songs List
   Widget _buildOwnSongsList(
-      List<SongModel> ownSongs, BuildContext context, bool isDarkMode) {
+    List<SongModel> ownSongs,
+    BuildContext context,
+    bool isDarkMode,
+  ) {
     final bluetoothBloc = context.read<BluetoothBloc>();
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
@@ -837,4 +779,169 @@ class _SongViewState extends State<SongView>
       },
     );
   }
+
+  /// 🎵 All Songs Tab - Popular + Regular Songs
+  Widget _buildAllSongsTab(
+    SongViewModel vm,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    bool isDarkMode,
+  ) {
+    // Hem normal songs hem de popular songs boşsa empty state göster
+    if (vm.songs.isEmpty &&
+        vm.popularSongs.isEmpty &&
+        !vm.isLoading &&
+        !vm.isLoadingPopular) {
+      return _buildEmptyState(isDarkMode);
+    }
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (scrollInfo is ScrollEndNotification &&
+            _scrollController.position.pixels >=
+                _scrollController.position.maxScrollExtent - 200 &&
+            vm.hasMore &&
+            !vm.isLoading) {
+          vm.fetchMoreSongs();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: _getTotalItemCount(vm),
+        itemBuilder: (context, index) => _buildSongItem(
+          context,
+          index,
+          vm,
+          isConnected,
+          bluetoothBloc,
+          isDarkMode,
+        ),
+      ),
+    );
+  }
+
+  /// 🎵 Get Total Item Count for Combined List
+  int _getTotalItemCount(SongViewModel vm) {
+    int count = 0;
+
+    // Popular Songs Header + Songs
+    if (vm.popularSongs.isNotEmpty) {
+      count += 1; // Header
+      count += vm.popularSongs.length; // Popular songs
+    }
+
+    // Regular Songs Header + Songs
+    if (vm.songs.isNotEmpty) {
+      count += 1; // Header
+      count += vm.songs.length; // Regular songs
+    }
+
+    // Loading indicator
+    if (vm.isLoading) {
+      count += 1;
+    }
+
+    return count;
+  }
+
+  /// 🎵 Build Song Item for Combined List
+  Widget _buildSongItem(
+    BuildContext context,
+    int index,
+    SongViewModel vm,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    bool isDarkMode,
+  ) {
+    int currentIndex = 0;
+
+    // Popular Songs Section
+    if (vm.popularSongs.isNotEmpty) {
+      // Popular Songs Header
+      if (index == currentIndex) {
+        return _buildSectionHeader('🔥 Popular Songs', isDarkMode);
+      }
+      currentIndex++;
+
+      // Popular Songs Items
+      if (index < currentIndex + vm.popularSongs.length) {
+        final songIndex = index - currentIndex;
+        final song = vm.popularSongs[songIndex];
+        return FutureBuilder<bool>(
+          future: _isSongLocked(song, isConnected),
+          builder: (context, snapshot) {
+            final isLocked = snapshot.data ?? false;
+            return _buildModernSongCard(
+              context,
+              song,
+              isConnected,
+              bluetoothBloc,
+              vm,
+              isLocked,
+              isDarkMode,
+            );
+          },
+        );
+      }
+      currentIndex += vm.popularSongs.length;
+    }
+
+    // Regular Songs Section
+    if (vm.songs.isNotEmpty) {
+      // Regular Songs Header
+      if (index == currentIndex) {
+        return _buildSectionHeader('🎵 All Songs', isDarkMode);
+      }
+      currentIndex++;
+
+      // Regular Songs Items
+      if (index < currentIndex + vm.songs.length) {
+        final songIndex = index - currentIndex;
+        final song = vm.songs[songIndex];
+        return FutureBuilder<bool>(
+          future: _isSongLocked(song, isConnected),
+          builder: (context, snapshot) {
+            final isLocked = snapshot.data ?? false;
+            return _buildModernSongCard(
+              context,
+              song,
+              isConnected,
+              bluetoothBloc,
+              vm,
+              isLocked,
+              isDarkMode,
+            );
+          },
+        );
+      }
+      currentIndex += vm.songs.length;
+    }
+
+    // Loading indicator
+    if (vm.isLoading && index == currentIndex) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        child: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  /// 🎵 Section Header Widget
+  Widget _buildSectionHeader(String title, bool isDarkMode) => Container(
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? Colors.white : Colors.black,
+          ),
+        ),
+      );
 }

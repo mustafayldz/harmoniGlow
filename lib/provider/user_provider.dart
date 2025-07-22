@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:drumly/models/user_model.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class UserProvider with ChangeNotifier {
@@ -43,17 +44,93 @@ class UserProvider with ChangeNotifier {
         if (idToken != null) {
           await StorageService.saveFirebaseToken(idToken);
 
-          // Backend'e kullanıcı bilgilerini gönder/güncelle
-          final user = await _userService.createOrUpdateUser(
-            context,
-            firebaseToken: idToken,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-          );
+          // Önce mevcut kullanıcıyı kontrol et
+          final existingUser = await _userService.getUser(context);
 
-          if (user != null) {
-            setUser(user);
-            debugPrint('✅ User initialized: ${user.email}');
+          if (existingUser != null) {
+            // Kullanıcı mevcut, FCM token'ı kontrol et ve güncelle
+            debugPrint('👤 User found: ${existingUser.email ?? "Unknown"}');
+            debugPrint(
+              '🔍 Checking FCM token... Current: ${existingUser.fcmToken ?? "null"}',
+            );
+
+            // FCM token'ı kontrol et - null veya boşsa güncelle
+            if (existingUser.fcmToken == null ||
+                existingUser.fcmToken!.isEmpty) {
+              debugPrint(
+                '🔔 FCM token is missing, attempting to get and update...',
+              );
+
+              // FCM token'ı al
+              var fcmToken = FirebaseNotificationService().fcmToken;
+
+              // Eğer hala null ise manuel olarak almaya çalış
+              if (fcmToken == null) {
+                debugPrint('🔄 FCM token null, trying to get manually...');
+                try {
+                  fcmToken =
+                      await FirebaseNotificationService().getTokenManually();
+                } catch (e) {
+                  debugPrint('❌ Failed to get FCM token manually: $e');
+                }
+              }
+
+              if (fcmToken != null && fcmToken.isNotEmpty) {
+                debugPrint(
+                  '🔔 Updating missing FCM token for existing user: ${existingUser.email ?? "Unknown"}',
+                );
+                debugPrint(
+                  '🔔 FCM Token to send: ${fcmToken.substring(0, 20)}...',
+                );
+
+                final updatedUser = await _userService.updateFCMToken(
+                  context,
+                  fcmToken: fcmToken,
+                );
+
+                if (updatedUser != null) {
+                  setUser(updatedUser);
+                  debugPrint(
+                    '✅ FCM token updated for existing user: ${updatedUser.email ?? "Unknown"}',
+                  );
+                } else {
+                  // FCM token güncellenemedi ama mevcut kullanıcıyı yükle
+                  setUser(existingUser);
+                  debugPrint(
+                    'ℹ️ User loaded (FCM token update failed): ${existingUser.email ?? "Unknown"}',
+                  );
+                }
+              } else {
+                // FCM token alınamadı, kullanıcıyı olduğu gibi yükle
+                setUser(existingUser);
+                debugPrint(
+                  '⚠️ FCM token could not be obtained, user loaded without update',
+                );
+              }
+            } else {
+              // FCM token zaten var, kullanıcıyı yükle
+              setUser(existingUser);
+              debugPrint(
+                '✅ User loaded with existing tokens: ${existingUser.email ?? "Unknown"}',
+              );
+            }
+          } else {
+            // Backend'e kullanıcı bilgilerini gönder/güncelle (yeni kullanıcı veya token mevcut)
+            // FCM token'ı al
+            final fcmToken = FirebaseNotificationService().fcmToken;
+
+            final user = await _userService.createOrUpdateUser(
+              context,
+              firebaseToken: idToken,
+              email: firebaseUser.email,
+              name: firebaseUser.displayName,
+              fcmToken: fcmToken,
+            );
+
+            if (user != null) {
+              setUser(user);
+              debugPrint('✅ User initialized: ${user.email}');
+            }
           }
         }
       }
@@ -84,6 +161,28 @@ class UserProvider with ChangeNotifier {
         }
       } catch (e) {
         debugPrint('❌ Error updating token: $e');
+      }
+    }
+  }
+
+  /// FCM Token'ı manuel olarak güncelle
+  Future<void> updateFCMToken(
+    BuildContext context,
+    String newFCMToken,
+  ) async {
+    if (_userModel?.userId != null) {
+      try {
+        final updatedUser = await _userService.updateFCMToken(
+          context,
+          fcmToken: newFCMToken,
+        );
+
+        if (updatedUser != null) {
+          setUser(updatedUser);
+          debugPrint('✅ FCM Token updated for user: ${updatedUser.email}');
+        }
+      } catch (e) {
+        debugPrint('❌ Error updating FCM token: $e');
       }
     }
   }

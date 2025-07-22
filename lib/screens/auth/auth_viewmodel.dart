@@ -1,3 +1,5 @@
+import 'package:drumly/models/user_model.dart';
+import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/shared/common_functions.dart';
@@ -59,12 +61,38 @@ class AuthViewModel extends ChangeNotifier {
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
 
-        // Backend'e kullanıcı bilgilerini gönder/güncelle
-        final user = await userService.createOrUpdateUser(
-          context,
-          firebaseToken: idToken,
-          email: email,
-        );
+        // FCM token'ı al
+        final fcmToken = FirebaseNotificationService().fcmToken;
+
+        // Önce mevcut kullanıcıyı kontrol et
+        final existingUser = await userService.getUser(context);
+
+        UserModel? user;
+        if (existingUser != null &&
+            (existingUser.firebaseToken == null ||
+                existingUser.firebaseToken!.isEmpty)) {
+          // Mevcut kullanıcının Firebase token'ı eksik, güncelle
+          debugPrint(
+            '🔄 Updating missing Firebase token for existing user during login',
+          );
+          // createOrUpdateUser kullanarak name'i de koru
+          user = await userService.createOrUpdateUser(
+            context,
+            firebaseToken: idToken,
+            email: email,
+            name: existingUser.name, // Mevcut name'i koru
+            fcmToken: fcmToken,
+          );
+        } else {
+          // Backend'e kullanıcı bilgilerini gönder/güncelle
+          user = await userService.createOrUpdateUser(
+            context,
+            firebaseToken: idToken,
+            email: email,
+            name: value.user!.displayName, // Firebase'den display name'i al
+            fcmToken: fcmToken,
+          );
+        }
 
         if (user != null) {
           debugPrint('✅ User login successful: ${user.email}');
@@ -101,25 +129,36 @@ class AuthViewModel extends ChangeNotifier {
         password: password,
       );
 
-      if (name.isNotEmpty && cred.user != null) {
-        await cred.user!.updateDisplayName(name);
-        await Future.microtask(() => cred.user!.reload());
+      if (cred.user != null) {
+        // İsim varsa display name'i güncelle
+        if (name.isNotEmpty) {
+          await cred.user!.updateDisplayName(name);
+          await Future.microtask(() => cred.user!.reload());
+        }
 
-        // Firebase token'ı al ve backend'e kullanıcı oluştur
+        // Firebase token'ı kesinlikle al ve backend'e kullanıcı oluştur
         final idToken = await cred.user!.getIdToken();
         if (idToken != null) {
           await StorageService.saveFirebaseToken(idToken);
+
+          // FCM token'ı al
+          final fcmToken = FirebaseNotificationService().fcmToken;
 
           final user = await userService.createOrUpdateUser(
             context,
             firebaseToken: idToken,
             email: email,
-            name: name,
+            name: name.isNotEmpty ? name : null,
+            fcmToken: fcmToken,
           );
 
           if (user != null) {
             debugPrint('✅ User registration successful: ${user.email}');
+          } else {
+            debugPrint('❌ Failed to create user in backend');
           }
+        } else {
+          debugPrint('❌ Failed to get Firebase ID token');
         }
       }
       toggleMode(true);

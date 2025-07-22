@@ -98,7 +98,8 @@ class SongRequestService {
           return requests;
         } else {
           debugPrint(
-              '❌ Failed to fetch song requests: ${responseData['message']}');
+            '❌ Failed to fetch song requests: ${responseData['message']}',
+          );
           return null;
         }
       } else {
