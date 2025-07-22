@@ -46,7 +46,7 @@ class RequestHelper {
         case RequestType.post:
           final request = await client.postUrl(Uri.parse(url));
 
-          request.headers.set('content-type', 'application/json-patch+json');
+          request.headers.set('content-type', 'application/json');
           request.headers.set('accept', 'application/json');
 
           if (token.isNotEmpty) {
@@ -62,7 +62,7 @@ class RequestHelper {
         case RequestType.put:
           final request = await client.putUrl(Uri.parse(url));
 
-          request.headers.set('content-type', 'application/json-patch+json');
+          request.headers.set('content-type', 'application/json');
           request.headers.set('accept', 'application/json');
           if (token.isNotEmpty) {
             request.headers.set('authorization', 'Bearer $token');
@@ -105,17 +105,27 @@ class RequestHelper {
           break;
         case 400:
           debugPrint('400');
-          break;
-        case 500:
-          debugPrint('500');
-          break;
-        case 502:
-          debugPrint('502');
+          debugPrint('400 Error Response: $result');
           break;
         case 404:
           debugPrint('404');
+          debugPrint('404 Error Response: $result');
+          break;
+        case 405:
+          debugPrint('405 - Method Not Allowed');
+          debugPrint('405 Error Response: $result');
+          break;
+        case 500:
+          debugPrint('500');
+          debugPrint('500 Error Response: $result');
+          break;
+        case 502:
+          debugPrint('502');
+          debugPrint('502 Error Response: $result');
           break;
         default:
+          debugPrint('Unexpected status code: ${response.statusCode}');
+          debugPrint('Response: $result');
           return null;
       }
       print({'result BURDA =========>', result});

@@ -88,15 +88,13 @@ class SongService {
     required String query,
     int limit = 20,
     int offset = 0,
-  }) async {
-    // API dokümantasyonuna göre /songs endpoint'ini query parametresi ile kullan
-    return getSongs(
-      context,
-      limit: limit,
-      offset: offset,
-      query: query,
-    );
-  }
+  }) async =>
+      getSongs(
+        context,
+        limit: limit,
+        offset: offset,
+        query: query,
+      );
 
   /*----------------------------------------------------------------------
                   Get My Assigned Songs - YENİ /api/users/me/songs

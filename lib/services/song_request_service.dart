@@ -7,12 +7,21 @@ import 'package:drumly/shared/request_helper.dart';
 import 'package:flutter/material.dart';
 
 class SongRequestService {
-  String getBaseUrl() => '${ApiServiceUrl.song}request';
+  String getBaseUrl() => '${ApiServiceUrl.baseUrl}song-requests/';
+  String getMyRequestsUrl() => '${ApiServiceUrl.baseUrl}song-requests/my';
 
   /// Debug URL'leri kontrol et
   void debugUrls() {
     debugPrint('🔗 Song Request URL: ${getBaseUrl()}');
+    debugPrint('🔗 My Requests URL: ${getMyRequestsUrl()}');
   }
+
+  /// Get available status filter options
+  static List<String> getStatusOptions() =>
+      ['pending', 'approved', 'rejected', 'completed'];
+
+  /// Get available priority options
+  static List<String> getPriorityOptions() => ['low', 'normal', 'high'];
 
   /*----------------------------------------------------------------------
                           Create Song Request
@@ -34,13 +43,19 @@ class SongRequestService {
         request.toJson(),
       );
 
-      if (response != null) {
-        final responseData = json.decode(response);
-        if (responseData['success'] == true) {
-          debugPrint('✅ Song request created successfully');
-          return true;
-        } else {
-          debugPrint('❌ Song request failed: ${responseData['message']}');
+      if (response != null && response.isNotEmpty) {
+        try {
+          final responseData = json.decode(response);
+          if (responseData['success'] == true) {
+            debugPrint('✅ Song request created successfully');
+            return true;
+          } else {
+            debugPrint('❌ Song request failed: ${responseData['message']}');
+            return false;
+          }
+        } catch (jsonError) {
+          debugPrint('❌ JSON parsing error: $jsonError');
+          debugPrint('❌ Raw response: $response');
           return false;
         }
       } else {
@@ -59,18 +74,18 @@ class SongRequestService {
   ----------------------------------------------------------------------*/
   Future<List<SongRequestModel>?> getUserSongRequests(
     BuildContext context, {
-    String? userId,
+    String? status,
     int limit = 20,
     int offset = 0,
   }) async {
-    final String baseUrl = getBaseUrl();
+    final String baseUrl = getMyRequestsUrl(); // Use /song-requests/my endpoint
 
     try {
-      // Query parametrelerini URL'e ekle
+      // Query parametrelerini URL'e ekle (API dokümantasyonuna göre)
       final Map<String, String> queryParams = {
         'limit': '$limit',
         'offset': '$offset',
-        if (userId != null) 'user_id': userId,
+        if (status != null && status.isNotEmpty) 'status': status,
       };
 
       final queryString = queryParams.entries
@@ -87,7 +102,7 @@ class SongRequestService {
         url,
       );
 
-      if (response != null) {
+      if (response != null && response.isNotEmpty) {
         final responseData = json.decode(response);
         if (responseData['success'] == true) {
           final List<dynamic> data = responseData['data'] ?? [];
