@@ -3,6 +3,7 @@
 //     final songRequestModel = songRequestModelFromJson(jsonString);
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 SongRequestModel songRequestModelFromJson(String str) =>
     SongRequestModel.fromJson(json.decode(str));
@@ -29,26 +30,30 @@ class SongRequestModel {
     this.createdAt,
   });
 
-  factory SongRequestModel.fromJson(Map<String, dynamic> json) =>
-      SongRequestModel(
-        requestId: json['request_id'],
-        userId: json['user_id'],
-        userEmail: json['user_email'],
-        userName: json['user_name'],
-        artistName: json['artist_name'] ?? '',
-        songTitle: json['song_title'] ?? '',
-        songLink: json['song_link'],
-        albumName: json['album_name'],
-        genre: json['genre'],
-        releaseYear: json['release_year'],
-        language: json['language'],
-        description: json['description'],
-        status: json['status'] ?? 'pending',
-        priority: json['priority'] ?? 'normal',
-        createdAt: json['created_at'] == null
-            ? null
-            : DateTime.parse(json['created_at']),
-      );
+  factory SongRequestModel.fromJson(Map<String, dynamic> json) {
+    // Debug log to see incoming JSON
+    debugPrint('🔍 SongRequestModel.fromJson received: $json');
+
+    return SongRequestModel(
+      requestId: json['request_id'] ?? json['id'],
+      userId: json['user_id'],
+      userEmail: json['user_email'],
+      userName: json['user_name'],
+      artistName: json['artist_name'] ?? json['artist'] ?? '',
+      songTitle: json['song_title'] ?? json['title'] ?? json['song_name'] ?? '',
+      songLink: json['song_link'] ?? json['link'],
+      albumName: json['album_name'] ?? json['album'],
+      genre: json['genre'],
+      releaseYear: json['release_year'],
+      language: json['language'],
+      description: json['description'] ?? json['note'] ?? json['comment'],
+      status: json['status'] ?? 'pending',
+      priority: json['priority'] ?? 'normal',
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at']),
+    );
+  }
 
   String? requestId;
   String? userId;

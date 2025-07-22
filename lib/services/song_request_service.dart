@@ -104,10 +104,72 @@ class SongRequestService {
 
       if (response != null && response.isNotEmpty) {
         final responseData = json.decode(response);
+        debugPrint('🔍 Raw response data: $responseData');
+
         if (responseData['success'] == true) {
-          final List<dynamic> data = responseData['data'] ?? [];
-          final requests =
-              data.map((json) => SongRequestModel.fromJson(json)).toList();
+          // Handle different response formats
+          final dynamic rawData = responseData['data'];
+          debugPrint('🔍 Raw data type: ${rawData.runtimeType}');
+          debugPrint('🔍 Raw data content: $rawData');
+
+          List<dynamic> dataList;
+          if (rawData is List) {
+            // Direct list of requests
+            dataList = rawData;
+            debugPrint(
+                '🔍 Processing as direct list with ${dataList.length} items');
+          } else if (rawData is Map<String, dynamic>) {
+            // Nested response with results/items field
+            debugPrint('🔍 Processing as Map, keys: ${rawData.keys.toList()}');
+            if (rawData.containsKey('data')) {
+              // API returns nested structure: data.data
+              dataList = rawData['data'] ?? [];
+              debugPrint(
+                  '🔍 Found nested data field with ${dataList.length} items');
+            } else if (rawData.containsKey('results')) {
+              dataList = rawData['results'] ?? [];
+              debugPrint(
+                  '🔍 Found results field with ${dataList.length} items');
+            } else if (rawData.containsKey('items')) {
+              dataList = rawData['items'] ?? [];
+              debugPrint('🔍 Found items field with ${dataList.length} items');
+            } else if (rawData.containsKey('song_requests')) {
+              dataList = rawData['song_requests'] ?? [];
+              debugPrint(
+                  '🔍 Found song_requests field with ${dataList.length} items');
+            } else {
+              // Assume the map itself is a single request
+              dataList = [rawData];
+              debugPrint('🔍 Treating map as single request');
+            }
+          } else {
+            debugPrint('❌ Unexpected data format: ${rawData.runtimeType}');
+            return null;
+          }
+
+          // Debug: İlk item'ı detaylı incele
+          if (dataList.isNotEmpty) {
+            debugPrint('🔍 First item in dataList: ${dataList.first}');
+            debugPrint('🔍 First item type: ${dataList.first.runtimeType}');
+            if (dataList.first is Map<String, dynamic>) {
+              final firstMap = dataList.first as Map<String, dynamic>;
+              debugPrint('🔍 First item keys: ${firstMap.keys.toList()}');
+              debugPrint('🔍 song_title value: "${firstMap['song_title']}"');
+              debugPrint('🔍 artist_name value: "${firstMap['artist_name']}"');
+              debugPrint('🔍 description value: "${firstMap['description']}"');
+            }
+          }
+
+          final requests = dataList.map(
+            (json) {
+              debugPrint('🔍 Processing JSON item: $json');
+              final request =
+                  SongRequestModel.fromJson(json as Map<String, dynamic>);
+              debugPrint(
+                  '🔍 Created model - songTitle: "${request.songTitle}", artistName: "${request.artistName}"');
+              return request;
+            },
+          ).toList();
 
           debugPrint('✅ Fetched ${requests.length} song requests');
           return requests;

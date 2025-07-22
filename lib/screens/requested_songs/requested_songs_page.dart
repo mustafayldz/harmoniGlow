@@ -55,6 +55,8 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
     setState(() => _isLoading = true);
 
     try {
+      debugPrint('🎵 Loading song requests with status: $_selectedStatus');
+
       final requests = await _songRequestService.getUserSongRequests(
         context,
         status: _selectedStatus == 'all' ? null : _selectedStatus,
@@ -62,12 +64,40 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         offset: loadMore ? _currentPage * _limit : 0,
       );
 
+      debugPrint('🎵 Received ${requests?.length ?? 0} requests from API');
+
       if (requests != null) {
+        // Debug: İlk request'i detaylı log'la
+        if (requests.isNotEmpty) {
+          final firstRequest = requests.first;
+          debugPrint('🔍 First request details:');
+          debugPrint('  - songTitle: "${firstRequest.songTitle}"');
+          debugPrint('  - artistName: "${firstRequest.artistName}"');
+          debugPrint('  - description: "${firstRequest.description}"');
+          debugPrint('  - status: "${firstRequest.status}"');
+          debugPrint('  - priority: "${firstRequest.priority}"');
+          debugPrint('  - requestId: "${firstRequest.requestId}"');
+        }
+
+        // Client-side filtering as backup
+        List<SongRequestModel> filteredRequests;
+        if (_selectedStatus == 'all') {
+          filteredRequests = requests;
+        } else {
+          filteredRequests = requests
+              .where(
+                (request) =>
+                    request.status.toLowerCase() ==
+                    _selectedStatus.toLowerCase(),
+              )
+              .toList();
+        }
+
         setState(() {
           if (loadMore) {
-            _songRequests.addAll(requests);
+            _songRequests.addAll(filteredRequests);
           } else {
-            _songRequests = requests;
+            _songRequests = filteredRequests;
           }
           _hasMore = requests.length >= _limit;
           if (loadMore) _currentPage++;
@@ -99,75 +129,124 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF0F172A) : Colors.grey[50],
-      appBar: _buildAppBar(isDarkMode),
-      body: Column(
-        children: [
-          _buildTabBar(isDarkMode),
-          Expanded(
-            child: _buildTabBarView(isDarkMode),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDarkMode
+                ? [
+                    const Color(0xFF0F172A), // Dark slate
+                    const Color(0xFF1E293B), // Lighter slate
+                    const Color(0xFF334155), // Even lighter
+                  ]
+                : [
+                    const Color(0xFFF8FAFC), // Light gray
+                    const Color(0xFFE2E8F0), // Slightly darker
+                    const Color(0xFFCBD5E1), // Even darker
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Modern Header
+              _buildModernHeader(isDarkMode),
+              // Tab Bar
+              _buildTabBar(isDarkMode),
+              // Content
+              Expanded(
+                child: _buildTabBarView(isDarkMode),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: _buildFAB(isDarkMode),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(bool isDarkMode) => AppBar(
-        backgroundColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-        elevation: 0,
-        title: Text(
-          'my_song_requests'.tr(),
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_rounded,
-            color: isDarkMode ? Colors.white : Colors.black,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              Icons.refresh_rounded,
-              color: isDarkMode ? Colors.white : Colors.black,
+  /// 🎨 Modern Header - Songs style
+  Widget _buildModernHeader(bool isDarkMode) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios_rounded,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
-            onPressed: _refreshRequests,
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'my_song_requests'.tr(),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
+            // Refresh Button
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
+                onPressed: _refreshRequests,
+                tooltip: 'Refresh',
+              ),
+            ),
+          ],
+        ),
       );
 
-  Widget _buildTabBar(bool isDarkMode) => DecoratedBox(
+  Widget _buildTabBar(bool isDarkMode) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-          border: Border(
-            bottom: BorderSide(
-              color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
-            ),
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.1),
           ),
         ),
         child: TabBar(
           controller: _tabController,
           isScrollable: true,
           indicator: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isDarkMode
-                    ? const Color(0xFF6366F1)
-                    : const Color(0xFF4F46E5),
-                width: 3,
-              ),
-            ),
+            color: isDarkMode
+                ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                : const Color(0xFF4F46E5).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
           ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding: const EdgeInsets.all(4),
           labelColor:
               isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
-          unselectedLabelColor:
-              isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          unselectedLabelColor: isDarkMode
+              ? Colors.white.withValues(alpha: 0.6)
+              : Colors.black.withValues(alpha: 0.6),
           labelStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -193,7 +272,11 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
   Widget _buildRequestsList(bool isDarkMode) {
     if (_isLoading && _songRequests.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          color: isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
+        ),
+      );
     }
 
     if (_songRequests.isEmpty) {
@@ -202,6 +285,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
     return RefreshIndicator(
       onRefresh: _refreshRequests,
+      color: isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
       child: NotificationListener<ScrollNotification>(
         onNotification: (scrollInfo) {
           if (scrollInfo is ScrollEndNotification &&
@@ -214,15 +298,19 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
           return false;
         },
         child: ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           itemCount: _songRequests.length + (_hasMore ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == _songRequests.length) {
               return _isLoading
-                  ? const Center(
+                  ? Center(
                       child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(),
+                        padding: const EdgeInsets.all(16),
+                        child: CircularProgressIndicator(
+                          color: isDarkMode
+                              ? const Color(0xFF6366F1)
+                              : const Color(0xFF4F46E5),
+                        ),
                       ),
                     )
                   : const SizedBox.shrink();
@@ -237,31 +325,70 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
   Widget _buildRequestCard(SongRequestModel request, bool isDarkMode) =>
       Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: isDarkMode
+                ? [
+                    const Color(0xFF1E293B).withValues(alpha: 0.9),
+                    const Color(0xFF334155).withValues(alpha: 0.7),
+                  ]
+                : [
+                    Colors.white,
+                    const Color(0xFFF8FAFC),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDarkMode ? Colors.grey[800]! : Colors.grey[200]!,
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
           ),
           boxShadow: [
             BoxShadow(
               color: isDarkMode
-                  ? Colors.black26
+                  ? Colors.black.withValues(alpha: 0.3)
                   : Colors.grey.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header: Song info + Status
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Music Icon
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDarkMode
+                            ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
+                            : [
+                                const Color(0xFF4F46E5),
+                                const Color(0xFF7C3AED),
+                              ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.music_note_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Song details
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,129 +404,151 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          'by ${request.artistName}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDarkMode
-                                ? Colors.grey[400]
-                                : Colors.grey[600],
-                          ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.person_rounded,
+                              size: 14,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.6)
+                                  : Colors.black.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                request.artistName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : Colors.black.withValues(alpha: 0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 12),
+                  // Status chip
                   _buildStatusChip(request.status, isDarkMode),
                 ],
               ),
-              if (request.albumName != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.album_rounded,
-                      size: 16,
-                      color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      request.albumName!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              if (request.genre != null || request.releaseYear != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (request.genre != null) ...[
-                      Icon(
-                        Icons.music_note_rounded,
-                        size: 16,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        request.genre!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                    if (request.genre != null && request.releaseYear != null)
-                      Text(
-                        ' • ',
-                        style: TextStyle(
-                          color:
-                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                    if (request.releaseYear != null)
-                      Text(
-                        '${request.releaseYear}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-              if (request.description != null) ...[
-                const SizedBox(height: 12),
+
+              const SizedBox(height: 16),
+
+              // Description (if available)
+              if (request.description != null &&
+                  request.description!.isNotEmpty) ...[
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color:
-                        isDarkMode ? const Color(0xFF0F172A) : Colors.grey[50],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    request.description!,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                      fontStyle: FontStyle.italic,
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.1)
+                          : Colors.black.withValues(alpha: 0.05),
                     ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildPriorityChip(request.priority, isDarkMode),
-                      if (request.songLink != null) ...[
-                        const SizedBox(width: 8),
-                        Icon(
-                          Icons.link_rounded,
-                          size: 16,
-                          color:
-                              isDarkMode ? Colors.blue[400] : Colors.blue[600],
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.description_rounded,
+                            size: 14,
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.6)
+                                : Colors.black.withValues(alpha: 0.6),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Note',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isDarkMode
+                                  ? Colors.white.withValues(alpha: 0.6)
+                                  : Colors.black.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        request.description!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.8)
+                              : Colors.black.withValues(alpha: 0.8),
+                          height: 1.4,
                         ),
-                      ],
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
-                  if (request.createdAt != null)
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Additional info row
+              Row(
+                children: [
+                  // Created date
+                  if (request.createdAt != null) ...[
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 14,
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : Colors.black.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       DateFormat('dd MMM yyyy').format(request.createdAt!),
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                        color: isDarkMode
+                            ? Colors.white.withValues(alpha: 0.5)
+                            : Colors.black.withValues(alpha: 0.5),
                       ),
                     ),
+                  ],
+
+                  const Spacer(),
+
+                  // Priority chip
+                  _buildPriorityChip(request.priority, isDarkMode),
+
+                  // Link indicator
+                  if (request.songLink != null &&
+                      request.songLink!.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? Colors.blue.withValues(alpha: 0.2)
+                            : Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.link_rounded,
+                        size: 14,
+                        color: isDarkMode ? Colors.blue[300] : Colors.blue[600],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ],
@@ -508,47 +657,102 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
   }
 
   Widget _buildEmptyState(bool isDarkMode) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.queue_music_rounded,
-              size: 64,
-              color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'no_requests_found'.tr(),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black,
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      (isDarkMode
+                              ? const Color(0xFF6366F1)
+                              : const Color(0xFF4F46E5))
+                          .withValues(alpha: 0.1),
+                      (isDarkMode
+                              ? const Color(0xFF8B5CF6)
+                              : const Color(0xFF7C3AED))
+                          .withValues(alpha: 0.1),
+                    ],
+                  ),
+                ),
+                child: Icon(
+                  Icons.queue_music_rounded,
+                  size: 60,
+                  color: isDarkMode
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFF4F46E5),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _selectedStatus == 'all'
-                  ? 'no_requests_desc'.tr()
-                  : 'no_filtered_requests_desc'.tr(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              const SizedBox(height: 32),
+              Text(
+                'no_requests_found'.tr(),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                _selectedStatus == 'all'
+                    ? 'no_requests_desc'.tr()
+                    : 'no_filtered_requests_desc'.tr(),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
 
-  Widget _buildFAB(bool isDarkMode) => FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/song-request'),
-        backgroundColor:
-            isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(
-          'new_request'.tr(),
-          style: const TextStyle(fontWeight: FontWeight.w600),
+  Widget _buildFAB(bool isDarkMode) => DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
+              isDarkMode ? const Color(0xFF8B5CF6) : const Color(0xFF7C3AED),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isDarkMode
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFF4F46E5))
+                  .withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => Navigator.pushNamed(context, '/song-request'),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          highlightElevation: 0,
+          icon: const Icon(Icons.add_rounded, size: 24),
+          label: Text(
+            'new_request'.tr(),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
         ),
       );
 }
