@@ -27,24 +27,47 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(_onTabChanged);
-    _loadSongRequests();
+
+    // Tab değişikliklerini dinle
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        _onTabChanged();
+      }
+    });
+
+    // İlk veriyi yükle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSongRequests();
+    });
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(_onTabChanged);
+    _tabController.removeListener(() {
+      if (!_tabController.indexIsChanging) {
+        _onTabChanged();
+      }
+    });
     _tabController.dispose();
     super.dispose();
   }
 
   void _onTabChanged() {
-    if (_tabController.indexIsChanging) {
-      final statuses = ['all', 'pending', 'approved', 'rejected', 'completed'];
-      _selectedStatus = statuses[_tabController.index];
-      _currentPage = 0;
-      _hasMore = true;
-      _songRequests.clear();
+    final statuses = ['all', 'pending', 'approved', 'rejected', 'completed'];
+    final newStatus = statuses[_tabController.index];
+
+    // Sadece status gerçekten değiştiyse yeni veri yükle
+    if (newStatus != _selectedStatus) {
+      debugPrint('🔄 Tab changed from $_selectedStatus to $newStatus');
+
+      setState(() {
+        _selectedStatus = newStatus;
+        _currentPage = 0;
+        _hasMore = true;
+        _songRequests.clear();
+      });
+
+      // Yeni veriyi yükle
       _loadSongRequests();
     }
   }
@@ -234,6 +257,21 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         child: TabBar(
           controller: _tabController,
           isScrollable: true,
+          onTap: (index) {
+            debugPrint('🎯 Tab tapped: $index');
+            // Manuel tab değişimi için
+            final statuses = [
+              'all',
+              'pending',
+              'approved',
+              'rejected',
+              'completed'
+            ];
+            final newStatus = statuses[index];
+            if (newStatus != _selectedStatus) {
+              _onTabChanged();
+            }
+          },
           indicator: BoxDecoration(
             color: isDarkMode
                 ? const Color(0xFF6366F1).withValues(alpha: 0.2)
@@ -267,7 +305,12 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
   Widget _buildTabBarView(bool isDarkMode) => TabBarView(
         controller: _tabController,
-        children: List.generate(5, (index) => _buildRequestsList(isDarkMode)),
+        physics:
+            const NeverScrollableScrollPhysics(), // Tab değişimini sadece tab tıklamasıyla sınırla
+        children: List.generate(5, (index) {
+          // Her tab için mevcut filtrelenmiş veriyi göster
+          return _buildRequestsList(isDarkMode);
+        }),
       );
 
   Widget _buildRequestsList(bool isDarkMode) {
