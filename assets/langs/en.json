@@ -94,6 +94,7 @@
   "bluetoothNotConnected": "Bluetooth not connected",
   "all_songs": "All Songs",
   "own_songs": "Own Songs",
+  "search_songs": "Search songs...",
   "no_user_data": "Please login to see your songs",
   "no_assigned_songs": "No songs assigned to you yet",
   "loading_own_songs": "Loading your songs...",
@@ -125,6 +126,17 @@
   "submit_request": "Submit Request",
   "required": "is required",
   "request_submitted_success": "Your song request has been submitted successfully!",
-  "request_submitted_error": "Failed to submit song request. Please try again."
+  "request_submitted_error": "Failed to submit song request. Please try again.",
+  "my_song_requests": "My Song Requests",
+  "all_requests": "All",
+  "pending_requests": "Pending",
+  "approved_requests": "Approved",
+  "rejected_requests": "Rejected",
+  "completed_requests": "Completed",
+  "no_requests_found": "No Requests Found",
+  "no_requests_desc": "You haven't made any song requests yet.",
+  "no_filtered_requests_desc": "No requests found with the selected filter.",
+  "request_a_song": "Request a Song",
+  "new_request": "New Request"
 }
 

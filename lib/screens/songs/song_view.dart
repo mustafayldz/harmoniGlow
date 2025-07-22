@@ -1,5 +1,4 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
@@ -17,19 +16,19 @@ class SongView extends StatefulWidget {
   State<SongView> createState() => _SongViewState();
 }
 
-class _SongViewState extends State<SongView>
-    with SingleTickerProviderStateMixin {
+class _SongViewState extends State<SongView> {
   late final SongViewModel vm;
-  late TabController _tabController;
+  // Tab controller kaldırıldı
 
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _lastSearch = '';
+  bool _isGridView = false; // Grid/List toggle için
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    // Tab controller artık gerekli değil
     vm = SongViewModel();
     vm.init(context);
     vm.fetchInitialSongsWithCache(context);
@@ -39,7 +38,7 @@ class _SongViewState extends State<SongView>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    // Tab controller dispose kaldırıldı
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -98,18 +97,20 @@ class _SongViewState extends State<SongView>
     await prefs.setInt(unlockTimeKey, currentTime);
   }
 
-  void _onSearchPressed() {
-    final query = _searchController.text.trim();
-    if (query != _lastSearch) {
-      _lastSearch = query;
-      vm.clearSongs();
-      if (query.isEmpty) {
-        // Boş arama - popüler şarkıları getir
-      } else {
-        // Arama terimi var - yeni search API'sini kullan
-        vm.fetchInitialSongsWithQuery(query: query);
+  void _onSearchChanged(String query) {
+    setState(() {
+      if (query != _lastSearch) {
+        _lastSearch = query;
+        vm.clearSongs();
+        if (query.isEmpty) {
+          // Boş arama - tüm şarkıları getir
+          vm.fetchInitialSongsWithCache(context);
+        } else {
+          // Arama terimi var - filtrelenmiş sonuçları getir
+          vm.fetchInitialSongsWithQuery(query: query);
+        }
       }
-    }
+    });
   }
 
   @override
@@ -144,30 +145,16 @@ class _SongViewState extends State<SongView>
             child: SafeArea(
               child: Column(
                 children: [
-                  // Modern App Bar (Training tarzı)
-                  _buildModernAppBar(context, isDarkMode),
+                  // Modern App Bar + Search
+                  _buildModernHeader(context, isDarkMode),
 
-                  // Modern Search Section (Training tarzı)
-                  _buildModernSearchSection(context, isDarkMode),
-
-                  // Tab Bar
-                  _buildTabBar(isDarkMode),
-
-                  // Tab Bar View
+                  // Main Content - No Tabs
                   Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        // All Songs Tab
-                        _buildAllSongsTab(
-                          vm,
-                          isConnected,
-                          bluetoothBloc,
-                          isDarkMode,
-                        ),
-                        // Own Songs Tab
-                        _buildOwnSongsTab(context, isDarkMode),
-                      ],
+                    child: _buildMainContent(
+                      vm,
+                      isConnected,
+                      bluetoothBloc,
+                      isDarkMode,
                     ),
                   ),
                 ],
@@ -179,49 +166,94 @@ class _SongViewState extends State<SongView>
     );
   }
 
-  /// 🎨 Modern App Bar - Training tarzı
-  Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Row(
+  /// 🎨 Modern Header - Search + Actions Combined
+  Widget _buildModernHeader(BuildContext context, bool isDarkMode) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        child: Column(
           children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.arrow_back_ios_rounded,
-                  color: isDarkMode ? Colors.white : Colors.black,
+            // App Bar Row
+            Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_rounded,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                'songs'.tr(),
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'songs'.tr(),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
                 ),
-              ),
+                // Grid/List Toggle
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      _isGridView
+                          ? Icons.view_list_rounded
+                          : Icons.grid_view_rounded,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                    onPressed: () => setState(() => _isGridView = !_isGridView),
+                    tooltip: _isGridView ? 'List View' : 'Grid View',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // My Requests Button
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                        : const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.library_music_rounded,
+                      color: isDarkMode
+                          ? const Color(0xFF6366F1)
+                          : const Color(0xFF4F46E5),
+                    ),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/requested-songs'),
+                    tooltip: 'My Song Requests',
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 16),
+            // Search Bar + Request Button Row
+            _buildSearchBar(isDarkMode),
           ],
         ),
       );
 
-  /// 🔍 Modern Search Section - Training tarzı
-  Widget _buildModernSearchSection(BuildContext context, bool isDarkMode) =>
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        padding: const EdgeInsets.all(4),
+  /// 🔍 Modern Search Bar
+  Widget _buildSearchBar(bool isDarkMode) => DecoratedBox(
         decoration: BoxDecoration(
           color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.1)
+              ? Colors.white.withValues(alpha: 0.05)
               : Colors.black.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -229,87 +261,492 @@ class _SongViewState extends State<SongView>
                 ? Colors.white.withValues(alpha: 0.1)
                 : Colors.black.withValues(alpha: 0.1),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isDarkMode
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : Colors.grey.withValues(alpha: 0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.black,
-                  fontSize: 16,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'searchBySong'.tr(),
-                  hintStyle: TextStyle(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : Colors.black.withValues(alpha: 0.6),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.6)
-                        : Colors.black.withValues(alpha: 0.6),
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            _lastSearch = '';
-                            vm.clearSongs();
-                            vm.fetchInitialSongs();
-                          },
-                          icon: Icon(
-                            Icons.clear_rounded,
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : Colors.black.withValues(alpha: 0.6),
-                          ),
-                        )
-                      : null,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: InputBorder.none,
-                ),
-                onSubmitted: (_) => _onSearchPressed(),
-                onChanged: (_) =>
-                    setState(() {}), // Clear button'ı güncellemek için
-              ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: _onSearchChanged,
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black,
+            fontSize: 16,
+          ),
+          decoration: InputDecoration(
+            hintText: 'search_songs'.tr(),
+            hintStyle: TextStyle(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.5)
+                  : Colors.black.withValues(alpha: 0.5),
+              fontSize: 16,
             ),
-            Container(
-              margin: const EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.2)
-                    : Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                onPressed: _onSearchPressed,
-                icon: Icon(
-                  Icons.search_rounded,
-                  color: isDarkMode ? Colors.white : Colors.black,
-                ),
-              ),
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : Colors.black.withValues(alpha: 0.7),
             ),
-          ],
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(
+                      Icons.clear_rounded,
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : Colors.black.withValues(alpha: 0.7),
+                    ),
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
         ),
       );
 
-  /// 🎵 Empty State - Training tarzı
-  Widget _buildEmptyState(bool isDarkMode) => Center(
+  /// 📱 Main Content - New Layout
+  Widget _buildMainContent(
+    SongViewModel vm,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    bool isDarkMode,
+  ) {
+    if (vm.songs.isEmpty &&
+        vm.popularSongs.isEmpty &&
+        !vm.isLoading &&
+        !vm.isLoadingPopular) {
+      return _buildEmptyState(isDarkMode);
+    }
+
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (scrollInfo is ScrollEndNotification &&
+            _scrollController.position.pixels >=
+                _scrollController.position.maxScrollExtent - 200 &&
+            vm.hasMore &&
+            !vm.isLoading) {
+          vm.fetchMoreSongs();
+        }
+        return false;
+      },
+      child: SingleChildScrollView(
+        controller: _scrollController,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Popular Songs Section (Horizontal)
+            if (vm.popularSongs.isNotEmpty) ...[
+              _buildSectionHeader('Popular Songs', isDarkMode),
+              const SizedBox(height: 12),
+              _buildHorizontalSongsList(
+                vm.popularSongs,
+                isConnected,
+                bluetoothBloc,
+                vm,
+                isDarkMode,
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // All Songs Section
+            _buildSectionHeader(
+              vm.popularSongs.isNotEmpty ? 'More Songs' : 'All Songs',
+              isDarkMode,
+              showCount: true,
+              count: vm.songs.length,
+            ),
+            const SizedBox(height: 12),
+
+            // Grid or List View
+            _isGridView
+                ? _buildSongsGrid(
+                    vm.songs,
+                    isConnected,
+                    bluetoothBloc,
+                    vm,
+                    isDarkMode,
+                  )
+                : _buildSongsList(
+                    vm.songs,
+                    isConnected,
+                    bluetoothBloc,
+                    vm,
+                    isDarkMode,
+                  ),
+
+            // Loading indicator
+            if (vm.isLoading)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+
+            const SizedBox(height: 80), // Bottom padding
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🎵 Horizontal Songs List for Popular Songs
+  Widget _buildHorizontalSongsList(
+    List<SongModel> songs,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    SongViewModel vm,
+    bool isDarkMode,
+  ) =>
+      SizedBox(
+        height: 200,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          itemCount: songs.length,
+          itemBuilder: (context, index) {
+            final song = songs[index];
+            return FutureBuilder<bool>(
+              future: _isSongLocked(song, isConnected),
+              builder: (context, snapshot) {
+                final isLocked = snapshot.data ?? false;
+                return Container(
+                  width: 160,
+                  margin: const EdgeInsets.only(right: 12),
+                  child: _buildHorizontalSongCard(
+                    context,
+                    song,
+                    isConnected,
+                    bluetoothBloc,
+                    vm,
+                    isLocked,
+                    isDarkMode,
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      );
+
+  /// 📱 Horizontal Song Card
+  Widget _buildHorizontalSongCard(
+    BuildContext context,
+    SongModel song,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    SongViewModel vm,
+    bool isLocked,
+    bool isDarkMode,
+  ) =>
+      GestureDetector(
+        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDarkMode
+                  ? [
+                      const Color(0xFF1E293B).withValues(alpha: 0.8),
+                      const Color(0xFF334155).withValues(alpha: 0.6),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.9),
+                      const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image section with lock overlay
+              Expanded(
+                flex: 3,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    gradient: LinearGradient(
+                      colors: isDarkMode
+                          ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
+                          : [const Color(0xFF4F46E5), const Color(0xFF7C3AED)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Music icon
+                      const Center(
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                      // Lock overlay
+                      if (isLocked)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.lock_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              // Info section
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        song.title ?? 'Unknown',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        song.artist ?? 'Unknown Artist',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.7)
+                              : Colors.black.withValues(alpha: 0.7),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  /// 📱 Songs Grid
+  Widget _buildSongsGrid(
+    List<SongModel> songs,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    SongViewModel vm,
+    bool isDarkMode,
+  ) =>
+      GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: songs.length,
+        itemBuilder: (context, index) {
+          final song = songs[index];
+          return FutureBuilder<bool>(
+            future: _isSongLocked(song, isConnected),
+            builder: (context, snapshot) {
+              final isLocked = snapshot.data ?? false;
+              return _buildGridSongCard(
+                context,
+                song,
+                isConnected,
+                bluetoothBloc,
+                vm,
+                isLocked,
+                isDarkMode,
+              );
+            },
+          );
+        },
+      );
+
+  /// 📱 Grid Song Card
+  Widget _buildGridSongCard(
+    BuildContext context,
+    SongModel song,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    SongViewModel vm,
+    bool isLocked,
+    bool isDarkMode,
+  ) =>
+      GestureDetector(
+        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDarkMode
+                  ? [
+                      const Color(0xFF1E293B).withValues(alpha: 0.8),
+                      const Color(0xFF334155).withValues(alpha: 0.6),
+                    ]
+                  : [
+                      Colors.white.withValues(alpha: 0.9),
+                      const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image section with lock overlay
+              Expanded(
+                flex: 3,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(20)),
+                    gradient: LinearGradient(
+                      colors: isDarkMode
+                          ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
+                          : [const Color(0xFF4F46E5), const Color(0xFF7C3AED)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Music icon
+                      const Center(
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
+                      // Lock overlay
+                      if (isLocked)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.lock_rounded,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              // Info section
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        song.title ?? 'Unknown',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        song.artist ?? 'Unknown Artist',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.7)
+                              : Colors.black.withValues(alpha: 0.7),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  /// 📱 Songs List (Vertical)
+  Widget _buildSongsList(
+    List<SongModel> songs,
+    bool isConnected,
+    BluetoothBloc bluetoothBloc,
+    SongViewModel vm,
+    bool isDarkMode,
+  ) =>
+      ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: songs.length,
+        itemBuilder: (context, index) {
+          final song = songs[index];
+          return FutureBuilder<bool>(
+            future: _isSongLocked(song, isConnected),
+            builder: (context, snapshot) {
+              final isLocked = snapshot.data ?? false;
+              return _buildModernSongCard(
+                context,
+                song,
+                isConnected,
+                bluetoothBloc,
+                vm,
+                isLocked,
+                isDarkMode,
+              );
+            },
+          );
+        },
+      );
+
+  /// 🚫 Empty State - Training tarzı
+  Widget _buildEmptyState(bool isDarkMode) => Container(
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -613,134 +1050,48 @@ class _SongViewState extends State<SongView>
     }
   }
 
-  /// 🎵 Tab Bar Widget
-  Widget _buildTabBar(bool isDarkMode) => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: TabBar(
-          controller: _tabController,
-          indicator: BoxDecoration(
-            color:
-                isDarkMode ? Colors.white.withValues(alpha: 0.1) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          indicatorSize: TabBarIndicatorSize.tab,
-          indicatorPadding: const EdgeInsets.all(4),
-          labelColor: isDarkMode ? Colors.white : Colors.black87,
-          unselectedLabelColor: isDarkMode
-              ? Colors.white.withValues(alpha: 0.6)
-              : Colors.black.withValues(alpha: 0.6),
-          labelStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-          ),
-          tabs: [
-            Tab(text: 'all_songs'.tr()),
-            Tab(text: 'own_songs'.tr()),
-          ],
-        ),
-      );
-
-  /// 🎵 Own Songs Tab Content
-  Widget _buildOwnSongsTab(BuildContext context, bool isDarkMode) =>
-      Consumer<UserProvider>(
-        builder: (context, userProvider, child) {
-          final user = userProvider.userModel;
-
-          if (user == null) {
-            return _buildEmptyOwnSongs(isDarkMode, 'no_user_data'.tr());
-          }
-
-          final assignedSongIds = user.assignedSongIds ?? [];
-
-          if (assignedSongIds.isEmpty) {
-            return _buildEmptyOwnSongs(isDarkMode, 'no_assigned_songs'.tr());
-          }
-
-          // Debug assigned songs
-          vm.debugAssignedSongs(assignedSongIds);
-
-          // SongViewModel'den assigned songs'ları al
-          final ownSongs = vm.getAssignedSongs(assignedSongIds);
-
-          if (ownSongs.isEmpty) {
-            // Eğer assigned songs bulunamazsa, şarkıları yükle
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              vm.fetchAssignedSongs(assignedSongIds);
-            });
-            return _buildEmptyOwnSongs(isDarkMode, 'loading_own_songs'.tr());
-          }
-
-          return _buildOwnSongsList(ownSongs, context, isDarkMode);
-        },
-      );
-
-  /// 🎵 Empty Own Songs State
-  Widget _buildEmptyOwnSongs(bool isDarkMode, String message) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  /// 🎵 Section Header Widget
+  Widget _buildSectionHeader(
+    String title,
+    bool isDarkMode, {
+    bool showCount = false,
+    int count = 0,
+  }) =>
+      Container(
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        child: Row(
           children: [
-            Icon(
-              Icons.music_note_outlined,
-              size: 80,
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
             Text(
-              message,
+              title,
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.7)
-                    : Colors.black.withValues(alpha: 0.7),
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? Colors.white : Colors.black,
               ),
-              textAlign: TextAlign.center,
             ),
+            if (showCount) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  count.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );
-
-  /// 🎵 Own Songs List
-  Widget _buildOwnSongsList(
-    List<SongModel> ownSongs,
-    BuildContext context,
-    bool isDarkMode,
-  ) {
-    final bluetoothBloc = context.read<BluetoothBloc>();
-    final state = context.watch<BluetoothBloc>().state;
-    final isConnected = state.isConnected;
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: ownSongs.length,
-      itemBuilder: (context, index) {
-        final song = ownSongs[index];
-
-        // Own songs are always unlocked
-        return _buildModernSongCard(
-          context,
-          song,
-          isConnected,
-          bluetoothBloc,
-          vm,
-          false, // isLocked = false for own songs
-          isDarkMode,
-        );
-      },
-    );
-  }
 
   /// 🎵 Song Request Button
   Widget _buildSongRequestButton(bool isDarkMode) => Container(
@@ -779,169 +1130,4 @@ class _SongViewState extends State<SongView>
       },
     );
   }
-
-  /// 🎵 All Songs Tab - Popular + Regular Songs
-  Widget _buildAllSongsTab(
-    SongViewModel vm,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    bool isDarkMode,
-  ) {
-    // Hem normal songs hem de popular songs boşsa empty state göster
-    if (vm.songs.isEmpty &&
-        vm.popularSongs.isEmpty &&
-        !vm.isLoading &&
-        !vm.isLoadingPopular) {
-      return _buildEmptyState(isDarkMode);
-    }
-
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scrollInfo) {
-        if (scrollInfo is ScrollEndNotification &&
-            _scrollController.position.pixels >=
-                _scrollController.position.maxScrollExtent - 200 &&
-            vm.hasMore &&
-            !vm.isLoading) {
-          vm.fetchMoreSongs();
-        }
-        return false;
-      },
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _getTotalItemCount(vm),
-        itemBuilder: (context, index) => _buildSongItem(
-          context,
-          index,
-          vm,
-          isConnected,
-          bluetoothBloc,
-          isDarkMode,
-        ),
-      ),
-    );
-  }
-
-  /// 🎵 Get Total Item Count for Combined List
-  int _getTotalItemCount(SongViewModel vm) {
-    int count = 0;
-
-    // Popular Songs Header + Songs
-    if (vm.popularSongs.isNotEmpty) {
-      count += 1; // Header
-      count += vm.popularSongs.length; // Popular songs
-    }
-
-    // Regular Songs Header + Songs
-    if (vm.songs.isNotEmpty) {
-      count += 1; // Header
-      count += vm.songs.length; // Regular songs
-    }
-
-    // Loading indicator
-    if (vm.isLoading) {
-      count += 1;
-    }
-
-    return count;
-  }
-
-  /// 🎵 Build Song Item for Combined List
-  Widget _buildSongItem(
-    BuildContext context,
-    int index,
-    SongViewModel vm,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    bool isDarkMode,
-  ) {
-    int currentIndex = 0;
-
-    // Popular Songs Section
-    if (vm.popularSongs.isNotEmpty) {
-      // Popular Songs Header
-      if (index == currentIndex) {
-        return _buildSectionHeader('🔥 Popular Songs', isDarkMode);
-      }
-      currentIndex++;
-
-      // Popular Songs Items
-      if (index < currentIndex + vm.popularSongs.length) {
-        final songIndex = index - currentIndex;
-        final song = vm.popularSongs[songIndex];
-        return FutureBuilder<bool>(
-          future: _isSongLocked(song, isConnected),
-          builder: (context, snapshot) {
-            final isLocked = snapshot.data ?? false;
-            return _buildModernSongCard(
-              context,
-              song,
-              isConnected,
-              bluetoothBloc,
-              vm,
-              isLocked,
-              isDarkMode,
-            );
-          },
-        );
-      }
-      currentIndex += vm.popularSongs.length;
-    }
-
-    // Regular Songs Section
-    if (vm.songs.isNotEmpty) {
-      // Regular Songs Header
-      if (index == currentIndex) {
-        return _buildSectionHeader('🎵 All Songs', isDarkMode);
-      }
-      currentIndex++;
-
-      // Regular Songs Items
-      if (index < currentIndex + vm.songs.length) {
-        final songIndex = index - currentIndex;
-        final song = vm.songs[songIndex];
-        return FutureBuilder<bool>(
-          future: _isSongLocked(song, isConnected),
-          builder: (context, snapshot) {
-            final isLocked = snapshot.data ?? false;
-            return _buildModernSongCard(
-              context,
-              song,
-              isConnected,
-              bluetoothBloc,
-              vm,
-              isLocked,
-              isDarkMode,
-            );
-          },
-        );
-      }
-      currentIndex += vm.songs.length;
-    }
-
-    // Loading indicator
-    if (vm.isLoading && index == currentIndex) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        child: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
-  }
-
-  /// 🎵 Section Header Widget
-  Widget _buildSectionHeader(String title, bool isDarkMode) => Container(
-        margin: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: isDarkMode ? Colors.white : Colors.black,
-          ),
-        ),
-      );
 }

@@ -94,6 +94,7 @@
   "bluetoothNotConnected": "Bluetooth bağlı değil",
   "all_songs": "Tüm Şarkılar",
   "own_songs": "Kendi Şarkılarım",
+  "search_songs": "Şarkı ara...",
   "no_user_data": "Şarkılarınızı görmek için giriş yapın",
   "no_assigned_songs": "Henüz size atanmış şarkı yok",
   "loading_own_songs": "Şarkılarınız yükleniyor...",
@@ -125,6 +126,17 @@
   "submit_request": "İsteği Gönder",
   "required": "zorunludur",
   "request_submitted_success": "Şarkı isteğiniz başarıyla gönderildi!",
-  "request_submitted_error": "Şarkı isteği gönderilemedi. Lütfen tekrar deneyin."
+  "request_submitted_error": "Şarkı isteği gönderilemedi. Lütfen tekrar deneyin.",
+  "my_song_requests": "Şarkı İsteklerim",
+  "all_requests": "Tümü",
+  "pending_requests": "Beklemede",
+  "approved_requests": "Onaylandı",
+  "rejected_requests": "Reddedildi",
+  "completed_requests": "Tamamlandı",
+  "no_requests_found": "İstek Bulunamadı",
+  "no_requests_desc": "Henüz hiç şarkı isteği yapmadınız.",
+  "no_filtered_requests_desc": "Seçilen filtreye uygun istek bulunamadı.",
+  "request_a_song": "Şarkı İste",
+  "new_request": "Yeni İstek"
 }
 
