@@ -117,7 +117,8 @@ class SongRequestService {
             // Direct list of requests
             dataList = rawData;
             debugPrint(
-                '🔍 Processing as direct list with ${dataList.length} items');
+              '🔍 Processing as direct list with ${dataList.length} items',
+            );
           } else if (rawData is Map<String, dynamic>) {
             // Nested response with results/items field
             debugPrint('🔍 Processing as Map, keys: ${rawData.keys.toList()}');
@@ -125,18 +126,21 @@ class SongRequestService {
               // API returns nested structure: data.data
               dataList = rawData['data'] ?? [];
               debugPrint(
-                  '🔍 Found nested data field with ${dataList.length} items');
+                '🔍 Found nested data field with ${dataList.length} items',
+              );
             } else if (rawData.containsKey('results')) {
               dataList = rawData['results'] ?? [];
               debugPrint(
-                  '🔍 Found results field with ${dataList.length} items');
+                '🔍 Found results field with ${dataList.length} items',
+              );
             } else if (rawData.containsKey('items')) {
               dataList = rawData['items'] ?? [];
               debugPrint('🔍 Found items field with ${dataList.length} items');
             } else if (rawData.containsKey('song_requests')) {
               dataList = rawData['song_requests'] ?? [];
               debugPrint(
-                  '🔍 Found song_requests field with ${dataList.length} items');
+                '🔍 Found song_requests field with ${dataList.length} items',
+              );
             } else {
               // Assume the map itself is a single request
               dataList = [rawData];
@@ -166,7 +170,8 @@ class SongRequestService {
               final request =
                   SongRequestModel.fromJson(json as Map<String, dynamic>);
               debugPrint(
-                  '🔍 Created model - songTitle: "${request.songTitle}", artistName: "${request.artistName}"');
+                '🔍 Created model - songTitle: "${request.songTitle}", artistName: "${request.artistName}"',
+              );
               return request;
             },
           ).toList();

@@ -257,6 +257,11 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         child: TabBar(
           controller: _tabController,
           isScrollable: true,
+          tabAlignment: TabAlignment.start, // Sol tarafa hizala
+          padding: EdgeInsets.zero, // Padding'i sıfırla
+          labelPadding: const EdgeInsets.symmetric(
+              horizontal: 12), // Tab'lar arası mesafe
+          dividerColor: Colors.transparent, // Alt çizgiyi kaldır
           onTap: (index) {
             debugPrint('🎯 Tab tapped: $index');
             // Manuel tab değişimi için
@@ -265,7 +270,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
               'pending',
               'approved',
               'rejected',
-              'completed'
+              'completed',
             ];
             final newStatus = statuses[index];
             if (newStatus != _selectedStatus) {
