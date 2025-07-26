@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drumly/constants.dart';
 import 'package:drumly/models/user_model.dart';
 import 'package:drumly/shared/enums.dart';
@@ -11,22 +12,37 @@ class UserService {
                   Get User
 ----------------------------------------------------------------------*/
   Future<UserModel?> getUser(BuildContext context) async {
-    final String url = '${getBaseUrlUser()}me';
+    debugPrint('🚀 UserService.getUser called');
 
-    try {
-      final response =
-          await RequestHelper.requestAsync(context, RequestType.get, url);
+    final String url = '${ApiServiceUrl.baseUrl}users/me';
+    debugPrint('� Making request to: $url');
 
-      if (response == null || response == '' || response.isEmpty) {
+    final response =
+        await RequestHelper.requestAsync(context, RequestType.get, url);
+
+    if (response != null) {
+      try {
+        final jsonResponse = json.decode(response);
+        debugPrint('📦 Full response: $jsonResponse');
+
+        // API response'da data field'ı var, onu kullanmalıyız
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          final userData = jsonResponse['data'];
+          debugPrint('✅ UserService.getUser successful');
+          return UserModel.fromJson(userData);
+        } else {
+          debugPrint(
+              '❌ UserService.getUser API returned success=false or no data');
+          return null;
+        }
+      } catch (e) {
+        debugPrint('❌ UserService.getUser parse error: $e');
         return null;
-      } else if (response.isNotEmpty && response != '') {
-        return userModelFromJson(response);
       }
-    } catch (e) {
-      debugPrint(e.toString());
+    } else {
+      debugPrint('❌ UserService.getUser response is null');
       return null;
     }
-    return null;
   }
 
   /*----------------------------------------------------------------------

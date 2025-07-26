@@ -20,8 +20,23 @@ class SettingView extends StatelessWidget {
       );
 }
 
-class _SettingViewBody extends StatelessWidget {
+class _SettingViewBody extends StatefulWidget {
   const _SettingViewBody();
+
+  @override
+  State<_SettingViewBody> createState() => _SettingViewBodyState();
+}
+
+class _SettingViewBodyState extends State<_SettingViewBody> {
+  @override
+  void initState() {
+    super.initState();
+    // User bilgilerini yükle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = Provider.of<SettingViewModel>(context, listen: false);
+      vm.refreshUserInfo(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +79,10 @@ class _SettingViewBody extends StatelessWidget {
                       padding: const EdgeInsets.all(20),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
+                          // Profile Section
+                          _buildProfileSection(vm, isDarkMode),
+                          const SizedBox(height: 24),
+
                           // Dark Mode Toggle
                           _buildModernSettingCard(
                             isDarkMode: isDarkMode,
@@ -492,6 +511,273 @@ class _SettingViewBody extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: isDarkMode ? Colors.white : Colors.black,
                 ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  /// 🎨 Profile Section - Modern Design
+  Widget _buildProfileSection(SettingViewModel vm, bool isDarkMode) =>
+      DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDarkMode
+                ? [
+                    const Color(0xFF1E293B).withValues(alpha: 0.9),
+                    const Color(0xFF334155).withValues(alpha: 0.7),
+                  ]
+                : [
+                    Colors.white,
+                    const Color(0xFFF8FAFC),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'profile'.tr(),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                          ),
+                        ),
+                        Text(
+                          'manage_your_account'.tr(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (vm.isLoadingUser)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    IconButton(
+                      onPressed: () => vm.refreshUserInfo(context),
+                      icon: Icon(
+                        Icons.refresh_rounded,
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // User Info Cards
+              if (vm.userModel != null) ...[
+                _buildUserInfoCard(
+                  icon: Icons.email_rounded,
+                  title: 'email'.tr(),
+                  value: vm.userModel!.email ?? 'not_provided'.tr(),
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: 12),
+                _buildUserInfoCard(
+                  icon: Icons.badge_rounded,
+                  title: 'name'.tr(),
+                  value: vm.userModel!.name ?? 'not_provided'.tr(),
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: 12),
+                _buildUserInfoCard(
+                  icon: Icons.access_time_rounded,
+                  title: 'member_since'.tr(),
+                  value: vm.userModel!.createdAt != null
+                      ? DateFormat('dd MMM yyyy')
+                          .format(vm.userModel!.createdAt!)
+                      : 'profile_unknown'.tr(),
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: 12),
+                _buildUserInfoCard(
+                  icon: Icons.login_rounded,
+                  title: 'last_login'.tr(),
+                  value: vm.userModel!.lastLogin != null
+                      ? DateFormat('dd MMM yyyy, HH:mm')
+                          .format(vm.userModel!.lastLogin!)
+                      : 'profile_unknown'.tr(),
+                  isDarkMode: isDarkMode,
+                ),
+                const SizedBox(height: 12),
+                _buildUserInfoCard(
+                  icon: Icons.library_music_rounded,
+                  title: 'assigned_songs'.tr(),
+                  value:
+                      '${vm.userModel!.assignedSongIds?.length ?? 0} ${'song_count'.tr()}',
+                  isDarkMode: isDarkMode,
+                ),
+                if (vm.userModel!.devices != null &&
+                    vm.userModel!.devices!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildUserInfoCard(
+                    icon: Icons.devices_rounded,
+                    title: 'connected_devices'.tr(),
+                    value:
+                        '${vm.userModel!.devices!.length} ${'device_count'.tr()}',
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
+              ] else if (!vm.isLoadingUser) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? Colors.red.withValues(alpha: 0.1)
+                        : Colors.red.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.red.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.red[400],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'failed_to_load_profile'.tr(),
+                          style: TextStyle(
+                            color: Colors.red[400],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
+                // Loading state
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+
+  /// 🔖 User Info Card Widget
+  Widget _buildUserInfoCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required bool isDarkMode,
+  }) =>
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.02),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : Colors.black.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: isDarkMode
+                          ? Colors.white.withValues(alpha: 0.6)
+                          : Colors.black.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

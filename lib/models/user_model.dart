@@ -5,6 +5,7 @@
 import 'dart:convert';
 
 import 'package:drumly/models/device_model.dart';
+import 'package:flutter/foundation.dart';
 
 UserModel userModelFromJson(String str) => UserModel.fromJson(json.decode(str));
 
@@ -24,28 +25,32 @@ class UserModel {
     this.fcmToken,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        id: json['_id'],
-        assignedSongIds: json['assigned_song_ids'] == null
-            ? []
-            : List<dynamic>.from(json['assigned_song_ids']!.map((x) => x)),
-        createdAt: json['created_at'] == null
-            ? null
-            : DateTime.parse(json['created_at']),
-        devices: json['devices'] == null
-            ? []
-            : List<DeviceModel>.from(
-                json['devices']!.map((x) => DeviceModel.fromJson(x)),
-              ),
-        email: json['email'],
-        lastLogin: json['last_login'] == null
-            ? null
-            : DateTime.parse(json['last_login']),
-        name: json['name'],
-        userId: json['user_id'],
-        firebaseToken: json['firebase_token'],
-        fcmToken: json['fcm_token'],
-      );
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    debugPrint('🔍 UserModel.fromJson received: $json');
+
+    return UserModel(
+      id: json['_id'] ?? json['id'],
+      assignedSongIds: json['assigned_song_ids'] == null
+          ? []
+          : List<dynamic>.from(json['assigned_song_ids']!.map((x) => x)),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at']),
+      devices: json['devices'] == null
+          ? []
+          : List<DeviceModel>.from(
+              json['devices']!.map((x) => DeviceModel.fromJson(x)),
+            ),
+      email: json['email'],
+      lastLogin: json['last_login'] == null
+          ? null
+          : DateTime.parse(json['last_login']),
+      name: json['name'],
+      userId: json['user_id'],
+      firebaseToken: json['firebase_token'],
+      fcmToken: json['fcm_token'],
+    );
+  }
   String? id;
   List<dynamic>? assignedSongIds;
   DateTime? createdAt;
