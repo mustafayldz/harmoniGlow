@@ -202,24 +202,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                     opacity: _fadeAnimation.value,
                     child: SlideTransition(
                       position: _slideAnimation,
-                      child: _buildModernAppBar(isDarkMode),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Bluetooth Status
-              SliverToBoxAdapter(
-                child: AnimatedBuilder(
-                  animation: _fadeAnimation,
-                  builder: (context, child) => Opacity(
-                    opacity: _fadeAnimation.value,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: _buildModernBluetoothBanner(
+                      child: _buildModernAppBar(
+                        isDarkMode,
                         isConnected,
                         deviceName,
-                        isDarkMode,
                       ),
                     ),
                   ),
@@ -281,191 +267,284 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildModernAppBar(bool isDarkMode) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+  Widget _buildModernAppBar(
+    bool isDarkMode,
+    bool isConnected,
+    String deviceName,
+  ) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final isMediumScreen = screenWidth < 600;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        isSmallScreen ? 16 : 20,
+        20,
+        isSmallScreen ? 16 : 20,
+        isSmallScreen ? 16 : 20,
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Logo Section - Responsive
+              Flexible(
+                flex: isSmallScreen ? 2 : 3,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Drumly',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        foreground: Paint()
-                          ..shader = const LinearGradient(
-                            colors: [Color(0xFF60A5FA), Color(0xFF34D399)],
-                          ).createShader(const Rect.fromLTWH(0, 0, 200, 70)),
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF60A5FA), Color(0xFF34D399)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: Text(
+                        'Drumly',
+                        style: TextStyle(
+                          fontSize:
+                              isSmallScreen ? 24 : (isMediumScreen ? 28 : 32),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
+                    if (!isSmallScreen) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Beat Your Rhythm',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.6)
+                              : Colors.black.withValues(alpha: 0.6),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.2)
-                          : Colors.black.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Consumer<NotificationProvider>(
-                    builder: (context, notificationProvider, child) =>
-                        GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const NotificationView(),
-                          ),
-                        );
-                      },
-                      child: Stack(
-                        children: [
-                          Icon(
-                            Icons.notifications_outlined,
-                            color: isDarkMode ? Colors.white : Colors.black,
-                            size: 24,
-                          ),
-                          if (notificationProvider.hasUnreadNotifications)
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEF4444),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: isDarkMode
-                                        ? const Color(0xFF0F172A)
-                                        : const Color(0xFFF8FAFC),
-                                    width: 2,
-                                  ),
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 18,
-                                  minHeight: 18,
-                                ),
-                                child: Text(
-                                  notificationProvider.unreadCount > 99
-                                      ? '99+'
-                                      : notificationProvider.unreadCount
-                                          .toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
+              ),
 
-  Widget _buildModernBluetoothBanner(
+              // Bluetooth Banner - Responsive
+              Flexible(
+                flex: isSmallScreen ? 2 : 2,
+                child: _buildAppBarBluetoothBanner(
+                  isConnected,
+                  deviceName,
+                  isDarkMode,
+                  isSmallScreen,
+                  isMediumScreen,
+                ),
+              ),
+
+              // Notification Button - Always visible
+              _buildNotificationButton(isDarkMode, isSmallScreen),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBarBluetoothBanner(
     bool connected,
     String deviceName,
     bool isDarkMode,
-  ) =>
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: GestureDetector(
-          onTap: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const FindDevicesView()),
+    bool isSmallScreen,
+    bool isMediumScreen,
+  ) {
+    final maxWidth = isSmallScreen ? 100.0 : (isMediumScreen ? 120.0 : 140.0);
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: maxWidth,
+        minWidth: 80,
+      ),
+      child: GestureDetector(
+        onTap: () => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const FindDevicesView()),
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: isSmallScreen ? 36 : 40,
+          padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 8 : 12,
+            vertical: isSmallScreen ? 4 : 6,
           ),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: connected
-                    ? [const Color(0xFF22C55E), const Color(0xFF16A34A)]
-                    : [const Color(0xFFEF4444), const Color(0xFFDC2626)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: (connected ? Colors.green : Colors.red)
-                      .withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: connected
+                  ? [const Color(0xFF22C55E), const Color(0xFF16A34A)]
+                  : [const Color(0xFFEF4444), const Color(0xFFDC2626)],
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
+            borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+            boxShadow: [
+              BoxShadow(
+                color: (connected ? Colors.green : Colors.red)
+                    .withValues(alpha: 0.2),
+                blurRadius: isSmallScreen ? 3 : 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                connected
+                    ? Icons.bluetooth_connected_rounded
+                    : Icons.bluetooth_disabled_rounded,
+                color: Colors.white,
+                size: isSmallScreen ? 14 : 16,
+              ),
+              if (!isSmallScreen) ...[
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
                     connected
-                        ? Icons.bluetooth_connected_rounded
-                        : Icons.bluetooth_disabled_rounded,
-                    color: Colors.white,
-                    size: 24,
+                        ? _getDeviceDisplayName(deviceName, isSmallScreen)
+                        : 'Off',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 10 : 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        connected
-                            ? 'connectedToDevice'.tr()
-                            : 'disconnected'.tr(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+              ] else ...[
+                // Küçük ekranlarda sadece durum ışığı
+                const SizedBox(width: 4),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        blurRadius: connected ? 4 : 0,
+                        spreadRadius: connected ? 1 : 0,
                       ),
-                      if (connected) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          deviceName,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: Colors.white.withValues(alpha: 0.7),
-                  size: 16,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationButton(bool isDarkMode, bool isSmallScreen) =>
+      Container(
+        padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
+          border: Border.all(
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.15)
+                : Colors.black.withValues(alpha: 0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDarkMode
+                  ? Colors.black.withValues(alpha: 0.2)
+                  : Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Consumer<NotificationProvider>(
+          builder: (context, notificationProvider, child) => GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationView(),
                 ),
+              );
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  Icons.notifications_outlined,
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                  size: isSmallScreen ? 20 : 24,
+                ),
+                if (notificationProvider.hasUnreadNotifications)
+                  Positioned(
+                    right: -2,
+                    top: -2,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: EdgeInsets.all(isSmallScreen ? 3 : 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDarkMode
+                              ? const Color(0xFF0F172A)
+                              : const Color(0xFFF8FAFC),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFFEF4444).withValues(alpha: 0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      constraints: BoxConstraints(
+                        minWidth: isSmallScreen ? 16 : 18,
+                        minHeight: isSmallScreen ? 16 : 18,
+                      ),
+                      child: Text(
+                        notificationProvider.unreadCount > 99
+                            ? '99+'
+                            : notificationProvider.unreadCount.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 8 : 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         ),
       );
+
+  String _getDeviceDisplayName(String deviceName, bool isSmallScreen) {
+    if (deviceName.isEmpty) return 'Connected';
+
+    final maxLength = isSmallScreen ? 4 : 8;
+    if (deviceName.length <= maxLength) return deviceName;
+
+    return '${deviceName.substring(0, maxLength)}...';
+  }
 
   Widget _buildModernCard(
     _CardData card,
