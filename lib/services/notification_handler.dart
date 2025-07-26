@@ -162,7 +162,8 @@ class NotificationHandler {
           notifications.indexWhere((n) => n['id'] == newNotification['id']);
       if (existingIndex != -1) {
         debugPrint(
-            '📱 Duplicate notification ignored: ${newNotification['id']}');
+          '📱 Duplicate notification ignored: ${newNotification['id']}',
+        );
         return;
       }
 
@@ -178,7 +179,8 @@ class NotificationHandler {
       await prefs.setString('notifications', jsonEncode(notifications));
 
       debugPrint(
-          '✅ Background notification saved successfully to SharedPreferences');
+        '✅ Background notification saved successfully to SharedPreferences',
+      );
     } catch (e) {
       debugPrint('❌ Error saving background notification: $e');
     }

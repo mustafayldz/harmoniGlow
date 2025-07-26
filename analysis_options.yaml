@@ -3,6 +3,8 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   errors:
     avoid_classes_with_only_static_members: ignore
+    # Background notification handling için unawaited futures'ı ignore et
+    unawaited_futures: ignore
   exclude:
     - "**.g.dart" # Otomatik oluşturulan dosyaları analizden hariç tut
 
@@ -20,7 +22,7 @@ linter:
 
     # 🚀 Performansı artıran kurallar
     prefer_single_quotes: true # String ifadelerde tek tırnak tercih edilir
-    unawaited_futures: true # async işlemleri beklemeyi zorunlu kılar
+    unawaited_futures: false # async işlemleri bekleme zorunluluğunu kapat
     avoid_unnecessary_containers: true # Gereksiz Container widget'larını kaldır
     unnecessary_null_checks: true # Gereksiz null kontrollerini engelle
     unnecessary_null_in_if_null_operators: true # ?? null kullanımını optimize et
@@ -39,7 +41,7 @@ linter:
     always_use_package_imports: true # Yerel importlar yerine package kullan
     prefer_final_locals: true # Yerel değişkenlerin mümkünse final olmasını teşvik et
     prefer_for_elements_to_map_fromIterable: true # `for` kullanımı, `map()` yerine teşvik edilir
-    avoid_classes_with_only_static_members: true # Sadece statik metodları olan sınıfları engeller (utility sınıfları için `abstract` kullan)
+    avoid_classes_with_only_static_members: false # Static metodları olan sınıfları allow et
     use_build_context_synchronously: false # BuildContext'in senkron kullanımını zorunlu kılar
     avoid_redundant_argument_values: true # Gereksiz argüman değerlerini engeller
 

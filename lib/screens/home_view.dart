@@ -288,7 +288,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Logo Section - Responsive
               Flexible(
                 flex: isSmallScreen ? 2 : 3,
                 child: Column(
@@ -330,7 +329,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
 
               // Bluetooth Banner - Responsive
               Flexible(
-                flex: isSmallScreen ? 2 : 2,
                 child: _buildAppBarBluetoothBanner(
                   isConnected,
                   deviceName,
@@ -340,7 +338,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 ),
               ),
 
-              // Notification Button - Always visible
               _buildNotificationButton(isDarkMode, isSmallScreen),
             ],
           ),

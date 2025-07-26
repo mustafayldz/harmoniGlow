@@ -1,4 +1,5 @@
 import 'dart:async';
+// unawaited fonksiyonu zaten dart:async içinde mevcut
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -27,18 +28,19 @@ class FirebaseNotificationService {
   /// Firebase Messaging'i başlat
   Future<void> initialize() async {
     try {
-      await _requestPermission();
+      // İzin ve local notification işlemlerini paralel başlat
+      await Future.wait([
+        _requestPermission(),
+        _initializeLocalNotifications(),
+      ]);
 
-      // iOS için APNS token'ı al
+      // iOS için APNS token'ı arka planda başlat
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        await _getAPNSToken();
+        unawaited(_getAPNSToken());
       }
 
-      // Local notifications'ı başlat
-      await _initializeLocalNotifications();
-
-      // FCM token'ı al
-      await _getToken();
+      // FCM token'ı arka planda başlat
+      unawaited(_getToken());
 
       // Token yenileme dinleyicisi
       _firebaseMessaging.onTokenRefresh.listen((token) {
@@ -54,7 +56,7 @@ class FirebaseNotificationService {
       FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
       // Uygulama kapalıyken gelen mesajları kontrol et
-      _checkInitialMessage();
+      unawaited(_checkInitialMessage());
 
       developer.log('Firebase Messaging initialized successfully', name: 'FCM');
     } catch (e) {
@@ -161,7 +163,7 @@ class FirebaseNotificationService {
   }
 
   /// Uygulama kapalıyken gelen mesajları kontrol et
-  void _checkInitialMessage() async {
+  Future<void> _checkInitialMessage() async {
     final initialMessage = await _firebaseMessaging.getInitialMessage();
     if (initialMessage != null) {
       developer.log(
