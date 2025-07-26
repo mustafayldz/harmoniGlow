@@ -32,7 +32,8 @@ class UserService {
           return UserModel.fromJson(userData);
         } else {
           debugPrint(
-              '❌ UserService.getUser API returned success=false or no data');
+            '❌ UserService.getUser API returned success=false or no data',
+          );
           return null;
         }
       } catch (e) {

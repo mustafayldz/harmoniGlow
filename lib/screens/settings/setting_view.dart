@@ -159,7 +159,7 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Container(
+                                  DecoratedBox(
                                     decoration: BoxDecoration(
                                       color: !appProvider.isClassic
                                           ? const Color(0xFF6366F1)
@@ -186,7 +186,7 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Container(
+                                  DecoratedBox(
                                     decoration: BoxDecoration(
                                       color: appProvider.isClassic
                                           ? const Color(0xFF6366F1)
@@ -357,7 +357,7 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                             title: 'logout'.tr(),
                             isButton: true,
                             onTap: () => vm.logout(context),
-                            child: Icon(
+                            child: const Icon(
                               Icons.arrow_forward_ios_rounded,
                               size: 16,
                               color: Colors.red,
@@ -499,27 +499,12 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       else
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => vm.refreshUserInfo(context),
-                              icon: Icon(
-                                Icons.refresh_rounded,
-                                color: isDarkMode
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
-                                size: 20,
-                              ),
-                            ),
-                            Icon(
-                              _isProfileExpanded
-                                  ? Icons.expand_less_rounded
-                                  : Icons.expand_more_rounded,
-                              color: isDarkMode
-                                  ? Colors.grey[400]
-                                  : Colors.grey[600],
-                            ),
-                          ],
+                        Icon(
+                          _isProfileExpanded
+                              ? Icons.expand_less_rounded
+                              : Icons.expand_more_rounded,
+                          color:
+                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
                         ),
                     ],
                   ),
@@ -539,26 +524,6 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                         icon: Icons.badge_rounded,
                         title: 'name'.tr(),
                         value: vm.userModel!.name ?? 'not_provided'.tr(),
-                        isDarkMode: isDarkMode,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildUserInfoCard(
-                        icon: Icons.access_time_rounded,
-                        title: 'member_since'.tr(),
-                        value: vm.userModel!.createdAt != null
-                            ? DateFormat('dd MMM yyyy')
-                                .format(vm.userModel!.createdAt!)
-                            : 'profile_unknown'.tr(),
-                        isDarkMode: isDarkMode,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildUserInfoCard(
-                        icon: Icons.login_rounded,
-                        title: 'last_login'.tr(),
-                        value: vm.userModel!.lastLogin != null
-                            ? DateFormat('dd MMM yyyy, HH:mm')
-                                .format(vm.userModel!.lastLogin!)
-                            : 'profile_unknown'.tr(),
                         isDarkMode: isDarkMode,
                       ),
                       const SizedBox(height: 12),
@@ -698,7 +663,7 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
     bool isButton = false,
     VoidCallback? onTap,
   }) =>
-      Container(
+      DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isDarkMode

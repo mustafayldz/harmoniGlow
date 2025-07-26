@@ -260,7 +260,8 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
           tabAlignment: TabAlignment.start, // Sol tarafa hizala
           padding: EdgeInsets.zero, // Padding'i sıfırla
           labelPadding: const EdgeInsets.symmetric(
-              horizontal: 12), // Tab'lar arası mesafe
+            horizontal: 12,
+          ), // Tab'lar arası mesafe
           dividerColor: Colors.transparent, // Alt çizgiyi kaldır
           onTap: (index) {
             debugPrint('🎯 Tab tapped: $index');
@@ -312,10 +313,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         controller: _tabController,
         physics:
             const NeverScrollableScrollPhysics(), // Tab değişimini sadece tab tıklamasıyla sınırla
-        children: List.generate(5, (index) {
-          // Her tab için mevcut filtrelenmiş veriyi göster
-          return _buildRequestsList(isDarkMode);
-        }),
+        children: List.generate(5, (index) => _buildRequestsList(isDarkMode)),
       );
 
   Widget _buildRequestsList(bool isDarkMode) {
