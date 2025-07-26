@@ -85,8 +85,11 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                               ).animate(
                                 CurvedAnimation(
                                   parent: viewModel.animationController,
-                                  curve: const Interval(0.3, 1.0,
-                                      curve: Curves.easeOutCubic),
+                                  curve: const Interval(
+                                    0.3,
+                                    1.0,
+                                    curve: Curves.easeOutCubic,
+                                  ),
                                 ),
                               ),
                               child: const StaticPromotionCard(),

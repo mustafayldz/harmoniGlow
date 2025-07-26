@@ -148,6 +148,24 @@
   "no_requests_desc": "You haven't made any song requests yet.",
   "no_filtered_requests_desc": "No requests found with the selected filter.",
   "request_a_song": "Request a Song",
-  "new_request": "New Request"
+  "new_request": "New Request",
+  "no_requests_description": "You haven't made any song requests yet. Start by requesting your favorite songs!",
+  "no_filtered_requests_description": "No requests found with the selected filter. Try changing the filter or make a new request.",
+  "error_loading_requests": "Error loading requests",
+  "status_pending": "Pending",
+  "status_approved": "Approved",
+  "status_rejected": "Rejected", 
+  "status_completed": "Completed",
+  "priority_high": "High",
+  "priority_normal": "Normal",
+  "priority_low": "Low",
+  "request_title_short": "Can't Find Your\nSong?",
+  "request_title_long": "Can't Find Your Song\nin the List?",
+  "time_indicator": "24h",
+  "request_description_short": "Send a request, we'll add it within 24 hours!",
+  "request_description_long": "Send a song request, we'll add it to your list within 24 hours!",
+  "button_text_short": "Send Request",
+  "button_text_long": "Send Song Request"
 }
+
 

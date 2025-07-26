@@ -131,7 +131,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load song requests: $e'),
+            content: Text('${'error_loading_requests'.tr()}\n$e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -234,7 +234,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
                   color: isDarkMode ? Colors.white : Colors.black,
                 ),
                 onPressed: _refreshRequests,
-                tooltip: 'Refresh',
+                tooltip: 'refresh'.tr(),
               ),
             ),
           ],
@@ -517,7 +517,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Note',
+                            'description'.tr(),
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
@@ -651,7 +651,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
           Icon(icon, size: 14, color: textColor),
           const SizedBox(width: 4),
           Text(
-            status.toUpperCase(),
+            'status_${status.toLowerCase()}'.tr().toUpperCase(),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -692,7 +692,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        priority.toUpperCase(),
+        'priority_${priority.toLowerCase()}'.tr().toUpperCase(),
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
@@ -749,8 +749,8 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
               const SizedBox(height: 12),
               Text(
                 _selectedStatus == 'all'
-                    ? 'no_requests_desc'.tr()
-                    : 'no_filtered_requests_desc'.tr(),
+                    ? 'no_requests_description'.tr()
+                    : 'no_filtered_requests_description'.tr(),
                 style: TextStyle(
                   fontSize: 16,
                   color: isDarkMode ? Colors.grey[400] : Colors.grey[600],

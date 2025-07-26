@@ -1,5 +1,6 @@
 // lib/screens/home/components/static_promotion_card.dart
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class StaticPromotionCard extends StatelessWidget {
   const StaticPromotionCard({super.key});
@@ -84,8 +85,8 @@ class StaticPromotionCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               isSmallScreen
-                                  ? 'İstediğin Şarkı\nYok mu?'
-                                  : 'İstediğin Şarkı\nListede Yok mu?',
+                                  ? 'request_title_short'.tr()
+                                  : 'request_title_long'.tr(),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: isSmallScreen
@@ -122,7 +123,7 @@ class StaticPromotionCard extends StatelessWidget {
                                 ),
                                 SizedBox(width: isSmallScreen ? 2 : 4),
                                 Text(
-                                  '24h',
+                                  'time_indicator'.tr(),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: isSmallScreen ? 8 : 10,
@@ -144,8 +145,8 @@ class StaticPromotionCard extends StatelessWidget {
                           children: [
                             Text(
                               isSmallScreen
-                                  ? 'İstek gönder, 24 saat içinde ekleyelim!'
-                                  : 'Şarkı isteği gönder, 24 saat içinde listene ekleyelim!',
+                                  ? 'request_description_short'.tr()
+                                  : 'request_description_long'.tr(),
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: isSmallScreen ? 9 : 10,
@@ -187,8 +188,8 @@ class StaticPromotionCard extends StatelessWidget {
                                   SizedBox(width: isSmallScreen ? 3 : 4),
                                   Text(
                                     isSmallScreen
-                                        ? 'İstek Gönder'
-                                        : 'Şarkı İsteği Gönder',
+                                        ? 'button_text_short'.tr()
+                                        : 'button_text_long'.tr(),
                                     style: TextStyle(
                                       color: const Color(0xFF6366F1),
                                       fontSize: isSmallScreen ? 9 : 10,
