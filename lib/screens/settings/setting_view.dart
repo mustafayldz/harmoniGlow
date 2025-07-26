@@ -1,6 +1,6 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
-import 'package:drumly/screens/home_view.dart';
+import 'package:drumly/screens/home/home_view.dart';
 import 'package:drumly/screens/settings/settings_viewmodel.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';

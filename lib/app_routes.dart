@@ -1,5 +1,5 @@
 import 'package:drumly/screens/bluetooth/find_devices_view.dart';
-import 'package:drumly/screens/home_view.dart';
+import 'package:drumly/screens/home/home_view.dart';
 import 'package:drumly/screens/auth/auth_view.dart';
 import 'package:drumly/screens/song_request/song_request_page.dart';
 import 'package:drumly/screens/requested_songs/requested_songs_page.dart';

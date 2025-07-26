@@ -2,7 +2,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
 import 'package:drumly/constants.dart';
 import 'package:drumly/screens/bluetooth/find_device_viewmodel.dart';
-import 'package:drumly/screens/home_view.dart';
+import 'package:drumly/screens/home/home_view.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
