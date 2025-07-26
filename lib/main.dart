@@ -29,8 +29,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('🔔 Background message title: ${message.notification?.title}');
   debugPrint('🔔 Background message body: ${message.notification?.body}');
 
-  // Background'da özel işlemler yapabilirsiniz
-  // Örneğin: local storage'a kaydetme, API call, vs.
+  await NotificationHandler().saveNotificationInBackground(message);
 }
 
 void main() async {
@@ -67,6 +66,9 @@ void main() async {
 
   // Default topic'lere abone ol
   await NotificationHandler.subscribeToDefaultTopics();
+
+  // FCM token'ı al ve debug için yazdır
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // FCM Token'ı debug için yazdır
   final notificationService = FirebaseNotificationService();

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/main.dart'; // navigatorKey için
 import 'package:drumly/provider/notification_provider.dart';
@@ -6,6 +8,7 @@ import 'package:drumly/screens/notifications/notification_view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationHandler {
   static final FirebaseNotificationService _notificationService =
@@ -127,6 +130,57 @@ class NotificationHandler {
     if (token == null) {
       final newToken = await _notificationService.getTokenManually();
       debugPrint('🔄 Yeniden alınan token: $newToken');
+    }
+  }
+
+  Future<void> saveNotificationInBackground(RemoteMessage message) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Mevcut notification'ları yükle
+      final notificationsString = prefs.getString('notifications');
+      List<Map<String, dynamic>> notifications = [];
+
+      if (notificationsString != null) {
+        final List<dynamic> notificationsJson = jsonDecode(notificationsString);
+        notifications = notificationsJson.cast<Map<String, dynamic>>();
+      }
+
+      // Yeni notification'ı oluştur
+      final newNotification = {
+        'id': message.messageId ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        'title': message.notification?.title ?? 'Drumly Notification',
+        'body': message.notification?.body ?? '',
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'data': message.data,
+        'isRead': false,
+      };
+
+      // Duplicate check - aynı ID'li notification varsa ekleme
+      final existingIndex =
+          notifications.indexWhere((n) => n['id'] == newNotification['id']);
+      if (existingIndex != -1) {
+        debugPrint(
+            '📱 Duplicate notification ignored: ${newNotification['id']}');
+        return;
+      }
+
+      // Listenin başına ekle (en yeni notification en üstte)
+      notifications.insert(0, newNotification);
+
+      // Maximum 20 notification limit
+      if (notifications.length > 20) {
+        notifications = notifications.take(20).toList();
+      }
+
+      // SharedPreferences'a kaydet
+      await prefs.setString('notifications', jsonEncode(notifications));
+
+      debugPrint(
+          '✅ Background notification saved successfully to SharedPreferences');
+    } catch (e) {
+      debugPrint('❌ Error saving background notification: $e');
     }
   }
 }

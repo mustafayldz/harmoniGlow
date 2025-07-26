@@ -12,12 +12,6 @@ class NotificationView extends StatefulWidget {
 
 class _NotificationViewState extends State<NotificationView> {
   @override
-  void initState() {
-    super.initState();
-    // Removed automatic mark all as read - let user control this manually
-  }
-
-  @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -59,7 +53,6 @@ class _NotificationViewState extends State<NotificationView> {
                     return CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        // Clear All Button
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(

@@ -15,7 +15,6 @@ class UserService {
     debugPrint('UserService.getUser called');
 
     final String url = '${ApiServiceUrl.baseUrl}users/me';
-    debugPrint('Making request to: $url');
 
     final response =
         await RequestHelper.requestAsync(context, RequestType.get, url);
