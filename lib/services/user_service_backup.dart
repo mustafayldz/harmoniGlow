@@ -12,10 +12,10 @@ class UserService {
                   Get User
 ----------------------------------------------------------------------*/
   Future<UserModel?> getUser(BuildContext context) async {
-    debugPrint('UserService.getUser called');
+    debugPrint('🚀 UserService.getUser called');
 
     final String url = '${ApiServiceUrl.baseUrl}users/me';
-    debugPrint('Making request to: $url');
+    debugPrint('� Making request to: $url');
 
     final response =
         await RequestHelper.requestAsync(context, RequestType.get, url);
@@ -23,24 +23,24 @@ class UserService {
     if (response != null) {
       try {
         final jsonResponse = json.decode(response);
-        debugPrint('Full response: $jsonResponse');
+        debugPrint('📦 Full response: $jsonResponse');
 
-        // API response'da data field'i var, onu kullanmaliyiz
+        // API response'da data field'ı var, onu kullanmalıyız
         if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
           final userData = jsonResponse['data'];
-          debugPrint('UserService.getUser successful');
+          debugPrint('✅ UserService.getUser successful');
           return UserModel.fromJson(userData);
         } else {
           debugPrint(
-              'UserService.getUser API returned success=false or no data');
+              '❌ UserService.getUser API returned success=false or no data');
           return null;
         }
       } catch (e) {
-        debugPrint('UserService.getUser parse error: $e');
+        debugPrint('❌ UserService.getUser parse error: $e');
         return null;
       }
     } else {
-      debugPrint('UserService.getUser response is null');
+      debugPrint('❌ UserService.getUser response is null');
       return null;
     }
   }
@@ -67,23 +67,23 @@ class UserService {
 
       final response = await RequestHelper.requestAsync(
         context,
-        RequestType.post, // POST metodu kullaniyoruz
+        RequestType.post, // POST metodu kullanıyoruz
         url,
         userData,
       );
 
       if (response != null && response.isNotEmpty) {
-        debugPrint('User created/updated successfully');
+        debugPrint('✅ User created/updated successfully');
         return userModelFromJson(response);
       } else {
-        debugPrint('Empty or null response from backend');
+        debugPrint('❌ Empty or null response from backend');
         return null;
       }
     } catch (e) {
-      debugPrint('Error in createOrUpdateUser: $e');
-      debugPrint('Error type: ${e.runtimeType}');
+      debugPrint('❌ Error in createOrUpdateUser: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
       if (e is Exception) {
-        debugPrint('Exception details: ${e.toString()}');
+        debugPrint('❌ Exception details: ${e.toString()}');
       }
       return null;
     }
@@ -104,7 +104,7 @@ class UserService {
         'firebase_token': firebaseToken,
       };
 
-      debugPrint('Updating Firebase token for user: $userId');
+      debugPrint('🔄 Updating Firebase token for user: $userId');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -114,11 +114,11 @@ class UserService {
       );
 
       if (response != null && response.isNotEmpty) {
-        debugPrint('Firebase token updated successfully');
+        debugPrint('✅ Firebase token updated successfully');
         return userModelFromJson(response);
       }
     } catch (e) {
-      debugPrint('Error in updateFirebaseToken: $e');
+      debugPrint('❌ Error in updateFirebaseToken: $e');
       return null;
     }
     return null;
@@ -138,8 +138,8 @@ class UserService {
         'fcm_token': fcmToken,
       };
 
-      debugPrint('Updating FCM token via: $url');
-      debugPrint('FCM Token: ${fcmToken.substring(0, 20)}...');
+      debugPrint('🔔 Updating FCM token via: $url');
+      debugPrint('🔔 FCM Token: ${fcmToken.substring(0, 20)}...');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -149,11 +149,11 @@ class UserService {
       );
 
       if (response != null && response.isNotEmpty) {
-        debugPrint('FCM token updated successfully');
+        debugPrint('✅ FCM token updated successfully');
         return userModelFromJson(response);
       }
     } catch (e) {
-      debugPrint('Error in updateFCMToken: $e');
+      debugPrint('❌ Error in updateFCMToken: $e');
       return null;
     }
     return null;
