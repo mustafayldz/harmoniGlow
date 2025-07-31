@@ -516,14 +516,14 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                       _buildUserInfoCard(
                         icon: Icons.email_rounded,
                         title: 'email'.tr(),
-                        value: vm.userModel!.email ?? 'not_provided'.tr(),
+                        value: vm.userModel!.email,
                         isDarkMode: isDarkMode,
                       ),
                       const SizedBox(height: 12),
                       _buildUserInfoCard(
                         icon: Icons.badge_rounded,
                         title: 'name'.tr(),
-                        value: vm.userModel!.name ?? 'not_provided'.tr(),
+                        value: vm.userModel!.name,
                         isDarkMode: isDarkMode,
                       ),
                       const SizedBox(height: 12),
@@ -531,17 +531,16 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                         icon: Icons.library_music_rounded,
                         title: 'assigned_songs'.tr(),
                         value:
-                            '${vm.userModel!.assignedSongIds?.length ?? 0} ${'song_count'.tr()}',
+                            '${vm.userModel!.assignedSongIds.length} ${'song_count'.tr()}',
                         isDarkMode: isDarkMode,
                       ),
-                      if (vm.userModel!.devices != null &&
-                          vm.userModel!.devices!.isNotEmpty) ...[
+                      if (vm.userModel!.devices.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _buildUserInfoCard(
                           icon: Icons.devices_rounded,
                           title: 'connected_devices'.tr(),
                           value:
-                              '${vm.userModel!.devices!.length} ${'device_count'.tr()}',
+                              '${vm.userModel!.devices.length} ${'device_count'.tr()}',
                           isDarkMode: isDarkMode,
                         ),
                       ],

@@ -121,7 +121,8 @@ class NotificationHandler {
   }
 
   /// FCM token'ı al
-  static String? get fcmToken => _notificationService.fcmToken;
+  static Future<String?> get fcmToken async =>
+      await _notificationService.fcmToken;
 
   /// Debug için token'ı manuel olarak yazdır
   static Future<void> printCurrentToken() async {

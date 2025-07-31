@@ -46,7 +46,7 @@ class UserService {
   }
 
   /*----------------------------------------------------------------------
-                  Create or Update User
+                  Create or Update User - DÜZELTME
 ----------------------------------------------------------------------*/
   Future<UserModel?> createOrUpdateUser(
     BuildContext context, {
@@ -55,9 +55,19 @@ class UserService {
     String? email,
     String? fcmToken,
   }) async {
-    final String url = getBaseUrlUser();
+    // DOĞRU ENDPOINT: /users/me kullan (405 hatasını önlemek için)
+    final String url = '${ApiServiceUrl.baseUrl}users/me';
 
     try {
+      debugPrint('🔄 createOrUpdateUser called');
+      debugPrint('📧 Email: $email');
+      debugPrint('👤 Name: $name');
+      debugPrint(
+        '🔔 FCM Token: ${fcmToken?.isNotEmpty == true ? "Mevcut (${fcmToken?.substring(0, 20)}...)" : "Yok"}',
+      );
+      debugPrint('🔥 Firebase Token: ${firebaseToken.substring(0, 20)}...');
+      debugPrint('🌐 URL: $url');
+
       final Map<String, dynamic> userData = {
         'firebase_token': firebaseToken,
         if (name != null && name.isNotEmpty) 'name': name,
@@ -65,25 +75,58 @@ class UserService {
         if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
       };
 
+      debugPrint('📤 Request data: ${jsonEncode(userData)}');
+
+      // PUT method kullan (users/me endpoint'i için)
       final response = await RequestHelper.requestAsync(
         context,
-        RequestType.post, // POST metodu kullaniyoruz
+        RequestType.put, // POST değil PUT kullan
         url,
         userData,
       );
 
+      debugPrint(
+        '📥 Response received: ${response?.isNotEmpty == true ? "Data var" : "Boş"}',
+      );
+
       if (response != null && response.isNotEmpty) {
-        debugPrint('User created/updated successfully');
-        return userModelFromJson(response);
+        try {
+          final jsonResponse = json.decode(response);
+          debugPrint('📥 Response parsed: $jsonResponse');
+
+          // API response yapısını kontrol et
+          if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+            debugPrint(
+              '✅ User created/updated successfully via API success response',
+            );
+            return UserModel.fromJson(jsonResponse['data']);
+          } else if (jsonResponse['data'] != null) {
+            debugPrint('✅ User created/updated successfully via data field');
+            return UserModel.fromJson(jsonResponse['data']);
+          } else if (jsonResponse is Map<String, dynamic> &&
+              jsonResponse.containsKey('email')) {
+            debugPrint(
+              '✅ User created/updated successfully via direct response',
+            );
+            return UserModel.fromJson(jsonResponse);
+          } else {
+            debugPrint('⚠️ Unexpected response structure: $jsonResponse');
+            return null;
+          }
+        } catch (parseError) {
+          debugPrint('❌ JSON parse error: $parseError');
+          debugPrint('❌ Raw response: $response');
+          return null;
+        }
       } else {
-        debugPrint('Empty or null response from backend');
+        debugPrint('❌ Empty or null response from backend');
         return null;
       }
     } catch (e) {
-      debugPrint('Error in createOrUpdateUser: $e');
-      debugPrint('Error type: ${e.runtimeType}');
+      debugPrint('❌ Error in createOrUpdateUser: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
       if (e is Exception) {
-        debugPrint('Exception details: ${e.toString()}');
+        debugPrint('❌ Exception details: ${e.toString()}');
       }
       return null;
     }
@@ -97,14 +140,14 @@ class UserService {
     required String userId,
     required String firebaseToken,
   }) async {
-    final String url = '${getBaseUrlUser()}$userId/token';
+    final String url = '${ApiServiceUrl.baseUrl}users/me/firebase-token';
 
     try {
       final Map<String, dynamic> tokenData = {
         'firebase_token': firebaseToken,
       };
 
-      debugPrint('Updating Firebase token for user: $userId');
+      debugPrint('🔄 Updating Firebase token for user: $userId');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -114,32 +157,37 @@ class UserService {
       );
 
       if (response != null && response.isNotEmpty) {
-        debugPrint('Firebase token updated successfully');
-        return userModelFromJson(response);
+        debugPrint('✅ Firebase token updated successfully');
+        final jsonResponse = json.decode(response);
+        if (jsonResponse['data'] != null) {
+          return UserModel.fromJson(jsonResponse['data']);
+        } else {
+          return UserModel.fromJson(jsonResponse);
+        }
       }
     } catch (e) {
-      debugPrint('Error in updateFirebaseToken: $e');
+      debugPrint('❌ Error in updateFirebaseToken: $e');
       return null;
     }
     return null;
   }
 
   /*----------------------------------------------------------------------
-                  Update FCM Token Only
+                  Update FCM Token Only - DÜZELTME
 ----------------------------------------------------------------------*/
   Future<UserModel?> updateFCMToken(
     BuildContext context, {
     required String fcmToken,
   }) async {
-    final String url = '${getBaseUrlUser()}me/fcm-token';
+    final String url = '${ApiServiceUrl.baseUrl}users/me/fcm-token';
 
     try {
       final Map<String, dynamic> tokenData = {
         'fcm_token': fcmToken,
       };
 
-      debugPrint('Updating FCM token via: $url');
-      debugPrint('FCM Token: ${fcmToken.substring(0, 20)}...');
+      debugPrint('🔄 Updating FCM token via: $url');
+      debugPrint('🔔 FCM Token: ${fcmToken.substring(0, 20)}...');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -149,13 +197,49 @@ class UserService {
       );
 
       if (response != null && response.isNotEmpty) {
-        debugPrint('FCM token updated successfully');
-        return userModelFromJson(response);
+        debugPrint('✅ FCM token updated successfully');
+        final jsonResponse = json.decode(response);
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          return UserModel.fromJson(jsonResponse['data']);
+        } else if (jsonResponse['data'] != null) {
+          return UserModel.fromJson(jsonResponse['data']);
+        } else {
+          return UserModel.fromJson(jsonResponse);
+        }
       }
     } catch (e) {
-      debugPrint('Error in updateFCMToken: $e');
+      debugPrint('❌ Error in updateFCMToken: $e');
       return null;
     }
     return null;
+  }
+
+  /*----------------------------------------------------------------------
+                  Separate FCM Token Update (Alternative)
+----------------------------------------------------------------------*/
+  Future<bool> sendFCMTokenToServer(
+    BuildContext context, {
+    required String fcmToken,
+  }) async {
+    try {
+      debugPrint('🔔 Sending FCM token to server...');
+      debugPrint('🔔 Token: ${fcmToken.substring(0, 20)}...');
+
+      final result = await updateFCMToken(context, fcmToken: fcmToken);
+
+      if (result != null) {
+        debugPrint('✅ FCM token successfully sent to server');
+        debugPrint(
+          '✅ Updated user FCM token: ${result.fcmToken?.substring(0, 20) ?? "null"}...',
+        );
+        return true;
+      } else {
+        debugPrint('❌ Failed to send FCM token to server');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ Error sending FCM token: $e');
+      return false;
+    }
   }
 }

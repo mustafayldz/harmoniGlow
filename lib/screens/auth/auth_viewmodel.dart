@@ -61,8 +61,19 @@ class AuthViewModel extends ChangeNotifier {
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
 
-        // FCM token'ı al
-        final fcmToken = FirebaseNotificationService().fcmToken;
+        // FCM token'ı güvenli şekilde al
+        debugPrint('🔔 FCM token alınıyor...');
+        String? fcmToken;
+
+        try {
+          fcmToken = await FirebaseNotificationService().fcmToken;
+          debugPrint(
+            '✅ FCM token result: ${fcmToken?.isNotEmpty == true ? "${fcmToken!.substring(0, 20)}..." : "null"}',
+          );
+        } catch (e) {
+          debugPrint('❌ FCM token alma hatası: $e');
+          fcmToken = null;
+        }
 
         // Önce mevcut kullanıcıyı kontrol et
         final existingUser = await userService.getUser(context);
@@ -71,31 +82,50 @@ class AuthViewModel extends ChangeNotifier {
         if (existingUser != null &&
             (existingUser.firebaseToken == null ||
                 existingUser.firebaseToken!.isEmpty)) {
-          // Mevcut kullanıcının Firebase token'ı eksik, güncelle
           debugPrint(
             '🔄 Updating missing Firebase token for existing user during login',
           );
-          // createOrUpdateUser kullanarak name'i de koru
+
           user = await userService.createOrUpdateUser(
             context,
             firebaseToken: idToken,
             email: email,
-            name: existingUser.name, // Mevcut name'i koru
-            fcmToken: fcmToken,
+            name: existingUser.name,
+            fcmToken: fcmToken, // FCM token'ı gönder
           );
         } else {
-          // Backend'e kullanıcı bilgilerini gönder/güncelle
+          debugPrint('🆕 Creating/updating user with all tokens');
+
           user = await userService.createOrUpdateUser(
             context,
             firebaseToken: idToken,
             email: email,
-            name: value.user!.displayName, // Firebase'den display name'i al
-            fcmToken: fcmToken,
+            name: value.user!.displayName,
+            fcmToken: fcmToken, // FCM token'ı gönder
           );
+        }
+
+        // FCM token ayrıca gönderilmemişse, özel method ile gönder
+        if (user != null && fcmToken != null && fcmToken.isNotEmpty) {
+          if (user.fcmToken == null || user.fcmToken != fcmToken) {
+            debugPrint('🔔 FCM token eksik, ayrıca gönderiliyor...');
+            final fcmResult = await userService.sendFCMTokenToServer(
+              context,
+              fcmToken: fcmToken,
+            );
+            debugPrint('🔔 FCM token separate send result: $fcmResult');
+          } else {
+            debugPrint('✅ FCM token already updated in user profile');
+          }
         }
 
         if (user != null) {
           debugPrint('✅ User login successful: ${user.email}');
+          debugPrint(
+            '✅ User FCM token: ${user.fcmToken?.substring(0, 20) ?? "null"}...',
+          );
+        } else {
+          debugPrint('❌ Failed to create user in backend');
         }
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -103,6 +133,7 @@ class AuthViewModel extends ChangeNotifier {
         });
       }
     } catch (e) {
+      debugPrint('❌ Login error: $e');
       Future.delayed(Duration.zero, () {
         showTopSnackBar(context, 'Sign in failed: $e');
       });
@@ -130,30 +161,40 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (cred.user != null) {
-        // İsim varsa display name'i güncelle
         if (name.isNotEmpty) {
           await cred.user!.updateDisplayName(name);
           await Future.microtask(() => cred.user!.reload());
         }
 
-        // Firebase token'ı kesinlikle al ve backend'e kullanıcı oluştur
         final idToken = await cred.user!.getIdToken();
         if (idToken != null) {
           await StorageService.saveFirebaseToken(idToken);
 
           // FCM token'ı al
-          final fcmToken = FirebaseNotificationService().fcmToken;
+          debugPrint('🔔 Registration: FCM token alınıyor...');
+          String? fcmToken;
+          try {
+            fcmToken = await FirebaseNotificationService().fcmToken;
+            debugPrint(
+              '✅ Registration FCM token: ${fcmToken?.substring(0, 20) ?? "null"}...',
+            );
+          } catch (e) {
+            debugPrint('❌ Registration FCM token error: $e');
+          }
 
           final user = await userService.createOrUpdateUser(
             context,
             firebaseToken: idToken,
             email: email,
             name: name.isNotEmpty ? name : null,
-            fcmToken: fcmToken,
+            fcmToken: fcmToken, // FCM token'ı gönder
           );
 
           if (user != null) {
             debugPrint('✅ User registration successful: ${user.email}');
+            debugPrint(
+              '✅ Registered user FCM token: ${user.fcmToken?.substring(0, 20) ?? "null"}...',
+            );
           } else {
             debugPrint('❌ Failed to create user in backend');
           }

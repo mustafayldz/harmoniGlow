@@ -74,7 +74,7 @@ void main() async {
   final notificationService = FirebaseNotificationService();
 
   // İlk kontrol
-  var token = notificationService.fcmToken;
+  var token = await notificationService.fcmToken;
 
   debugPrint('🔔 ----------------FCM Token: $token');
 
@@ -82,7 +82,7 @@ void main() async {
   if (token == null) {
     await Future.delayed(const Duration(seconds: 2));
 
-    token = notificationService.fcmToken;
+    token = await notificationService.fcmToken;
 
     if (token == null) {
       token = await notificationService.getTokenManually();
@@ -94,7 +94,7 @@ void main() async {
         // Son deneme - 3 saniye daha bekle
         if (token == null) {
           await Future.delayed(const Duration(seconds: 3));
-          token = notificationService.fcmToken;
+          token = await notificationService.fcmToken;
         }
       }
     }

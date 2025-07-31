@@ -49,7 +49,7 @@ class UserProvider with ChangeNotifier {
 
           if (existingUser != null) {
             // Kullanıcı mevcut, FCM token'ı kontrol et ve güncelle
-            debugPrint('👤 User found: ${existingUser.email ?? "Unknown"}');
+            debugPrint('👤 User found: ${existingUser.email}');
             debugPrint(
               '🔍 Checking FCM token... Current: ${existingUser.fcmToken ?? "null"}',
             );
@@ -62,7 +62,7 @@ class UserProvider with ChangeNotifier {
               );
 
               // FCM token'ı al
-              var fcmToken = FirebaseNotificationService().fcmToken;
+              var fcmToken = await FirebaseNotificationService().fcmToken;
 
               // Eğer hala null ise manuel olarak almaya çalış
               if (fcmToken == null) {
@@ -77,7 +77,7 @@ class UserProvider with ChangeNotifier {
 
               if (fcmToken != null && fcmToken.isNotEmpty) {
                 debugPrint(
-                  '🔔 Updating missing FCM token for existing user: ${existingUser.email ?? "Unknown"}',
+                  '🔔 Updating missing FCM token for existing user: ${existingUser.email}',
                 );
                 debugPrint(
                   '🔔 FCM Token to send: ${fcmToken.substring(0, 20)}...',
@@ -91,13 +91,13 @@ class UserProvider with ChangeNotifier {
                 if (updatedUser != null) {
                   setUser(updatedUser);
                   debugPrint(
-                    '✅ FCM token updated for existing user: ${updatedUser.email ?? "Unknown"}',
+                    '✅ FCM token updated for existing user: ${updatedUser.email}',
                   );
                 } else {
                   // FCM token güncellenemedi ama mevcut kullanıcıyı yükle
                   setUser(existingUser);
                   debugPrint(
-                    'ℹ️ User loaded (FCM token update failed): ${existingUser.email ?? "Unknown"}',
+                    'ℹ️ User loaded (FCM token update failed): ${existingUser.email}',
                   );
                 }
               } else {
@@ -111,13 +111,13 @@ class UserProvider with ChangeNotifier {
               // FCM token zaten var, kullanıcıyı yükle
               setUser(existingUser);
               debugPrint(
-                '✅ User loaded with existing tokens: ${existingUser.email ?? "Unknown"}',
+                '✅ User loaded with existing tokens: ${existingUser.email}',
               );
             }
           } else {
             // Backend'e kullanıcı bilgilerini gönder/güncelle (yeni kullanıcı veya token mevcut)
             // FCM token'ı al
-            final fcmToken = FirebaseNotificationService().fcmToken;
+            final fcmToken = await FirebaseNotificationService().fcmToken;
 
             final user = await _userService.createOrUpdateUser(
               context,
@@ -151,7 +151,7 @@ class UserProvider with ChangeNotifier {
       try {
         final updatedUser = await _userService.updateFirebaseToken(
           context,
-          userId: _userModel!.userId!,
+          userId: _userModel!.userId,
           firebaseToken: newToken,
         );
 

@@ -1,26 +1,17 @@
-// To parse this JSON data, do
-//
-//     final userModel = userModelFromJson(jsonString);
-
-import 'dart:convert';
-
+// user_model.dart
 import 'package:drumly/models/device_model.dart';
-import 'package:flutter/foundation.dart';
-
-UserModel userModelFromJson(String str) => UserModel.fromJson(json.decode(str));
-
-String userModelToJson(UserModel data) => json.encode(data.toJson());
+import 'package:flutter/material.dart';
 
 class UserModel {
   UserModel({
+    required this.userId,
+    required this.email,
+    required this.name,
+    required this.createdAt,
+    required this.lastLogin,
+    required this.assignedSongIds,
+    required this.devices,
     this.id,
-    this.assignedSongIds,
-    this.createdAt,
-    this.devices,
-    this.email,
-    this.lastLogin,
-    this.name,
-    this.userId,
     this.firebaseToken,
     this.fcmToken,
   });
@@ -30,52 +21,41 @@ class UserModel {
 
     return UserModel(
       id: json['_id'] ?? json['id'],
-      assignedSongIds: json['assigned_song_ids'] == null
-          ? []
-          : List<dynamic>.from(json['assigned_song_ids']!.map((x) => x)),
-      createdAt: json['created_at'] == null
-          ? null
-          : DateTime.parse(json['created_at']),
-      devices: json['devices'] == null
-          ? []
-          : List<DeviceModel>.from(
-              json['devices']!.map((x) => DeviceModel.fromJson(x)),
-            ),
-      email: json['email'],
-      lastLogin: json['last_login'] == null
-          ? null
-          : DateTime.parse(json['last_login']),
-      name: json['name'],
-      userId: json['user_id'],
+      userId: json['user_id'] ?? '',
+      email: json['email'] ?? '',
+      name: json['name'] ?? '',
       firebaseToken: json['firebase_token'],
-      fcmToken: json['fcm_token'],
+      fcmToken: json['fcm_token'], // JSON'dan FCM token'ı al
+      createdAt: json['created_at'] ?? '',
+      lastLogin: json['last_login'] ?? '',
+      assignedSongIds: List<String>.from(json['assigned_song_ids'] ?? []),
+      devices: (json['devices'] as List<dynamic>?)
+              ?.map((device) => DeviceModel.fromJson(device))
+              .toList() ??
+          [],
     );
   }
-  String? id;
-  List<dynamic>? assignedSongIds;
-  DateTime? createdAt;
-  List<DeviceModel>? devices;
-  String? email;
-  DateTime? lastLogin;
-  String? name;
-  String? userId;
-  String? firebaseToken;
-  String? fcmToken;
+  final String? id;
+  final String userId;
+  final String email;
+  final String name;
+  final String? firebaseToken;
+  final String? fcmToken; // FCM Token field'ı ekle
+  final String createdAt;
+  final String lastLogin;
+  final List<String> assignedSongIds;
+  final List<DeviceModel> devices;
 
   Map<String, dynamic> toJson() => {
-        '_id': id,
-        'assigned_song_ids': assignedSongIds == null
-            ? []
-            : List<dynamic>.from(assignedSongIds!.map((x) => x)),
-        'created_at': createdAt?.toIso8601String(),
-        'devices': devices == null
-            ? []
-            : List<dynamic>.from(devices!.map((x) => x.toJson())),
-        'email': email,
-        'last_login': lastLogin?.toIso8601String(),
-        'name': name,
+        if (id != null) '_id': id,
         'user_id': userId,
-        'firebase_token': firebaseToken,
-        'fcm_token': fcmToken,
+        'email': email,
+        'name': name,
+        if (firebaseToken != null) 'firebase_token': firebaseToken,
+        if (fcmToken != null) 'fcm_token': fcmToken, // JSON'a FCM token'ı ekle
+        'created_at': createdAt,
+        'last_login': lastLogin,
+        'assigned_song_ids': assignedSongIds,
+        'devices': devices.map((device) => device.toJson()).toList(),
       };
 }

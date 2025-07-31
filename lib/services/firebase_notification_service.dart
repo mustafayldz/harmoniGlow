@@ -18,7 +18,10 @@ class FirebaseNotificationService {
       FlutterLocalNotificationsPlugin();
 
   String? _fcmToken;
-  String? get fcmToken => _fcmToken;
+  Future<String?>? get fcmToken async {
+    _fcmToken ??= await _firebaseMessaging.getToken();
+    return _fcmToken;
+  }
 
   // Notification callback'leri
   Function(RemoteMessage)? onMessageReceived;
