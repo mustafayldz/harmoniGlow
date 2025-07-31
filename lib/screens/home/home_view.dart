@@ -100,7 +100,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
 
                       // Cards Grid
                       SliverPadding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         sliver: HomeCardsGrid(
                           fadeAnimation: viewModel.fadeAnimation,
                           animationController: viewModel.animationController,
