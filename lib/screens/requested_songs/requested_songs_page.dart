@@ -171,6 +171,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               // Modern Header
@@ -191,7 +192,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
   /// 🎨 Modern Header - Songs style
   Widget _buildModernHeader(bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
         child: Row(
           children: [
             DecoratedBox(

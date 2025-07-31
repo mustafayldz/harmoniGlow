@@ -94,6 +94,7 @@ class _SongRequestPageState extends State<SongRequestPage> {
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               _buildAppBar(isDarkMode),
@@ -126,7 +127,7 @@ class _SongRequestPageState extends State<SongRequestPage> {
   }
 
   Widget _buildAppBar(bool isDarkMode) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
           children: [
             GestureDetector(

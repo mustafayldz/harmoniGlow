@@ -56,6 +56,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                   ),
                 ),
                 child: SafeArea(
+                  bottom: false,
                   child: CustomScrollView(
                     physics: const BouncingScrollPhysics(),
                     slivers: [

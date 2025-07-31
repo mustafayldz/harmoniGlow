@@ -74,6 +74,7 @@ class _TrainingViewState extends State<TrainingView>
             ),
           ),
           child: SafeArea(
+            bottom: false,
             child: Column(
               children: [
                 // Modern App Bar
@@ -98,7 +99,7 @@ class _TrainingViewState extends State<TrainingView>
   }
 
   Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         child: Row(
           children: [
             DecoratedBox(

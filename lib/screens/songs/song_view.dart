@@ -143,6 +143,7 @@ class _SongViewState extends State<SongView> {
               ),
             ),
             child: SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   // Modern App Bar + Search
@@ -168,7 +169,7 @@ class _SongViewState extends State<SongView> {
 
   /// 🎨 Modern Header - Search + Actions Combined
   Widget _buildModernHeader(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
         child: Column(
           children: [
             // App Bar Row
