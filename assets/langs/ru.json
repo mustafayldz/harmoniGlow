@@ -165,5 +165,7 @@
   "request_description_short": "Отправьте запрос, мы добавим в течение 24 часов!",
   "request_description_long": "Отправьте запрос песни, мы добавим её в ваш список в течение 24 часов!",
   "button_text_short": "Отправить запрос",
-  "button_text_long": "Отправить запрос песни"
+  "button_text_long": "Отправить запрос песни",
+  "connected": "Подключено",
+  "notConnected": "Не подключено"
 }

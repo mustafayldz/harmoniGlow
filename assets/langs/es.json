@@ -165,5 +165,7 @@
   "request_description_short": "¡Envía una solicitud, la agregaremos en 24 horas!",
   "request_description_long": "¡Envía una solicitud de canción, la agregaremos a tu lista en 24 horas!",
   "button_text_short": "Enviar Solicitud",
-  "button_text_long": "Enviar Solicitud de Canción"
+  "button_text_long": "Enviar Solicitud de Canción",
+  "connected": "Conectado",
+  "notConnected": "No Conectado"
 }

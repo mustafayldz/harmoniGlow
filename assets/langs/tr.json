@@ -165,5 +165,7 @@
   "request_description_short": "İstek gönder, 24 saat içinde ekleyelim!",
   "request_description_long": "Şarkı isteği gönder, 24 saat içinde listene ekleyelim!",
   "button_text_short": "İstek Gönder",
-  "button_text_long": "Şarkı İsteği Gönder"
+  "button_text_long": "Şarkı İsteği Gönder",
+  "connected": "Bağlandı",
+  "notConnected": "Bağlı Değil"
 }

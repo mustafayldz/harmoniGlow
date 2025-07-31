@@ -165,7 +165,9 @@
   "request_description_short": "Send a request, we'll add it within 24 hours!",
   "request_description_long": "Send a song request, we'll add it to your list within 24 hours!",
   "button_text_short": "Send Request",
-  "button_text_long": "Send Song Request"
+  "button_text_long": "Send Song Request",
+  "connected": "Connected",
+  "notConnected": "Not Connected"
 }
 
 

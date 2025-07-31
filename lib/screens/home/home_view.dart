@@ -59,7 +59,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                   child: CustomScrollView(
                     physics: const BouncingScrollPhysics(),
                     slivers: [
-                      // App Bar
                       SliverToBoxAdapter(
                         child: AnimatedBuilder(
                           animation: viewModel.fadeAnimation,

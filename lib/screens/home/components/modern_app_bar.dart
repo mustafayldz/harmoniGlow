@@ -68,6 +68,7 @@ class ModernAppBar extends StatelessWidget {
                 ),
               ),
               Flexible(
+                flex: isSmallScreen ? 1 : 2,
                 child: BluetoothBanner(
                   isConnected: isConnected,
                   deviceName: deviceName,
