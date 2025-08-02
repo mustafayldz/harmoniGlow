@@ -19,23 +19,13 @@ import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-/// Background message handler - top level function olmalı
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Firebase'i başlat (background'da gerekli)
   await Firebase.initializeApp();
-
-  debugPrint('🔔 Background message received: ${message.messageId}');
-  debugPrint('🔔 Background message title: ${message.notification?.title}');
-  debugPrint('🔔 Background message body: ${message.notification?.body}');
-
   await NotificationHandler().saveNotificationInBackground(message);
 }
 
 void main() async {
-  // İlk debug çıktısı
-  debugPrint('🚀🚀🚀 DRUMLY UYGULAMASI BAŞLATIYOR 🚀🚀🚀');
-
   WidgetsFlutterBinding.ensureInitialized();
 
   // Status bar'ı gizle (tüm uygulama boyunca)
@@ -52,13 +42,20 @@ void main() async {
   // Status bar'ı tamamen gizle
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // Firebase'i başlat
-  await Firebase.initializeApp();
+  // Paralel başlatma - performans iyileştirmesi
+  await Future.wait([
+    Firebase.initializeApp(),
+    MobileAds.instance.initialize(),
+    EasyLocalization.ensureInitialized(),
+  ]);
+
+  // Servisleri başlat
+  setupLocator();
 
   // Background message handler'ı kaydet
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Firebase Notification Service'i başlat
+  // Firebase Notification Service'i başlat (paralel değil, dependency var)
   await FirebaseNotificationService().initialize();
 
   // Notification handler'ı başlat
@@ -67,49 +64,11 @@ void main() async {
   // Default topic'lere abone ol
   await NotificationHandler.subscribeToDefaultTopics();
 
-  // FCM token'ı al ve debug için yazdır
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-  // FCM Token'ı debug için yazdır
+  // FCM Token'ı al ve debug için yazdır
   final notificationService = FirebaseNotificationService();
 
-  // İlk kontrol
-  var token = await notificationService.fcmToken;
-
-  debugPrint('🔔 ----------------FCM Token: $token');
-
-  // Eğer token null ise, daha agresif deneme
-  if (token == null) {
-    await Future.delayed(const Duration(seconds: 2));
-
-    token = await notificationService.fcmToken;
-
-    if (token == null) {
-      token = await notificationService.getTokenManually();
-
-      // Hala null ise refresh dene
-      if (token == null) {
-        token = await notificationService.refreshToken();
-
-        // Son deneme - 3 saniye daha bekle
-        if (token == null) {
-          await Future.delayed(const Duration(seconds: 3));
-          token = await notificationService.fcmToken;
-        }
-      }
-    }
-  }
-
-  // if (token != null) {
-  //   debugPrint('🔧 Firebase token alındı');
-  // } else {
-  //   debugPrint('🔧 Sorun giderme: Firebase konfigürasyonunu kontrol edin');
-  // }
-
-  // Diğer servisleri başlat
-  setupLocator();
-  await MobileAds.instance.initialize();
-  await EasyLocalization.ensureInitialized();
+  // Token alma işlemi - performansı optimize et
+  await notificationService.getTokenManually();
 
   runApp(
     EasyLocalization(

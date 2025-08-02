@@ -1,10 +1,6 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'beat_maker_model.dart';
 
-// **************************************************************************
-// TypeAdapterGenerator
-// **************************************************************************
 
 class BeatMakerModelAdapter extends TypeAdapter<BeatMakerModel> {
   @override

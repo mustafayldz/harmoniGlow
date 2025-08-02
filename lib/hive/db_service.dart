@@ -2,7 +2,6 @@ import 'package:drumly/constants.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:hive/hive.dart';
 
-/// 🔒 Kullanıcının eriştiği şarkıların kilit kayıtları (LazyBox)
 
 Future<void> addRecord(String songId) async {
   final lazyBox = Hive.lazyBox(Constants.lockSongBox);
@@ -37,7 +36,6 @@ bool hasRecord(String songId) {
   return lazyBox.containsKey(songId);
 }
 
-/// 🥁 BeatMaker kayıt işlemleri (LazyBox ile)
 
 Future<void> saveBeatMakerModel(BeatMakerModel beat) async {
   final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);

@@ -1,6 +1,3 @@
-// To parse this JSON data, do
-//
-//     final songRequestModel = songRequestModelFromJson(jsonString);
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';

@@ -1,5 +1,4 @@
 import 'dart:async';
-// unawaited fonksiyonu zaten dart:async içinde mevcut
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -318,7 +317,6 @@ class FirebaseNotificationService {
   }
 }
 
-/// Background message handler (top-level function olmalı)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   developer.log(

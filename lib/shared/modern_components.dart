@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 🎨 Modern Design System Components
 class ModernComponents {
   // Modern Color Palette
   static const modernColors = ModernColors();
@@ -12,7 +11,6 @@ class ModernComponents {
   static const shadows = ModernShadows();
 }
 
-/// 🌈 Modern Color Palette
 class ModernColors {
   const ModernColors();
 
@@ -53,7 +51,6 @@ class ModernColors {
   static const lightSurface = Color(0xFF94A3B8);
 }
 
-/// 🌅 Modern Gradient Presets
 class ModernGradients {
   const ModernGradients();
 
@@ -116,7 +113,6 @@ class ModernGradients {
   );
 }
 
-/// 🌟 Modern Shadow Presets
 class ModernShadows {
   const ModernShadows();
 
@@ -153,7 +149,6 @@ class ModernShadows {
       ];
 }
 
-/// 🎨 Modern App Bar Component
 class ModernAppBar extends StatelessWidget {
   const ModernAppBar({
     required this.title,
@@ -208,7 +203,6 @@ class ModernAppBar extends StatelessWidget {
       );
 }
 
-/// 💎 Modern Glass Card Component
 class ModernGlassCard extends StatelessWidget {
   const ModernGlassCard({
     required this.child,
@@ -279,7 +273,6 @@ class ModernGlassCard extends StatelessWidget {
       );
 }
 
-/// 🌈 Modern Gradient Card Component
 class ModernGradientCard extends StatelessWidget {
   const ModernGradientCard({
     required this.child,
@@ -334,7 +327,6 @@ class ModernGradientCard extends StatelessWidget {
       );
 }
 
-/// 📱 Modern Screen Layout
 class ModernScreenLayout extends StatelessWidget {
   const ModernScreenLayout({
     required this.title,
@@ -386,7 +378,6 @@ class ModernScreenLayout extends StatelessWidget {
       );
 }
 
-/// 🎯 Modern Icon Button
 class ModernIconButton extends StatelessWidget {
   const ModernIconButton({
     required this.icon,
@@ -424,7 +415,6 @@ class ModernIconButton extends StatelessWidget {
       );
 }
 
-/// 🔘 Modern Button
 class ModernButton extends StatelessWidget {
   const ModernButton({
     required this.text,

@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-// import 'package:url_launcher/url_launcher.dart';
 
 class FindDevicesView extends StatefulWidget {
   const FindDevicesView({super.key});

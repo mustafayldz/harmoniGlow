@@ -80,6 +80,8 @@ class _TrainingViewState extends State<TrainingView>
                 // Modern App Bar
                 _buildModernAppBar(context, isDarkMode),
 
+                const SizedBox(height: 20),
+
                 // Modern Tab Bar
                 _buildModernTabBar(context, isDarkMode),
 
@@ -99,7 +101,7 @@ class _TrainingViewState extends State<TrainingView>
   }
 
   Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Row(
           children: [
             DecoratedBox(
@@ -206,82 +208,78 @@ class _TrainingBody extends StatelessWidget {
       );
     }
 
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      child: TabBarView(
-        controller: tabController,
-        children: levels.map((level) {
-          final levelName = level.name;
-          final levelBeats = vm.getBeatsForLevel(levelName);
+    return TabBarView(
+      controller: tabController,
+      children: levels.map((level) {
+        final levelName = level.name;
+        final levelBeats = vm.getBeatsForLevel(levelName);
 
-          if (levelBeats.isEmpty && !vm.loading) {
-            return _buildEmptyState(isDarkMode);
-          }
+        if (levelBeats.isEmpty && !vm.loading) {
+          return _buildEmptyState(isDarkMode);
+        }
 
-          return NotificationListener<ScrollNotification>(
-            onNotification: (scrollInfo) {
-              // Enhanced scroll optimization with hasMoreData check
-              if (scrollInfo is ScrollEndNotification &&
-                  !vm.loading &&
-                  vm.hasMoreData(
-                    levelName,
-                  ) && // Check if more data is available
-                  scrollInfo.metrics.pixels >=
-                      scrollInfo.metrics.maxScrollExtent - 200) {
-                // Only load if we have some beats already (prevents initial empty state from triggering)
-                if (levelBeats.isNotEmpty) {
-                  debugPrint('🔄 Loading more beats for level: $levelName');
-                  vm.fetchBeats(level: levelName);
-                } else {
-                  debugPrint(
-                    '🚫 Empty beat list, skipping load more for level: $levelName',
-                  );
-                }
-              } else if (scrollInfo is ScrollEndNotification &&
-                  !vm.hasMoreData(levelName)) {
+        return NotificationListener<ScrollNotification>(
+          onNotification: (scrollInfo) {
+            // Enhanced scroll optimization with hasMoreData check
+            if (scrollInfo is ScrollEndNotification &&
+                !vm.loading &&
+                vm.hasMoreData(
+                  levelName,
+                ) && // Check if more data is available
+                scrollInfo.metrics.pixels >=
+                    scrollInfo.metrics.maxScrollExtent - 200) {
+              // Only load if we have some beats already (prevents initial empty state from triggering)
+              if (levelBeats.isNotEmpty) {
+                debugPrint('🔄 Loading more beats for level: $levelName');
+                vm.fetchBeats(level: levelName);
+              } else {
                 debugPrint(
-                  '✋ No more data available for level: $levelName, skipping request',
+                  '🚫 Empty beat list, skipping load more for level: $levelName',
                 );
               }
-              return false;
+            } else if (scrollInfo is ScrollEndNotification &&
+                !vm.hasMoreData(levelName)) {
+              debugPrint(
+                '✋ No more data available for level: $levelName, skipping request',
+              );
+            }
+            return false;
+          },
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await vm.fetchBeats(level: levelName, reset: true);
             },
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await vm.fetchBeats(level: levelName, reset: true);
-              },
-              child: ListView.builder(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                itemCount: levelBeats.length +
-                    (vm.loading ? 1 : 0), // Add loading indicator
-                itemBuilder: (context, index) {
-                  // Show loading indicator at the bottom
-                  if (index >= levelBeats.length) {
-                    return Container(
-                      padding: const EdgeInsets.all(20),
-                      alignment: Alignment.center,
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isDarkMode ? Colors.white : Colors.black,
-                        ),
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              itemCount: levelBeats.length +
+                  (vm.loading ? 1 : 0), // Add loading indicator
+              itemBuilder: (context, index) {
+                // Show loading indicator at the bottom
+                if (index >= levelBeats.length) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    alignment: Alignment.center,
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isDarkMode ? Colors.white : Colors.black,
                       ),
-                    );
-                  }
-
-                  final beat = levelBeats[index];
-                  return _buildModernBeatCard(
-                    context,
-                    beat,
-                    vm,
-                    bluetoothBloc,
-                    isDarkMode,
+                    ),
                   );
-                },
-              ),
+                }
+
+                final beat = levelBeats[index];
+                return _buildModernBeatCard(
+                  context,
+                  beat,
+                  vm,
+                  bluetoothBloc,
+                  isDarkMode,
+                );
+              },
             ),
-          );
-        }).toList(),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 

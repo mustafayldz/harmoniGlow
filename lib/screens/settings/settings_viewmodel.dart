@@ -34,9 +34,8 @@ class SettingViewModel extends ChangeNotifier {
 
     try {
       userModel = await userService.getUser(context);
-      debugPrint('✅ User info loaded: ${userModel?.name ?? 'Unknown'}');
     } catch (e) {
-      debugPrint('❌ Error loading user info: $e');
+      debugPrint('❌ Error creating fallback player for $e');
     } finally {
       isLoadingUser = false;
       notifyListeners();

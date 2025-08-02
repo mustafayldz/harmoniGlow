@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_event.dart';
@@ -31,7 +30,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     );
 
     if (adapterState == BluetoothAdapterState.off) {
-      debugPrint('Bluetooth is not ON. Current state: $adapterState');
       return;
     }
 
@@ -82,7 +80,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       }
 
       if (state.isScanning) {
-        debugPrint('Scan is already in progress. Ignoring new scan request.');
         return;
       }
 
@@ -96,13 +93,10 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
       _scanSubscription = FlutterBluePlus.scanResults.listen(
         (results) {
-          if (results.isEmpty) {
-            debugPrint('No devices found during scan.');
-          }
+          if (results.isEmpty) {}
           emit(state.copyWith(scanResults: results));
         },
         onError: (error) {
-          debugPrint('Error during Bluetooth scan: $error');
           emit(
             state.copyWith(
               isScanning: false,
@@ -116,7 +110,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       await Future.delayed(const Duration(seconds: 3));
       await _stopScanning(emit);
     } catch (e) {
-      debugPrint('Error during Bluetooth scan: $e');
       emit(
         state.copyWith(
           isScanning: false,
@@ -135,15 +128,12 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
   Future<void> _stopScanning(Emitter<BluetoothStateC> emit) async {
     try {
-      debugPrint('Stopping Bluetooth scan...');
       await FlutterBluePlus.stopScan();
       await _scanSubscription?.cancel();
       _scanSubscription = null;
 
       emit(state.copyWith(isScanning: false));
-      debugPrint('Bluetooth scan stopped.');
     } catch (e) {
-      debugPrint('Error while stopping scan: $e');
       emit(
         state.copyWith(
           isScanning: false,
@@ -162,10 +152,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
       // Listen for connection state changes
       event.device.connectionState.listen((state) {
-        debugPrint('Bluetooth Connection State: $state');
-
         if (state == BluetoothConnectionState.disconnected) {
-          debugPrint('Device disconnected! Navigating to another page.');
           add(ForceNavigationEvent()); // Trigger navigation event
         }
       });
@@ -177,7 +164,6 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       // Find the correct characteristic
       for (BluetoothService service in services) {
         for (BluetoothCharacteristic c in service.characteristics) {
-          // debugPrint(
           //   'Service UUID: ${service.uuid}, Characteristic UUID: ${c.uuid}, Properties: ${c.properties}',
           // );
 

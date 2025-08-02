@@ -41,33 +41,34 @@ class _SplashViewState extends State<SplashView>
   }
 
   Future<void> _initializeApp() async {
-    // 1. Hive setup
+    // 1. Hive setup - paralel çalışacak
     final appDocDir = await getApplicationDocumentsDirectory();
     Hive.init(appDocDir.path);
     Hive.registerAdapter(BeatMakerModelAdapter());
     Hive.registerAdapter(NoteModelAdapter());
 
+    // 2. Paralel işlemler
     await Future.wait([
       Hive.openLazyBox(Constants.lockSongBox),
       Hive.openLazyBox<BeatMakerModel>(Constants.beatRecordsBox),
     ]);
 
-    // 2. Hafif bir gecikme animasyon için (gerekirse)
-    await Future.delayed(const Duration(milliseconds: 500));
+    // 3. Hafif bir gecikme animasyon için (azaltıldı)
+    await Future.delayed(const Duration(milliseconds: 200));
 
-    // 3. Firebase token kontrolü
+    // 4. Firebase token kontrolü
     final token = await storageService.getFirebaseToken();
 
     if (!mounted) return;
 
-    // 4. tokeni kontrol et gerekirse tokeni yenile
+    // 5. Token kontrolü ve yönlendirme
     if (token != null) {
       if (isJwtExpired(token)) {
         final newToken = await getValidFirebaseToken();
         await StorageService.saveFirebaseToken(newToken);
       }
 
-      // 5. User initialization - backend ile sync
+      // 6. User initialization - paralel değil, backend dependency
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       await userProvider.initializeUser(context);
 

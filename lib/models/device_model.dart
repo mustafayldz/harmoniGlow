@@ -1,6 +1,3 @@
-// To parse this JSON data, do
-//
-//     final deviceModel = deviceModelFromJson(jsonString);
 
 import 'dart:convert';
 

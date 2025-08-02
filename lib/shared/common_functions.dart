@@ -9,37 +9,31 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-/// Capitalizes the first letter of a given string.
 String capitalize(String input) {
   if (input.isEmpty) return input;
   return input[0].toUpperCase() + input.substring(1);
 }
 
-/// Checks if a given string is a valid email address.
 bool isValidEmail(String email) {
   final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
   return emailRegex.hasMatch(email);
 }
 
-/// Formats a number with commas as thousand separators.
 String formatWithCommas(int number) => number.toString().replaceAllMapped(
       RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
       (Match match) => '${match[1]},',
     );
 
-/// Delays execution for a given number of milliseconds.
 Future<void> delay(int milliseconds) async {
   await Future.delayed(Duration(milliseconds: milliseconds));
 }
 
-/// Splits an integer into two bytes (8 bits each).
 List<int> splitToBytes(int value) {
   final low = value & 0xFF; // Alt 8 bit
   final high = (value >> 8) & 0xFF; // Üst 8 bit
   return [252, low, high];
 }
 
-/// sneakbar
 Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
@@ -75,8 +69,9 @@ Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
                 onPressed: () async {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-                  final bool earned = await AdServiceReward()
-                      .showRewardedAdWithConfetti(context);
+                  final adService = AdServiceReward();
+                  final bool earned =
+                      await adService.showRewardedAdWithConfetti(context);
 
                   if (earned) {
                     await addRecord(songId);
@@ -103,7 +98,6 @@ Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
   return completer.future; // Burada sonucu döndürür
 }
 
-/// Decode the payload (middle segment) of a JWT into a Map.
 Map<String, dynamic> decodeJwtPayload(String token) {
   final parts = token.split('.');
   if (parts.length != 3) {
@@ -115,7 +109,6 @@ Map<String, dynamic> decodeJwtPayload(String token) {
   return json.decode(payload) as Map<String, dynamic>;
 }
 
-/// Returns true if the token’s `exp` time (in seconds since epoch) is in the past.
 bool isJwtExpired(String token) {
   try {
     final payload = decodeJwtPayload(token);
@@ -129,7 +122,6 @@ bool isJwtExpired(String token) {
   }
 }
 
-/// Gets a valid Firebase ID token, forcing a refresh if it’s expired.
 Future<String> getValidFirebaseToken() async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) {
@@ -142,7 +134,6 @@ Future<String> getValidFirebaseToken() async {
   return freshToken;
 }
 
-/// classic snackbar
 void showClassicSnackBar(BuildContext context, String message) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
@@ -214,8 +205,6 @@ void showTopSnackBar(BuildContext context, String message) {
   });
 }
 
-/// Return drum part id with drum part name
-
 int getDrumPartId(String drumPartName) {
   switch (drumPartName) {
     case 'Hi-Hat':
@@ -239,8 +228,6 @@ int getDrumPartId(String drumPartName) {
   }
 }
 
-/// return dark color rondom color
-
 Color getRandomColor(bool isDark) {
   final double threshold = isDark ? 0.7 : 0.3;
 
@@ -260,7 +247,6 @@ Color getRandomColor(bool isDark) {
   return color;
 }
 
-/// Capitalize the first letter of each word in a string.
 String capitalizeFirst(String text) {
   if (text.isEmpty) return '';
   return text[0].toUpperCase() + text.substring(1).toLowerCase();

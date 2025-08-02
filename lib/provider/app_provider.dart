@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class AppProvider with ChangeNotifier {
   AppProvider() {
@@ -28,13 +29,23 @@ class AppProvider with ChangeNotifier {
 
   final Queue<bool> _loadings = Queue<bool>();
   void setLoading(bool loading) {
+    // Build sırasında setState çağrılmasını önlemek için
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      Future.microtask(() => _updateLoading(loading));
+    } else {
+      _updateLoading(loading);
+    }
+  }
+
+  void _updateLoading(bool loading) {
     if (loading) {
       _loadings.add(true);
     } else {
       _loadings.clear();
     }
     _loading = _loadings.isNotEmpty;
-    debugPrint('loading status is ===>  $_loading');
+    notifyListeners();
   }
 
   void setCountdownValue(bool isIncrement) {
@@ -59,7 +70,6 @@ class AppProvider with ChangeNotifier {
 
   void setIsClassic(bool isClassic) {
     _isClassic = isClassic;
-    debugPrint(isClassic ? 'Classic' : 'Electronic');
     notifyListeners();
   }
 

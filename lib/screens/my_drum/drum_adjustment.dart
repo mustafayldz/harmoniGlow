@@ -43,10 +43,6 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
         }
       },
     );
-
-    for (var element in drumParts!) {
-      debugPrint('Loaded: ${element.name} - ${element.led} - ${element.rgb} ');
-    }
   }
 
   void onPartClicked(BluetoothBloc bluetoothBloc, String partName) {

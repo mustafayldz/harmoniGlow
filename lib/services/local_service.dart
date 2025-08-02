@@ -59,8 +59,6 @@ class StorageService {
           jsonDecode(savedData).map((x) => DrumModel.fromJson(x)),
         );
       } catch (e) {
-        // Handle any parsing errors
-        debugPrint('Error decoding saved drum parts: ${e.toString()}');
         return null;
       }
     }

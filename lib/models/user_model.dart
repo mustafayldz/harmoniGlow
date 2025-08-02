@@ -1,4 +1,3 @@
-// user_model.dart
 import 'package:drumly/models/device_model.dart';
 import 'package:flutter/material.dart';
 

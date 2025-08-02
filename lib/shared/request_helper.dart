@@ -97,38 +97,24 @@ class RequestHelper {
 
       switch (response.statusCode) {
         case 200:
-          debugPrint('200');
         case 201:
-          debugPrint('201');
         case 401:
-          debugPrint('401');
           break;
         case 400:
-          debugPrint('400');
-          debugPrint('400 Error Response: $result');
           break;
         case 404:
-          debugPrint('404');
-          debugPrint('404 Error Response: $result');
           break;
         case 405:
-          debugPrint('405 - Method Not Allowed');
-          debugPrint('405 Error Response: $result');
           break;
         case 500:
-          debugPrint('500');
-          debugPrint('500 Error Response: $result');
           break;
         case 502:
-          debugPrint('502');
-          debugPrint('502 Error Response: $result');
           break;
         default:
           debugPrint('Unexpected status code: ${response.statusCode}');
           debugPrint('Response: $result');
           return null;
       }
-      print({'result BURDA =========>', result});
       appProvider.setLoading(false);
       return result;
     } on FormatException catch (e) {

@@ -31,7 +31,11 @@ class _SongViewState extends State<SongView> {
     // Tab controller artık gerekli değil
     vm = SongViewModel();
     vm.init(context);
-    vm.fetchInitialSongsWithCache(context);
+
+    // Build sırasında setState çağrılmasını önlemek için
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      vm.fetchInitialSongsWithCache(context);
+    });
 
     _scrollController.addListener(_onScroll);
   }
@@ -142,24 +146,21 @@ class _SongViewState extends State<SongView> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  // Modern App Bar + Search
-                  _buildModernHeader(context, isDarkMode),
+            child: Column(
+              children: [
+                // Modern App Bar + Search
+                _buildModernHeader(context, isDarkMode),
 
-                  // Main Content - No Tabs
-                  Expanded(
-                    child: _buildMainContent(
-                      vm,
-                      isConnected,
-                      bluetoothBloc,
-                      isDarkMode,
-                    ),
+                // Main Content - No Tabs
+                Expanded(
+                  child: _buildMainContent(
+                    vm,
+                    isConnected,
+                    bluetoothBloc,
+                    isDarkMode,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -167,9 +168,8 @@ class _SongViewState extends State<SongView> {
     );
   }
 
-  /// 🎨 Modern Header - Search + Actions Combined
   Widget _buildModernHeader(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Column(
           children: [
             // App Bar Row

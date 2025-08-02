@@ -126,34 +126,35 @@ class _SongRequestPageState extends State<SongRequestPage> {
     );
   }
 
+  /// 🎨 Modern Header - Songs style
   Widget _buildAppBar(bool isDarkMode) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Row(
           children: [
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(
                   Icons.arrow_back_ios_rounded,
                   color: isDarkMode ? Colors.white : Colors.black,
-                  size: 20,
                 ),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
             const SizedBox(width: 16),
-            Text(
-              'request_song'.tr(),
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black,
+            Expanded(
+              child: Text(
+                'request_song'.tr(),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isDarkMode ? Colors.white : Colors.black,
+                ),
               ),
             ),
           ],

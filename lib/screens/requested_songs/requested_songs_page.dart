@@ -87,8 +87,6 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         offset: loadMore ? _currentPage * _limit : 0,
       );
 
-      debugPrint('🎵 Received ${requests?.length ?? 0} requests from API');
-
       if (requests != null) {
         // Debug: İlk request'i detaylı log'la
         if (requests.isNotEmpty) {
@@ -192,7 +190,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
   /// 🎨 Modern Header - Songs style
   Widget _buildModernHeader(bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Row(
           children: [
             DecoratedBox(

@@ -57,8 +57,6 @@ class NotificationHandler {
 
   /// FCM token yenileme
   static void _handleTokenRefresh(String token) {
-    debugPrint('🔄 FCM Token refreshed: $token');
-
     // Token'ı sunucuya gönderin
     _sendTokenToServer(token);
   }
@@ -66,58 +64,45 @@ class NotificationHandler {
   /// Navigation işlemi
   static void _navigateBasedOnData(Map<String, dynamic> data) {
     final screen = data['screen'];
-    final id = data['id'];
 
     switch (screen) {
       case 'song':
         // Şarkı detay sayfasına git
-        debugPrint('Navigate to song with id: $id');
         break;
       case 'beat':
         // Beat maker sayfasına git
-        debugPrint('Navigate to beat maker with id: $id');
         break;
       case 'settings':
         // Ayarlar sayfasına git
-        debugPrint('Navigate to settings');
         break;
       default:
         // Ana sayfa
-        debugPrint('Navigate to home');
         break;
     }
   }
 
   /// Token'ı sunucuya gönder
   static void _sendTokenToServer(String token) {
-    debugPrint('🔔 Sending FCM token to server: $token');
-
     // Context'i al ve UserProvider'a gönder
     final context = navigatorKey.currentContext;
     if (context != null) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       if (userProvider.isLoggedIn) {
         userProvider.updateFCMToken(context, token);
-      } else {
-        debugPrint('❌ User not logged in, cannot update FCM token');
-      }
-    } else {
-      debugPrint('❌ Context not available, cannot update FCM token');
-    }
+      } else {}
+    } else {}
   }
 
   /// Topic'lere abone ol
   static Future<void> subscribeToDefaultTopics() async {
     await _notificationService.subscribeToTopic('general');
     await _notificationService.subscribeToTopic('updates');
-    debugPrint('Subscribed to default topics');
   }
 
   /// Kullanıcı çıkış yaptığında topic'lerden çık
   static Future<void> unsubscribeFromTopics() async {
     await _notificationService.unsubscribeFromTopic('general');
     await _notificationService.unsubscribeFromTopic('updates');
-    debugPrint('Unsubscribed from topics');
   }
 
   /// FCM token'ı al
@@ -129,8 +114,7 @@ class NotificationHandler {
     final token = _notificationService.fcmToken;
 
     if (token == null) {
-      final newToken = await _notificationService.getTokenManually();
-      debugPrint('🔄 Yeniden alınan token: $newToken');
+      await _notificationService.getTokenManually();
     }
   }
 
@@ -162,9 +146,6 @@ class NotificationHandler {
       final existingIndex =
           notifications.indexWhere((n) => n['id'] == newNotification['id']);
       if (existingIndex != -1) {
-        debugPrint(
-          '📱 Duplicate notification ignored: ${newNotification['id']}',
-        );
         return;
       }
 
@@ -178,12 +159,8 @@ class NotificationHandler {
 
       // SharedPreferences'a kaydet
       await prefs.setString('notifications', jsonEncode(notifications));
-
-      debugPrint(
-        '✅ Background notification saved successfully to SharedPreferences',
-      );
     } catch (e) {
-      debugPrint('❌ Error saving background notification: $e');
+      debugPrint('❌ Error saving notification in background: $e');
     }
   }
 }

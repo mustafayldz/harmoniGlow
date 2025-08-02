@@ -18,9 +18,6 @@ class SongService {
 
   // Debug metodu - URL'leri kontrol et
   void debugUrls() {
-    debugPrint('🔗 Base Song URL: ${getBaseUrlSong()}');
-    debugPrint('🔗 My Assigned Songs URL: ${getMyAssignedSongsUrl()}');
-    debugPrint('🔗 Beat URL: ${getBaseUrlBeats()}');
   }
 
   /*----------------------------------------------------------------------
@@ -53,7 +50,6 @@ class SongService {
 
       // Final URL oluştur
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
-      debugPrint('🔗 Songs URL: ${uri.toString()}');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -62,7 +58,6 @@ class SongService {
       );
 
       if (response == null || response.isEmpty) {
-        debugPrint('❌ Songs: Empty or null response');
         return null;
       }
 
@@ -71,11 +66,9 @@ class SongService {
         for (var item in decoded['data']) {
           songs.add(SongModel.fromJson(item));
         }
-        debugPrint('📦 Songs: Found ${songs.length} songs');
       }
       return songs;
     } catch (e) {
-      debugPrint('❌ Error in getSongs: $e');
       return null;
     }
   }
@@ -104,7 +97,6 @@ class SongService {
     final List<SongModel> songs = <SongModel>[];
 
     try {
-      debugPrint('👤 Getting my assigned songs from: $url');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -113,22 +105,18 @@ class SongService {
       );
 
       if (response == null || response.isEmpty) {
-        debugPrint('❌ My songs: Empty or null response');
         return null;
       }
 
-      debugPrint('✅ My songs: Response received (${response.length} chars)');
       final decoded = json.decode(response);
 
       if (decoded is Map && decoded.containsKey('data')) {
         for (var item in decoded['data']) {
           songs.add(SongModel.fromJson(item));
         }
-        debugPrint('📦 My songs: Found ${songs.length} songs');
       }
       return songs;
     } catch (e) {
-      debugPrint('❌ Error in getMyAssignedSongs: $e');
       return null;
     }
   }
@@ -155,7 +143,6 @@ class SongService {
       }
       return songTypes;
     } catch (e) {
-      debugPrint(e.toString());
       return null;
     }
   }
@@ -180,7 +167,6 @@ class SongService {
       };
 
       final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
-      debugPrint('🔗 Beats URL: ${uri.toString()}');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -198,7 +184,6 @@ class SongService {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Error in getBeats: $e');
       return null;
     }
   }
@@ -213,7 +198,6 @@ class SongService {
     final String url = '${getBaseUrlBeats()}$beatId';
 
     try {
-      debugPrint('🔗 Beat ID URL: $url');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -238,7 +222,6 @@ class SongService {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Error in getBeatById: $e');
       return null;
     }
   }
@@ -253,7 +236,6 @@ class SongService {
     final String url = '${getBaseUrlSong()}$songId';
 
     try {
-      debugPrint('🔗 Song ID URL: $url');
 
       final response = await RequestHelper.requestAsync(
         context,
@@ -276,7 +258,6 @@ class SongService {
       }
       return null;
     } catch (e) {
-      debugPrint('❌ Error in getSongById: $e');
       return null;
     }
   }

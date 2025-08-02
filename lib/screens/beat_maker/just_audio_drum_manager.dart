@@ -114,7 +114,7 @@ class JustAudioDrumManager {
 
         debugPrint('🔄 Fallback JustAudio player created for $drumPart');
       } catch (e2) {
-        debugPrint('❌ Fallback also failed for $drumPart: $e2');
+        debugPrint('❌ Error creating fallback player for $drumPart: $e2');
       }
     }
   }
