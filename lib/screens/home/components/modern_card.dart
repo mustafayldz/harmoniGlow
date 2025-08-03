@@ -8,6 +8,7 @@ import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
+import 'package:drumly/features/drum_hero/presentation/screens/drum_hero_main_screen.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -154,6 +155,8 @@ class ModernCard extends StatelessWidget {
         return const SettingView();
       case 'my beats':
         return const MyBeatsView();
+      case 'drum hero':
+        return const DrumHeroMainScreen();
       default:
         return const SizedBox.shrink();
     }

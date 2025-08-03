@@ -116,6 +116,18 @@ class HomeViewModel extends ChangeNotifier {
         ),
       ),
       CardData(
+        key: 'drum hero',
+        title: 'DrumHero',
+        subtitle: 'Test Your Skills',
+        color: const Color(0xFF8B5CF6),
+        icon: Icons.games_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      CardData(
         key: 'settings',
         title: 'settings'.tr(),
         subtitle: 'customizeApp'.tr(),
