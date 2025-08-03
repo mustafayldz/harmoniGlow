@@ -36,6 +36,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   lottie: ^3.2.0
   confetti: ^0.8.0
+  flame: ^1.17.0
+  flame_audio: ^2.1.0
 
   flutter_localizations:
     sdk: flutter
@@ -64,5 +66,6 @@ flutter:
     - assets/images/draw/
     - assets/images/icons/
     - assets/sounds/
+    - assets/drum_hero/
     - assets/langs/
     - assets/animation/

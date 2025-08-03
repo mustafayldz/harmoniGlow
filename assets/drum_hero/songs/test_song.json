@@ -1,0 +1,18 @@
+{
+  "song_name": "Test Beat",
+  "artist": "DrumHero",
+  "bpm": 120,
+  "duration": 10000,
+  "difficulty": "easy",
+  "audio_path": "assets/drum_hero/songs/test_song.mp3",
+  "notes": [
+    {"time": 0, "drum": "kick", "lane": 4},
+    {"time": 500, "drum": "snare", "lane": 2},
+    {"time": 1000, "drum": "kick", "lane": 4},
+    {"time": 1500, "drum": "snare", "lane": 2},
+    {"time": 2000, "drum": "hihat", "lane": 0},
+    {"time": 2250, "drum": "hihat", "lane": 0},
+    {"time": 2500, "drum": "snare", "lane": 2},
+    {"time": 3000, "drum": "kick", "lane": 4}
+  ]
+}
