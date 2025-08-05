@@ -29,8 +29,6 @@ class SongViewModel extends ChangeNotifier {
 
   void init(BuildContext ctx) {
     context = ctx;
-    // Debug URL'leri kontrol et
-    _songService.debugUrls();
   }
 
   Future<void> fetchInitialSongsWithCache(BuildContext ctx) async {

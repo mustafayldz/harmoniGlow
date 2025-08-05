@@ -1,4 +1,5 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
@@ -24,10 +25,12 @@ class _SongViewState extends State<SongView> {
   final ScrollController _scrollController = ScrollController();
   String _lastSearch = '';
   bool _isGridView = false; // Grid/List toggle için
+  late final UserProvider userProvider;
 
   @override
   void initState() {
     super.initState();
+    userProvider = Provider.of<UserProvider>(context, listen: false);
     // Tab controller artık gerekli değil
     vm = SongViewModel();
     vm.init(context);
@@ -59,14 +62,17 @@ class _SongViewState extends State<SongView> {
 
   /// 🔐 KILIT DURUMU KONTROLÜ - Tüm kurallar burada
   Future<bool> _isSongLocked(SongModel song, bool isBluetoothConnected) async {
-    // 📱 1. API'den gelen şarkı zaten kilitsiz ise -> KİLİTSİZ
-    if (!song.isLocked) return false;
+    // Eğer şarkı zaten kilitsizse veya Bluetooth bağlıysa -> kilitsiz
+    if (!song.isLocked || isBluetoothConnected) return false;
 
-    // 🔵 2. Bluetooth bağlı ise -> KİLİTSİZ
-    if (isBluetoothConnected) return false;
+    // Eğer kullanıcıya atanmış şarkılar arasında yoksa -> kilitli
+    if (userProvider.user.assignedSongIds.contains(song.songId)) return false;
 
-    // ⏰ 3. Shared Preferences'dan 2 saatlik unlock kontrolü
-    return !(await _hasValidUnlock(song.songId));
+    // Eğer geçici olarak kilit açılmışsa -> kilitsiz
+    if (await _hasValidUnlock(song.songId)) return false;
+
+    // Yukarıdaki hiçbir durum gerçekleşmediyse -> kilitli
+    return true;
   }
 
   /// ⏰ 2 saatlik unlock kontrolü

@@ -1,3 +1,4 @@
+import 'package:drumly/adMob/ad_view.dart';
 import 'package:drumly/models/song_request_model.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/services/song_request_service.dart';
@@ -485,90 +486,100 @@ class _SongRequestPageState extends State<SongRequestPage> {
       );
 
   Future<void> _submitRequest() async {
+    // Form validasyonunu önce kontrol et
     if (!_formKey.currentState!.validate()) return;
 
+    // Hemen loading'i başlat
     setState(() => _isLoading = true);
 
-    try {
-      // Firebase Auth'dan user bilgilerini al
-      final firebaseUser = FirebaseAuth.instance.currentUser;
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final user = userProvider.userModel;
+    // Reklam göster ve işlemi reklam bittikten sonra yap
+    AdView(
+      onAdFinished: () async {
+        try {
+          // Firebase Auth'dan user bilgilerini al
+          final firebaseUser = FirebaseAuth.instance.currentUser;
+          final userProvider =
+              Provider.of<UserProvider>(context, listen: false);
+          final user = userProvider.userModel;
 
-      debugPrint(
-        '🎵 Firebase User: ${firebaseUser?.uid}, Email: ${firebaseUser?.email}',
-      );
-      debugPrint('🎵 User Provider: ${user?.userId}, Email: ${user?.email}');
-
-      final request = SongRequestModel(
-        // Firebase Auth bilgilerini kullan
-        userId: firebaseUser?.uid ?? user?.userId,
-        userEmail: firebaseUser?.email ?? user?.email,
-        userName: firebaseUser?.displayName ??
-            user?.name ??
-            firebaseUser?.email?.split('@').first,
-        artistName: _artistController.text.trim(),
-        songTitle: _songTitleController.text.trim(),
-        songLink: _songLinkController.text.trim().isEmpty
-            ? null
-            : _songLinkController.text.trim(),
-        albumName: _albumController.text.trim().isEmpty
-            ? null
-            : _albumController.text.trim(),
-        genre: _genreController.text.trim().isEmpty
-            ? null
-            : _genreController.text.trim(),
-        releaseYear: _releaseYearController.text.trim().isEmpty
-            ? null
-            : int.tryParse(_releaseYearController.text.trim()),
-        language: _languageController.text.trim().isEmpty
-            ? null
-            : _languageController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        priority: _selectedPriority,
-      );
-
-      debugPrint('🎵 Final request data: ${request.toJson()}');
-
-      final success =
-          await _songRequestService.createSongRequest(context, request);
-
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('request_submitted_success'.tr()),
-              backgroundColor: Colors.green,
-            ),
+          debugPrint(
+            '🎵 Firebase User: ${firebaseUser?.uid}, Email: ${firebaseUser?.email}',
           );
-          Navigator.pop(context);
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('request_submitted_error'.tr()),
-              backgroundColor: Colors.red,
-            ),
+          debugPrint(
+            '🎵 User Provider: ${user?.userId}, Email: ${user?.email}',
           );
+
+          final request = SongRequestModel(
+            // Firebase Auth bilgilerini kullan
+            userId: firebaseUser?.uid ?? user?.userId,
+            userEmail: firebaseUser?.email ?? user?.email,
+            userName: firebaseUser?.displayName ??
+                user?.name ??
+                firebaseUser?.email?.split('@').first,
+            artistName: _artistController.text.trim(),
+            songTitle: _songTitleController.text.trim(),
+            songLink: _songLinkController.text.trim().isEmpty
+                ? null
+                : _songLinkController.text.trim(),
+            albumName: _albumController.text.trim().isEmpty
+                ? null
+                : _albumController.text.trim(),
+            genre: _genreController.text.trim().isEmpty
+                ? null
+                : _genreController.text.trim(),
+            releaseYear: _releaseYearController.text.trim().isEmpty
+                ? null
+                : int.tryParse(_releaseYearController.text.trim()),
+            language: _languageController.text.trim().isEmpty
+                ? null
+                : _languageController.text.trim(),
+            description: _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+            priority: _selectedPriority,
+          );
+
+          debugPrint('🎵 Final request data: ${request.toJson()}');
+
+          final success =
+              await _songRequestService.createSongRequest(context, request);
+
+          if (success) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('request_submitted_success'.tr()),
+                  backgroundColor: Colors.green,
+                ),
+              );
+              Navigator.pop(context);
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('request_submitted_error'.tr()),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('Submit request error: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('request_submitted_error'.tr()),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
         }
-      }
-    } catch (e) {
-      debugPrint('Submit request error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('request_submitted_error'.tr()),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+      },
+    );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:drumly/adMob/ad_view.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/screens/beat_maker/beat_maker_view.dart';
 import 'package:drumly/screens/bluetooth/find_devices_view.dart';
@@ -114,27 +113,27 @@ class ModernCard extends StatelessWidget {
       await FirebaseAnalytics.instance.logEvent(name: key.replaceAll(' ', '_'));
       if (!context.mounted) return;
 
-      if (!isConnected && key == 'songs') {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AdView(
-              onAdFinished: () async {
-                if (!context.mounted) return;
-                await Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SongView()),
-                );
-              },
-            ),
-          ),
-        );
-      } else {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => destination),
-        );
-      }
+      // if (!isConnected && key == 'songs') {
+      //   await Navigator.push(
+      //     context,
+      //     MaterialPageRoute(
+      //       builder: (_) => AdView(
+      //         onAdFinished: () async {
+      //           if (!context.mounted) return;
+      //           await Navigator.pushReplacement(
+      //             context,
+      //             MaterialPageRoute(builder: (_) => const SongView()),
+      //           );
+      //         },
+      //       ),
+      //     ),
+      //   );
+      // } else {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => destination),
+      );
+      // }
     } catch (e, st) {
       debugPrint('Navigation error: $e\n$st');
     }

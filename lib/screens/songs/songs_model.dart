@@ -31,11 +31,10 @@ class SongModel {
   });
 
   factory SongModel.fromJson(Map<String, dynamic> json) => SongModel(
-        // API field mappings
-        id: json['id'] as String?,
-        songId: json['song_id'] as String? ?? json['id'] as String?, // Fallback
+        id: json['song_id'] as String?, // API'dan song_id'yi al
+        songId: json['song_id'] as String?, // Backward compatibility
         name: json['name'] as String?,
-        title: json['title'] as String? ?? json['name'] as String?, // Fallback
+        title: json['title'] as String?,
         artist: json['artist'] as String?,
         userId: json['user_id'] as String?,
         songTypeId: json['song_type_id'] as String?,

@@ -16,10 +16,6 @@ class SongService {
   // YENİ: API'ya uygun endpoint'ler
   String getMyAssignedSongsUrl() => '${ApiServiceUrl.user}me/songs';
 
-  // Debug metodu - URL'leri kontrol et
-  void debugUrls() {
-  }
-
   /*----------------------------------------------------------------------
                   Get Songs - API dokümantasyonuna uygun
 ----------------------------------------------------------------------*/
@@ -67,6 +63,7 @@ class SongService {
           songs.add(SongModel.fromJson(item));
         }
       }
+
       return songs;
     } catch (e) {
       return null;
@@ -97,7 +94,6 @@ class SongService {
     final List<SongModel> songs = <SongModel>[];
 
     try {
-
       final response = await RequestHelper.requestAsync(
         context,
         RequestType.get,
@@ -198,7 +194,6 @@ class SongService {
     final String url = '${getBaseUrlBeats()}$beatId';
 
     try {
-
       final response = await RequestHelper.requestAsync(
         context,
         RequestType.get,
@@ -236,7 +231,6 @@ class SongService {
     final String url = '${getBaseUrlSong()}$songId';
 
     try {
-
       final response = await RequestHelper.requestAsync(
         context,
         RequestType.get,
