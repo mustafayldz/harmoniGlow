@@ -66,313 +66,320 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: Column(
-          children: [
-            // Modern App Bar
-            _buildModernAppBar(context, isDarkMode),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // Modern App Bar
+              _buildModernAppBar(context, isDarkMode),
 
-            // Content
-            Expanded(
-              child: CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.all(20),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        // Profile Section
-                        _buildProfileSection(vm, isDarkMode),
-                        const SizedBox(height: 24),
+              // Content
+              Expanded(
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.all(20),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          // Profile Section
+                          _buildProfileSection(vm, isDarkMode),
+                          const SizedBox(height: 24),
 
-                        // Dark Mode Toggle
-                        _buildSimpleSettingCard(
-                          isDarkMode: isDarkMode,
-                          icon: Icons.brightness_6_outlined,
-                          title: 'darkMode'.tr(),
-                          child: Switch(
-                            value: appProvider.isDarkMode,
-                            onChanged: (_) => vm.toggleTheme(),
-                            activeColor: const Color(0xFF6366F1),
-                            activeTrackColor:
-                                const Color(0xFF6366F1).withValues(alpha: 0.3),
-                            inactiveThumbColor: Colors.grey,
-                            inactiveTrackColor:
-                                Colors.grey.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Countdown Adjust
-                        _buildSimpleSettingCard(
-                          isDarkMode: isDarkMode,
-                          icon: Icons.timer_outlined,
-                          title: 'adjustCountdown'.tr(),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.remove_rounded),
-                                onPressed: () => vm.adjustCountdown(false),
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.1)
-                                      : Colors.black.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '${appProvider.countdownValue} s',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDarkMode
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.add_rounded),
-                                onPressed: () => vm.adjustCountdown(true),
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Drum Type Toggle (only if connected)
-                        if (bluetoothState.isConnected) ...[
+                          // Dark Mode Toggle
                           _buildSimpleSettingCard(
                             isDarkMode: isDarkMode,
-                            icon: Icons.music_note_outlined,
-                            title: 'drumType'.tr(),
+                            icon: Icons.brightness_6_outlined,
+                            title: 'darkMode'.tr(),
+                            child: Switch(
+                              value: appProvider.isDarkMode,
+                              onChanged: (_) => vm.toggleTheme(),
+                              activeColor: const Color(0xFF6366F1),
+                              activeTrackColor: const Color(0xFF6366F1)
+                                  .withValues(alpha: 0.3),
+                              inactiveThumbColor: Colors.grey,
+                              inactiveTrackColor:
+                                  Colors.grey.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Countdown Adjust
+                          _buildSimpleSettingCard(
+                            isDarkMode: isDarkMode,
+                            icon: Icons.timer_outlined,
+                            title: 'adjustCountdown'.tr(),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                DecoratedBox(
+                                IconButton(
+                                  icon: const Icon(Icons.remove_rounded),
+                                  onPressed: () => vm.adjustCountdown(false),
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: !appProvider.isClassic
-                                        ? const Color(0xFF6366F1)
-                                        : isDarkMode
-                                            ? Colors.white
-                                                .withValues(alpha: 0.1)
-                                            : Colors.black
-                                                .withValues(alpha: 0.1),
+                                    color: isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.1)
+                                        : Colors.black.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: TextButton(
-                                    onPressed: () => vm.setDrumStyle(false),
-                                    child: Text(
-                                      'electronic'.tr(),
-                                      style: TextStyle(
-                                        color: !appProvider.isClassic
-                                            ? Colors.white
-                                            : isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  child: Text(
+                                    '${appProvider.countdownValue} s',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.black,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: appProvider.isClassic
-                                        ? const Color(0xFF6366F1)
-                                        : isDarkMode
-                                            ? Colors.white
-                                                .withValues(alpha: 0.1)
-                                            : Colors.black
-                                                .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: TextButton(
-                                    onPressed: () => vm.setDrumStyle(true),
-                                    child: Text(
-                                      'classic'.tr(),
-                                      style: TextStyle(
-                                        color: appProvider.isClassic
-                                            ? Colors.white
-                                            : isDarkMode
-                                                ? Colors.white
-                                                : Colors.black,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
+                                IconButton(
+                                  icon: const Icon(Icons.add_rounded),
+                                  onPressed: () => vm.adjustCountdown(true),
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 16),
-                        ],
 
-                        // Language Selector
-                        _buildSimpleSettingCard(
-                          isDarkMode: isDarkMode,
-                          icon: Icons.language_outlined,
-                          title: 'language'.tr(),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? Colors.white.withValues(alpha: 0.1)
-                                  : Colors.black.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: DropdownButton<Locale>(
-                              value: context.locale,
-                              dropdownColor:
-                                  isDarkMode ? Colors.grey[800] : Colors.white,
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                color: isDarkMode ? Colors.white : Colors.black,
+                          // Drum Type Toggle (only if connected)
+                          if (bluetoothState.isConnected) ...[
+                            _buildSimpleSettingCard(
+                              isDarkMode: isDarkMode,
+                              icon: Icons.music_note_outlined,
+                              title: 'drumType'.tr(),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: !appProvider.isClassic
+                                          ? const Color(0xFF6366F1)
+                                          : isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.1)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: TextButton(
+                                      onPressed: () => vm.setDrumStyle(false),
+                                      child: Text(
+                                        'electronic'.tr(),
+                                        style: TextStyle(
+                                          color: !appProvider.isClassic
+                                              ? Colors.white
+                                              : isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: appProvider.isClassic
+                                          ? const Color(0xFF6366F1)
+                                          : isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.1)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: TextButton(
+                                      onPressed: () => vm.setDrumStyle(true),
+                                      child: Text(
+                                        'classic'.tr(),
+                                        style: TextStyle(
+                                          color: appProvider.isClassic
+                                              ? Colors.white
+                                              : isDarkMode
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              underline: const SizedBox(),
-                              borderRadius: BorderRadius.circular(8),
-                              onChanged: (Locale? newLocale) async {
-                                if (newLocale != null) {
-                                  await context.setLocale(newLocale);
-                                  await Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const HomeView(),
-                                    ),
-                                  );
-                                }
-                              },
-                              items: [
-                                DropdownMenuItem(
-                                  value: const Locale('en'),
-                                  child: Text(
-                                    'English',
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Language Selector
+                          _buildSimpleSettingCard(
+                            isDarkMode: isDarkMode,
+                            icon: Icons.language_outlined,
+                            title: 'language'.tr(),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDarkMode
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : Colors.black.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<Locale>(
+                                value: context.locale,
+                                dropdownColor: isDarkMode
+                                    ? Colors.grey[800]
+                                    : Colors.white,
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color:
+                                      isDarkMode ? Colors.white : Colors.black,
+                                ),
+                                underline: const SizedBox(),
+                                borderRadius: BorderRadius.circular(8),
+                                onChanged: (Locale? newLocale) async {
+                                  if (newLocale != null) {
+                                    await context.setLocale(newLocale);
+                                    await Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const HomeView(),
+                                      ),
+                                    );
+                                  }
+                                },
+                                items: [
+                                  DropdownMenuItem(
+                                    value: const Locale('en'),
+                                    child: Text(
+                                      'English',
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DropdownMenuItem(
-                                  value: const Locale('tr'),
-                                  child: Text(
-                                    'Türkçe',
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                                  DropdownMenuItem(
+                                    value: const Locale('tr'),
+                                    child: Text(
+                                      'Türkçe',
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DropdownMenuItem(
-                                  value: const Locale('es'),
-                                  child: Text(
-                                    'Español',
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                                  DropdownMenuItem(
+                                    value: const Locale('es'),
+                                    child: Text(
+                                      'Español',
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DropdownMenuItem(
-                                  value: const Locale('fr'),
-                                  child: Text(
-                                    'Français',
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                                  DropdownMenuItem(
+                                    value: const Locale('fr'),
+                                    child: Text(
+                                      'Français',
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                DropdownMenuItem(
-                                  value: const Locale('ru'),
-                                  child: Text(
-                                    'Русский',
-                                    style: TextStyle(
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
+                                  DropdownMenuItem(
+                                    value: const Locale('ru'),
+                                    child: Text(
+                                      'Русский',
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
                                     ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // App Info
+                          _buildSimpleSettingCard(
+                            isDarkMode: isDarkMode,
+                            icon: Icons.info_outlined,
+                            title: 'appInformation'.tr(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Version: ${vm.version}',
+                                  style: TextStyle(
+                                    color: isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.8)
+                                        : Colors.black.withValues(alpha: 0.8),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                Text(
+                                  'Build #: ${vm.buildNumber}',
+                                  style: TextStyle(
+                                    color: isDarkMode
+                                        ? Colors.white.withValues(alpha: 0.8)
+                                        : Colors.black.withValues(alpha: 0.8),
+                                    fontSize: 14,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 24),
 
-                        // App Info
-                        _buildSimpleSettingCard(
-                          isDarkMode: isDarkMode,
-                          icon: Icons.info_outlined,
-                          title: 'appInformation'.tr(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Version: ${vm.version}',
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.8)
-                                      : Colors.black.withValues(alpha: 0.8),
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                'Build #: ${vm.buildNumber}',
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.8)
-                                      : Colors.black.withValues(alpha: 0.8),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                          // Logout Button
+                          _buildSimpleSettingCard(
+                            isDarkMode: isDarkMode,
+                            icon: Icons.logout_rounded,
+                            title: 'logout'.tr(),
+                            isButton: true,
+                            onTap: () => vm.logout(context),
+                            child: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: Colors.red,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Logout Button
-                        _buildSimpleSettingCard(
-                          isDarkMode: isDarkMode,
-                          icon: Icons.logout_rounded,
-                          title: 'logout'.tr(),
-                          isButton: true,
-                          onTap: () => vm.logout(context),
-                          child: const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                            color: Colors.red,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ]),
+                          const SizedBox(height: 32),
+                        ]),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
         child: Row(
           children: [
             DecoratedBox(

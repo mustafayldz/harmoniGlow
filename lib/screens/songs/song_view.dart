@@ -152,21 +152,24 @@ class _SongViewState extends State<SongView> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Column(
-              children: [
-                // Modern App Bar + Search
-                _buildModernHeader(context, isDarkMode),
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  // Modern App Bar + Search
+                  _buildModernHeader(context, isDarkMode),
 
-                // Main Content - No Tabs
-                Expanded(
-                  child: _buildMainContent(
-                    vm,
-                    isConnected,
-                    bluetoothBloc,
-                    isDarkMode,
+                  // Main Content - No Tabs
+                  Expanded(
+                    child: _buildMainContent(
+                      vm,
+                      isConnected,
+                      bluetoothBloc,
+                      isDarkMode,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -175,7 +178,7 @@ class _SongViewState extends State<SongView> {
   }
 
   Widget _buildModernHeader(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
         child: Column(
           children: [
             // App Bar Row
@@ -345,7 +348,7 @@ class _SongViewState extends State<SongView> {
             // Popular Songs Section (Horizontal)
             if (vm.popularSongs.isNotEmpty) ...[
               _buildSectionHeader('Popular Songs', isDarkMode),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildHorizontalSongsList(
                 vm.popularSongs,
                 isConnected,
@@ -353,7 +356,7 @@ class _SongViewState extends State<SongView> {
                 vm,
                 isDarkMode,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
 
             // All Songs Section
@@ -363,7 +366,7 @@ class _SongViewState extends State<SongView> {
               showCount: true,
               count: vm.songs.length,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             // Grid or List View
             _isGridView
@@ -1065,7 +1068,7 @@ class _SongViewState extends State<SongView> {
     int count = 0,
   }) =>
       Container(
-        margin: const EdgeInsets.symmetric(vertical: 16),
+        margin: const EdgeInsets.only(top: 8, bottom: 8),
         child: Row(
           children: [
             Text(
