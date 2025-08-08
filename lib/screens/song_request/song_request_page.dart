@@ -1,4 +1,3 @@
-import 'package:drumly/adMob/ad_view.dart';
 import 'package:drumly/models/song_request_model.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/services/song_request_service.dart';
@@ -270,6 +269,23 @@ class _SongRequestPageState extends State<SongRequestPage> {
             icon: Icons.link_rounded,
             isDarkMode: isDarkMode,
             keyboardType: TextInputType.url,
+            validator: (value) {
+              if (value != null && value.trim().isNotEmpty) {
+                final url = value.trim();
+                // URL formatını kontrol et
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                  return 'Geçerli bir URL girin (http:// veya https:// ile başlamalı)';
+                }
+                // YouTube/müzik platformları için basit kontrol
+                if (!url.contains('youtube.com') &&
+                    !url.contains('youtu.be') &&
+                    !url.contains('spotify.com') &&
+                    !url.contains('soundcloud.com')) {
+                  return 'YouTube, Spotify veya SoundCloud linki girin';
+                }
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
           Row(
@@ -343,6 +359,7 @@ class _SongRequestPageState extends State<SongRequestPage> {
     bool isRequired = false,
     TextInputType? keyboardType,
     int maxLines = 1,
+    String? Function(String?)? validator,
   }) =>
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,10 +377,16 @@ class _SongRequestPageState extends State<SongRequestPage> {
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
-            validator: isRequired
-                ? (value) =>
-                    value?.isEmpty == true ? '$label ${'required'.tr()}' : null
-                : null,
+            textInputAction:
+                maxLines > 1 ? TextInputAction.done : TextInputAction.next,
+            onFieldSubmitted:
+                maxLines > 1 ? (_) => FocusScope.of(context).unfocus() : null,
+            validator: validator ??
+                (isRequired
+                    ? (value) => value?.isEmpty == true
+                        ? '$label ${'required'.tr()}'
+                        : null
+                    : null),
             decoration: InputDecoration(
               hintText: hint,
               prefixIcon: Icon(icon),
@@ -487,99 +510,117 @@ class _SongRequestPageState extends State<SongRequestPage> {
 
   Future<void> _submitRequest() async {
     // Form validasyonunu önce kontrol et
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     // Hemen loading'i başlat
     setState(() => _isLoading = true);
 
-    // Reklam göster ve işlemi reklam bittikten sonra yap
-    AdView(
-      onAdFinished: () async {
-        try {
-          // Firebase Auth'dan user bilgilerini al
-          final firebaseUser = FirebaseAuth.instance.currentUser;
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
-          final user = userProvider.userModel;
+    try {
+      // Direkt submit işlemini yap (reklam kaldırıldı)
+      await _performSubmit();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('request_submitted_error'.tr()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
-          debugPrint(
-            '🎵 Firebase User: ${firebaseUser?.uid}, Email: ${firebaseUser?.email}',
+  /// 📝 Gerçek submit işlemi
+  Future<void> _performSubmit() async {
+    try {
+      // Firebase Auth'dan user bilgilerini al
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final user = userProvider.userModel;
+
+      final request = SongRequestModel(
+        // Firebase Auth bilgilerini kullan
+        userId: firebaseUser?.uid ?? user?.userId,
+        userEmail: firebaseUser?.email ?? user?.email,
+        userName: firebaseUser?.displayName ??
+            user?.name ??
+            firebaseUser?.email?.split('@').first,
+        artistName: _artistController.text.trim(),
+        songTitle: _songTitleController.text.trim(),
+        songLink: _songLinkController.text.trim().isEmpty
+            ? null
+            : _songLinkController.text.trim(),
+        albumName: _albumController.text.trim().isEmpty
+            ? null
+            : _albumController.text.trim(),
+        genre: _genreController.text.trim().isEmpty
+            ? null
+            : _genreController.text.trim(),
+        releaseYear: _releaseYearController.text.trim().isEmpty
+            ? null
+            : int.tryParse(_releaseYearController.text.trim()),
+        language: _languageController.text.trim().isEmpty
+            ? null
+            : _languageController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        priority: _selectedPriority,
+      );
+
+      final success =
+          await _songRequestService.createSongRequest(context, request);
+
+      if (success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('request_submitted_success'.tr()),
+              backgroundColor: Colors.green,
+            ),
           );
-          debugPrint(
-            '🎵 User Provider: ${user?.userId}, Email: ${user?.email}',
-          );
-
-          final request = SongRequestModel(
-            // Firebase Auth bilgilerini kullan
-            userId: firebaseUser?.uid ?? user?.userId,
-            userEmail: firebaseUser?.email ?? user?.email,
-            userName: firebaseUser?.displayName ??
-                user?.name ??
-                firebaseUser?.email?.split('@').first,
-            artistName: _artistController.text.trim(),
-            songTitle: _songTitleController.text.trim(),
-            songLink: _songLinkController.text.trim().isEmpty
-                ? null
-                : _songLinkController.text.trim(),
-            albumName: _albumController.text.trim().isEmpty
-                ? null
-                : _albumController.text.trim(),
-            genre: _genreController.text.trim().isEmpty
-                ? null
-                : _genreController.text.trim(),
-            releaseYear: _releaseYearController.text.trim().isEmpty
-                ? null
-                : int.tryParse(_releaseYearController.text.trim()),
-            language: _languageController.text.trim().isEmpty
-                ? null
-                : _languageController.text.trim(),
-            description: _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
-            priority: _selectedPriority,
-          );
-
-          debugPrint('🎵 Final request data: ${request.toJson()}');
-
-          final success =
-              await _songRequestService.createSongRequest(context, request);
-
-          if (success) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('request_submitted_success'.tr()),
-                  backgroundColor: Colors.green,
-                ),
-              );
-              Navigator.pop(context);
-            }
-          } else {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('request_submitted_error'.tr()),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
-        } catch (e) {
-          debugPrint('Submit request error: $e');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('request_submitted_error'.tr()),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        } finally {
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
+          Navigator.pop(context);
         }
-      },
-    );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Şarkı talebi gönderilemedi. Lütfen bilgileri kontrol edin.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      String errorMessage = 'Şarkı talebi gönderilemedi';
+
+      // Backend hata mesajını parse et
+      final errorStr = e.toString();
+      if (errorStr.contains('song_link') && errorStr.contains('URL')) {
+        errorMessage =
+            'Şarkı linki geçerli bir URL olmalı (YouTube, Spotify vs.)';
+      } else if (errorStr.contains('Validation error')) {
+        errorMessage = 'Form bilgileri eksik veya hatalı. Lütfen kontrol edin.';
+      } else if (errorStr.contains('timeout') || errorStr.contains('network')) {
+        errorMessage = 'İnternet bağlantısı sorunu. Lütfen tekrar deneyin.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
