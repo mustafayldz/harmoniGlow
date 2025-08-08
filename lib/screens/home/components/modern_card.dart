@@ -7,6 +7,7 @@ import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
+import 'package:drumly/adMob/ad_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -113,27 +114,15 @@ class ModernCard extends StatelessWidget {
       await FirebaseAnalytics.instance.logEvent(name: key.replaceAll(' ', '_'));
       if (!context.mounted) return;
 
-      // if (!isConnected && key == 'songs') {
-      //   await Navigator.push(
-      //     context,
-      //     MaterialPageRoute(
-      //       builder: (_) => AdView(
-      //         onAdFinished: () async {
-      //           if (!context.mounted) return;
-      //           await Navigator.pushReplacement(
-      //             context,
-      //             MaterialPageRoute(builder: (_) => const SongView()),
-      //           );
-      //         },
-      //       ),
-      //     ),
-      //   );
-      // } else {
+      // 🎯 Beat Maker için reklam göster
+      if (key == 'beat maker') {
+        await AdService.instance.showInterstitialAd();
+      }
+
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => destination),
       );
-      // }
     } catch (e, st) {
       debugPrint('Navigation error: $e\n$st');
     }

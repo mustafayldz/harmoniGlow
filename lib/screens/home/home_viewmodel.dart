@@ -1,6 +1,7 @@
 import 'package:drumly/screens/home/components/card_data.dart';
 import 'package:drumly/screens/my_drum/drum_model.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/adMob/ad_service.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:drumly/constants.dart';
@@ -51,6 +52,16 @@ class HomeViewModel extends ChangeNotifier {
     _checkLocalStorage();
     _initCards();
     _animationController.forward();
+
+    // 🎯 Ana sayfa açıldıktan 30 saniye sonra reklam göster
+    _scheduleInitialAd();
+  }
+
+  /// 📺 Ana sayfa için zamanlı reklam
+  void _scheduleInitialAd() {
+    Future.delayed(const Duration(seconds: 30), () {
+      AdService.instance.showInterstitialAd();
+    });
   }
 
   void _initCards() {
