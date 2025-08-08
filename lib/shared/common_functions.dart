@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:drumly/adMob/ad_service_reward.dart';
-import 'package:drumly/hive/db_service.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 String capitalize(String input) {
   if (input.isEmpty) return input;
@@ -74,7 +74,12 @@ Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
                       await adService.showRewardedAdWithConfetti(context);
 
                   if (earned) {
-                    await addRecord(songId);
+                    // 🎁 SharedPreferences'e unlock zamanını kaydet
+                    final prefs = await SharedPreferences.getInstance();
+                    final unlockTimeKey = 'unlock_time_$songId';
+                    final currentTime = DateTime.now().millisecondsSinceEpoch;
+                    await prefs.setInt(unlockTimeKey, currentTime);
+
                     showClassicSnackBar(context, 'accessOpenedFor'.tr());
                     completer.complete(true); // ✅ Kullanıcı izledi
                   } else {

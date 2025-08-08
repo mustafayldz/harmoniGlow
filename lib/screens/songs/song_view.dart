@@ -30,6 +30,7 @@ class _SongViewState extends State<SongView> {
   @override
   void initState() {
     super.initState();
+
     userProvider = Provider.of<UserProvider>(context, listen: false);
     // Tab controller artık gerekli değil
     vm = SongViewModel();
@@ -63,13 +64,20 @@ class _SongViewState extends State<SongView> {
   /// 🔐 KILIT DURUMU KONTROLÜ - Tüm kurallar burada
   Future<bool> _isSongLocked(SongModel song, bool isBluetoothConnected) async {
     // Eğer şarkı zaten kilitsizse veya Bluetooth bağlıysa -> kilitsiz
-    if (!song.isLocked || isBluetoothConnected) return false;
+    if (!song.isLocked || isBluetoothConnected) {
+      return false;
+    }
 
-    // Eğer kullanıcıya atanmış şarkılar arasında yoksa -> kilitli
-    if (userProvider.user.assignedSongIds.contains(song.songId)) return false;
+    // Eğer kullanıcıya atanmış şarkılar arasında varsa -> kilitsiz
+    if (userProvider.user.assignedSongIds.contains(song.songId)) {
+      return false;
+    }
 
     // Eğer geçici olarak kilit açılmışsa -> kilitsiz
-    if (await _hasValidUnlock(song.songId)) return false;
+    final hasUnlock = await _hasValidUnlock(song.songId);
+    if (hasUnlock) {
+      return false;
+    }
 
     // Yukarıdaki hiçbir durum gerçekleşmediyse -> kilitli
     return true;
@@ -77,24 +85,28 @@ class _SongViewState extends State<SongView> {
 
   /// ⏰ 2 saatlik unlock kontrolü
   Future<bool> _hasValidUnlock(String? songId) async {
-    if (songId == null) return false;
+    if (songId == null) {
+      return false;
+    }
 
     final prefs = await SharedPreferences.getInstance();
     final unlockTimeKey = 'unlock_time_$songId';
     final unlockTime = prefs.getInt(unlockTimeKey);
 
-    if (unlockTime == null) return false;
+    if (unlockTime == null) {
+      return false;
+    }
 
     final currentTime = DateTime.now().millisecondsSinceEpoch;
-    final twoHoursInMs = 2 * 60 * 60 * 1000; // 2 saat
+    final twoMinutesInMs = 2 * 60 * 60 * 1000; // 🎯 PRODUCTION: 2 saat
+    final timeElapsed = currentTime - unlockTime;
 
-    // 2 saat geçti mi kontrol et
-    if (currentTime - unlockTime > twoHoursInMs) {
+    // 2 dakika geçti mi kontrol et
+    if (timeElapsed > twoMinutesInMs) {
       // Süresi dolmuş, temizle
       await prefs.remove(unlockTimeKey);
       return false;
     }
-
     return true; // Hala geçerli
   }
 
@@ -415,14 +427,15 @@ class _SongViewState extends State<SongView> {
           itemCount: songs.length,
           itemBuilder: (context, index) {
             final song = songs[index];
-            return FutureBuilder<bool>(
-              future: _isSongLocked(song, isConnected),
-              builder: (context, snapshot) {
-                final isLocked = snapshot.data ?? false;
-                return Container(
-                  width: 160,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: _buildHorizontalSongCard(
+            return Container(
+              width: 160,
+              margin: const EdgeInsets.only(right: 12),
+              child: FutureBuilder<bool>(
+                future: _isSongLocked(song, isConnected),
+                builder: (context, snapshot) {
+                  final isLocked =
+                      snapshot.data ?? false; // Default false for safety
+                  return _buildHorizontalSongCard(
                     context,
                     song,
                     isConnected,
@@ -430,9 +443,9 @@ class _SongViewState extends State<SongView> {
                     vm,
                     isLocked,
                     isDarkMode,
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             );
           },
         ),
@@ -584,7 +597,8 @@ class _SongViewState extends State<SongView> {
           return FutureBuilder<bool>(
             future: _isSongLocked(song, isConnected),
             builder: (context, snapshot) {
-              final isLocked = snapshot.data ?? false;
+              final isLocked =
+                  snapshot.data ?? false; // Default false for safety
               return _buildGridSongCard(
                 context,
                 song,
@@ -739,7 +753,8 @@ class _SongViewState extends State<SongView> {
           return FutureBuilder<bool>(
             future: _isSongLocked(song, isConnected),
             builder: (context, snapshot) {
-              final isLocked = snapshot.data ?? false;
+              final isLocked =
+                  snapshot.data ?? false; // Default false for safety
               return _buildModernSongCard(
                 context,
                 song,
@@ -966,7 +981,7 @@ class _SongViewState extends State<SongView> {
   void _onUnlockTap(SongModel song) async {
     final success = await showAdConsentSnackBar(context, song.songId ?? '');
     if (success && song.songId != null) {
-      // 2 saatlik unlock zamanını kaydet
+      // 2 dakikalık unlock zamanını kaydet
       await _saveUnlockTime(song.songId!);
 
       // UI'ı güncelle

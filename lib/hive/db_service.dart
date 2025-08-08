@@ -1,41 +1,23 @@
 import 'package:drumly/constants.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:hive/hive.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-
+/// 🔐 SharedPreferences tabanlı unlock sistemi
 Future<void> addRecord(String songId) async {
-  final lazyBox = Hive.lazyBox(Constants.lockSongBox);
-  final timestamp = DateTime.now().toIso8601String();
-  await lazyBox.put(songId, timestamp);
+  final prefs = await SharedPreferences.getInstance();
+  final unlockTimeKey = 'unlock_time_$songId';
+  final currentTime = DateTime.now().millisecondsSinceEpoch;
+
+  await prefs.setInt(unlockTimeKey, currentTime);
 }
 
-Future<void> cleanExpiredRecords() async {
-  final lazyBox = Hive.lazyBox(Constants.lockSongBox);
-  final now = DateTime.now();
-  final keysToRemove = <dynamic>[];
-
-  for (final key in lazyBox.keys) {
-    final stored = await lazyBox.get(key);
-    if (stored is String) {
-      final createdAt = DateTime.tryParse(stored);
-      if (createdAt != null &&
-          // now.difference(createdAt) > const Duration(minutes: 1)) {
-          now.difference(createdAt) > const Duration(hours: 2)) {
-        keysToRemove.add(key);
-      }
-    }
-  }
-
-  for (final key in keysToRemove) {
-    await lazyBox.delete(key);
-  }
-}
+/// 🥁 BeatMaker kayıt işlemleri (LazyBox ile)
 
 bool hasRecord(String songId) {
   final lazyBox = Hive.lazyBox(Constants.lockSongBox);
   return lazyBox.containsKey(songId);
 }
-
 
 Future<void> saveBeatMakerModel(BeatMakerModel beat) async {
   final lazyBox = Hive.lazyBox<BeatMakerModel>(Constants.beatRecordsBox);
