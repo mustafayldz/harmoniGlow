@@ -10,26 +10,25 @@ class VersionUpdateDialog extends StatelessWidget {
     super.key,
     this.onDismiss,
   });
+
   final VersionCheckResult result;
   final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isForceUpdate = result.status == VersionStatus.forceUpdate;
+    final isForceUpdate = result.isForceUpdate; // VersionCheckResult'tan al
 
     return PopScope(
       canPop: !isForceUpdate,
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvokedWithResult: (didPop, _) {
         if (!didPop && isForceUpdate) {
           SystemNavigator.pop();
         }
       },
       child: AlertDialog(
         backgroundColor: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
             Container(
@@ -49,7 +48,7 @@ class VersionUpdateDialog extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                isForceUpdate ? 'forceUpdate'.tr() : 'updateAvailable'.tr(),
+                'updateAvailable'.tr(), // Her zaman aynı başlığı kullan
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -72,73 +71,39 @@ class VersionUpdateDialog extends StatelessWidget {
                     : Colors.black.withValues(alpha: 0.8),
               ),
             ),
-            if (!isForceUpdate) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : Colors.grey.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'currentVersion'.tr(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : Colors.black.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        Text(
-                          result.currentVersion,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? Colors.white : Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : Colors.black.withValues(alpha: 0.6),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'newVersion'.tr(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.6)
-                                : Colors.black.withValues(alpha: 0.6),
-                          ),
-                        ),
-                        Text(
-                          result.latestVersion,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            // Her durumda version karşılaştırmasını göster
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-            ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildVersionColumn(
+                    title: 'currentVersion'.tr(),
+                    value: result.currentVersion,
+                    isDarkMode: isDarkMode,
+                  ),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: isDarkMode
+                        ? Colors.white.withValues(alpha: 0.6)
+                        : Colors.black.withValues(alpha: 0.6),
+                  ),
+                  _buildVersionColumn(
+                    title: 'newVersion'.tr(),
+                    value: result.latestVersion,
+                    isDarkMode: isDarkMode,
+                    valueColor: isForceUpdate ? Colors.red : Colors.green,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -184,33 +149,53 @@ class VersionUpdateDialog extends StatelessWidget {
     );
   }
 
+  Widget _buildVersionColumn({
+    required String title,
+    required String value,
+    required bool isDarkMode,
+    Color? valueColor,
+  }) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : Colors.black.withValues(alpha: 0.6),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: valueColor ?? (isDarkMode ? Colors.white : Colors.black),
+            ),
+          ),
+        ],
+      );
+
   Future<void> _openStore(BuildContext context) async {
     try {
       final uri = Uri.parse(result.storeUrl);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${'storeCannotOpen'.tr()}: ${result.storeUrl}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        _showError(context, '${'storeCannotOpen'.tr()}: ${result.storeUrl}');
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${'storeOpenError'.tr()}: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      _showError(context, '${'storeOpenError'.tr()}: $e');
+    }
+  }
+
+  void _showError(BuildContext context, String message) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
     }
   }
 }
@@ -218,16 +203,21 @@ class VersionUpdateDialog extends StatelessWidget {
 class VersionChecker {
   static Future<bool> checkAndShowUpdateDialog(BuildContext context) async {
     try {
+      debugPrint(
+          '...................................................Checking for updates...');
       final versionService = VersionControlService();
       final result = await versionService.checkVersion();
 
+      debugPrint(
+          '...................................................Version check result: ${result.status}');
+
       if (!context.mounted) return false;
 
-      if (result.status == VersionStatus.updateAvailable ||
-          result.status == VersionStatus.forceUpdate) {
+      if (result.status == VersionStatus.updateAvailable) {
         showDialog(
           context: context,
-          barrierDismissible: false,
+          barrierDismissible:
+              !result.isForceUpdate, // Force update ise dismiss edilemez
           builder: (context) => VersionUpdateDialog(
             result: result,
             onDismiss: () {},
@@ -236,7 +226,7 @@ class VersionChecker {
         return true;
       }
       return false;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }

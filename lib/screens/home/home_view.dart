@@ -21,29 +21,33 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _viewModel = HomeViewModel(vsync: this);
-    
+
     // initState'de context henüz ready olmayabilir, post frame callback kullan
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _viewModel.initialize(context);
       _checkForUpdates();
     });
   }
-  
+
   /// 🔄 Version kontrolü ve popup gösterimi
   void _checkForUpdates() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
-    
+
+    debugPrint(
+        '...................................................Checking for updates... ${userProvider.hasShownVersionCheckThisSession}');
+
     // Eğer bu session'da zaten gösterildiyse tekrar gösterme
     if (userProvider.hasShownVersionCheckThisSession) {
       return;
     }
-    
+
     // Uygulama tam yüklendikten sonra kontrol et
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     if (mounted) {
-      final wasDialogShown = await VersionChecker.checkAndShowUpdateDialog(context);
-      
+      final wasDialogShown =
+          await VersionChecker.checkAndShowUpdateDialog(context);
+
       // Sadece dialog gösterildiyse flag'i işaretle
       if (wasDialogShown) {
         userProvider.markVersionCheckAsShown();
