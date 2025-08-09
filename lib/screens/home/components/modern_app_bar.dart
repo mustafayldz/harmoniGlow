@@ -1,9 +1,6 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/screens/home/components/bluetooth_banner.dart';
-import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/home/components/notification_button.dart';
-import 'package:drumly/widgets/version_update_dialog.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
