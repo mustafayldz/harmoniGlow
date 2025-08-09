@@ -1,6 +1,7 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/screens/home/components/bluetooth_banner.dart';
 import 'package:drumly/screens/home/components/notification_button.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -54,7 +55,7 @@ class ModernAppBar extends StatelessWidget {
                     if (!isSmallScreen) ...[
                       const SizedBox(height: 2),
                       Text(
-                        'Beat Your Rhythm',
+                        'followTheBeat'.tr(),
                         style: TextStyle(
                           fontSize: 12,
                           color: isDarkMode

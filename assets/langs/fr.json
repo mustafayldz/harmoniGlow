@@ -177,5 +177,6 @@
   "later": "Plus Tard",
   "update": "Mettre à Jour",
   "storeCannotOpen": "Impossible d'ouvrir le magasin",
-  "storeOpenError": "Erreur lors de l'ouverture du magasin"
+  "storeOpenError": "Erreur lors de l'ouverture du magasin",
+  "followTheBeat": "Suivez le rythme"
 }
