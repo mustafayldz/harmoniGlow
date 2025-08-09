@@ -37,70 +37,179 @@ List<int> splitToBytes(int value) {
 Future<bool> showAdConsentSnackBar(BuildContext context, String songId) async {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
-  final completer = Completer<bool>();
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: isDark ? Colors.grey[850] : Colors.grey[200],
-      duration: const Duration(seconds: 10),
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                  : const Color(0xFF4F46E5).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.lock_open_rounded,
+              color: isDark ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'unlockSongTitle'.tr(),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'toPlayThisSong'.tr(),
+            'unlockSongMessage'.tr(),
             style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.8)
+                  : Colors.black.withValues(alpha: 0.8),
+              fontSize: 16,
+              height: 1.4,
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  completer.complete(false); // ❌ Kullanıcı reddetti
-                },
-                child: const Text('decline').tr(),
-              ),
-              TextButton(
-                onPressed: () async {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-                  final adService = AdServiceReward();
-                  final bool earned =
-                      await adService.showRewardedAdWithConfetti(context);
-
-                  if (earned) {
-                    // 🎁 SharedPreferences'e unlock zamanını kaydet
-                    final prefs = await SharedPreferences.getInstance();
-                    final unlockTimeKey = 'unlock_time_$songId';
-                    final currentTime = DateTime.now().millisecondsSinceEpoch;
-                    await prefs.setInt(unlockTimeKey, currentTime);
-
-                    showClassicSnackBar(context, 'accessOpenedFor'.tr());
-                    completer.complete(true); // ✅ Kullanıcı izledi
-                  } else {
-                    showClassicSnackBar(
-                      context,
-                      'adNotWatchedOrErrorOccurred'.tr(),
-                    );
-                    completer
-                        .complete(false); // ❌ Kullanıcı izlemeyi tamamlamadı
-                  }
-                },
-                child: const Text('accept').tr(),
-              ),
-            ],
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(false);
+          },
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          child: Text(
+            'cancel'.tr(),
+            style: TextStyle(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.7)
+                  : Colors.black.withValues(alpha: 0.7),
+              fontSize: 16,
+            ),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.of(context).pop(true);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor:
+                isDark ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 0,
+          ),
+          child: Text(
+            'watchAd'.tr(),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     ),
   );
 
-  return completer.future; // Burada sonucu döndürür
+  if (result == true) {
+    // Loading dialog göster
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          content: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  'loadingAd'.tr(),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    try {
+      final adService = AdServiceReward();
+      final bool earned = await adService.showRewardedAdWithConfetti(context);
+
+      // Loading dialog'ı kapat
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (earned) {
+        // 🎁 SharedPreferences'e unlock zamanını kaydet
+        final prefs = await SharedPreferences.getInstance();
+        final unlockTimeKey = 'unlock_time_$songId';
+        final currentTime = DateTime.now().millisecondsSinceEpoch;
+        await prefs.setInt(unlockTimeKey, currentTime);
+
+        if (context.mounted) {
+          showClassicSnackBar(context, 'accessOpenedFor'.tr());
+        }
+        return true;
+      } else {
+        if (context.mounted) {
+          showClassicSnackBar(context, 'adNotWatchedOrErrorOccurred'.tr());
+        }
+        return false;
+      }
+    } catch (e) {
+      // Hata durumunda loading dialog'ı kapat
+      if (context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      if (context.mounted) {
+        showClassicSnackBar(context, 'errorOccurred'.tr());
+      }
+      return false;
+    }
+  }
+
+  return false;
 }
 
 Map<String, dynamic> decodeJwtPayload(String token) {

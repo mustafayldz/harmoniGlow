@@ -178,5 +178,10 @@
   "update": "Mettre à Jour",
   "storeCannotOpen": "Impossible d'ouvrir le magasin",
   "storeOpenError": "Erreur lors de l'ouverture du magasin",
-  "followTheBeat": "Suivez le rythme"
+  "followTheBeat": "Suivez le rythme",
+  "unlockSongTitle": "Débloquer la Chanson",
+  "unlockSongMessage": "Pour lire cette chanson, vous devez d'abord regarder une annonce de soutien.",
+  "watchAd": "Regarder l'Annonce",
+  "loadingAd": "Chargement de l'annonce...",
+  "errorOccurred": "Une erreur s'est produite"
 }

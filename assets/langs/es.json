@@ -178,5 +178,10 @@
   "update": "Actualizar",
   "storeCannotOpen": "No se puede abrir la tienda",
   "storeOpenError": "Error al abrir la tienda",
-  "followTheBeat": "Sigue el Ritmo"
+  "followTheBeat": "Sigue el Ritmo",
+  "unlockSongTitle": "Desbloquear Canción",
+  "unlockSongMessage": "Para reproducir esta canción, primero debes ver un anuncio de apoyo.",
+  "watchAd": "Ver Anuncio",
+  "loadingAd": "Cargando anuncio...",
+  "errorOccurred": "Ocurrió un error"
 }

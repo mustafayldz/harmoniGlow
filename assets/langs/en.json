@@ -178,7 +178,12 @@
   "update": "Update",
   "storeCannotOpen": "Store cannot be opened",
   "storeOpenError": "Error opening store",
-  "followTheBeat": "Follow the Beat"
+  "followTheBeat": "Follow the Beat",
+  "unlockSongTitle": "Unlock Song",
+  "unlockSongMessage": "To play this song, you first need to watch a support ad.",
+  "watchAd": "Watch Ad",
+  "loadingAd": "Loading ad...",
+  "errorOccurred": "Error occurred"
 }
 
 

@@ -178,5 +178,10 @@
   "update": "Güncelle",
   "storeCannotOpen": "Store açılamadı",
   "storeOpenError": "Store açılırken hata",
-  "followTheBeat": "Ritmi Takip Et"
+  "followTheBeat": "Ritmi Takip Et",
+  "unlockSongTitle": "Şarkıyı Aç",
+  "unlockSongMessage": "Bu şarkıyı dinlemek için önce bir destek reklamı izlemeniz gerekir.",
+  "watchAd": "Reklam İzle",
+  "loadingAd": "Reklam yükleniyor...",
+  "errorOccurred": "Hata oluştu"
 }

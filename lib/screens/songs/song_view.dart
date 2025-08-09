@@ -9,6 +9,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:confetti/confetti.dart';
 
 class SongView extends StatefulWidget {
   const SongView({super.key});
@@ -23,6 +24,7 @@ class _SongViewState extends State<SongView> {
 
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final ConfettiController _confettiController;
   String _lastSearch = '';
   bool _isGridView = false; // Grid/List toggle için
   late final UserProvider userProvider;
@@ -35,6 +37,8 @@ class _SongViewState extends State<SongView> {
     // Tab controller artık gerekli değil
     vm = SongViewModel();
     vm.init(context);
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 3));
 
     // Build sırasında setState çağrılmasını önlemek için
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,6 +53,7 @@ class _SongViewState extends State<SongView> {
     // Tab controller dispose kaldırıldı
     _searchController.dispose();
     _scrollController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -145,45 +150,72 @@ class _SongViewState extends State<SongView> {
     return ChangeNotifierProvider<SongViewModel>.value(
       value: vm,
       child: Consumer<SongViewModel>(
-        builder: (context, vm, _) => Scaffold(
-          body: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDarkMode
-                    ? [
-                        const Color(0xFF0F172A), // Dark slate
-                        const Color(0xFF1E293B), // Lighter slate
-                        const Color(0xFF334155), // Even lighter
-                      ]
-                    : [
-                        const Color(0xFFF8FAFC), // Light gray
-                        const Color(0xFFE2E8F0), // Slightly darker
-                        const Color(0xFFCBD5E1), // Even darker
-                      ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+        builder: (context, vm, _) => Stack(
+          children: [
+            Scaffold(
+              body: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDarkMode
+                        ? [
+                            const Color(0xFF0F172A), // Dark slate
+                            const Color(0xFF1E293B), // Lighter slate
+                            const Color(0xFF334155), // Even lighter
+                          ]
+                        : [
+                            const Color(0xFFF8FAFC), // Light gray
+                            const Color(0xFFE2E8F0), // Slightly darker
+                            const Color(0xFFCBD5E1), // Even darker
+                          ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      // Modern App Bar + Search
+                      _buildModernHeader(context, isDarkMode),
+
+                      // Main Content - No Tabs
+                      Expanded(
+                        child: _buildMainContent(
+                          vm,
+                          isConnected,
+                          bluetoothBloc,
+                          isDarkMode,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            child: SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  // Modern App Bar + Search
-                  _buildModernHeader(context, isDarkMode),
-
-                  // Main Content - No Tabs
-                  Expanded(
-                    child: _buildMainContent(
-                      vm,
-                      isConnected,
-                      bluetoothBloc,
-                      isDarkMode,
-                    ),
-                  ),
+            // Confetti Widget
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirection: 1.57, // radians - downwards
+                blastDirectionality: BlastDirectionality.explosive,
+                emissionFrequency: 0.05,
+                numberOfParticles: 50,
+                maxBlastForce: 100,
+                minBlastForce: 80,
+                gravity: 0.3,
+                particleDrag: 0.05,
+                colors: const [
+                  Colors.green,
+                  Colors.blue,
+                  Colors.pink,
+                  Colors.orange,
+                  Colors.purple,
+                  Colors.yellow,
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -980,9 +1012,13 @@ class _SongViewState extends State<SongView> {
   /// 🎁 Rewarded reklam göster ve unlock yap
   void _onUnlockTap(SongModel song) async {
     final success = await showAdConsentSnackBar(context, song.songId ?? '');
+
     if (success && song.songId != null) {
       // 2 dakikalık unlock zamanını kaydet
       await _saveUnlockTime(song.songId!);
+
+      // Confetti efekti başlat
+      _confettiController.play();
 
       // UI'ı güncelle
       setState(() {});
