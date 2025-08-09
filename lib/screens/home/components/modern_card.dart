@@ -114,11 +114,22 @@ class ModernCard extends StatelessWidget {
       await FirebaseAnalytics.instance.logEvent(name: key.replaceAll(' ', '_'));
       if (!context.mounted) return;
 
-      // 🎯 Beat Maker için reklam göster
+      // 🎯 Beat Maker için reklam göster ve tamamlanmasını bekle
       if (key == 'beat maker') {
-        await AdService.instance.showInterstitialAd();
+        // Reklam yüklenmesini ve gösterilmesini bekle
+        final bool adCompleted = await AdService.instance.showInterstitialAd();
+
+        // Eğer reklam başarıyla gösterilmediyse veya kapatılmadıysa navigasyon yapma
+        if (!adCompleted) {
+          debugPrint('Ad not completed, navigation cancelled');
+          return;
+        }
+
+        // Context'in hala geçerli olduğundan emin ol
+        if (!context.mounted) return;
       }
 
+      // Reklam tamamlandıktan sonra navigasyon yap
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => destination),
