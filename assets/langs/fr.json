@@ -167,5 +167,15 @@
   "button_text_short": "Envoyer une Demande",
   "button_text_long": "Envoyer une Demande de Chanson",
   "connected": "Connecté",
-  "notConnected": "Non Connecté"
+  "notConnected": "Non Connecté",
+  "maintenanceMode": "Mode Maintenance",
+  "forceUpdate": "Mise à Jour Forcée",
+  "updateAvailable": "Mise à Jour Disponible",
+  "currentVersion": "Version Actuelle",
+  "newVersion": "Nouvelle Version",
+  "ok": "OK",
+  "later": "Plus Tard",
+  "update": "Mettre à Jour",
+  "storeCannotOpen": "Impossible d'ouvrir le magasin",
+  "storeOpenError": "Erreur lors de l'ouverture du magasin"
 }

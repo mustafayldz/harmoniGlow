@@ -167,5 +167,15 @@
   "button_text_short": "İstek Gönder",
   "button_text_long": "Şarkı İsteği Gönder",
   "connected": "Bağlandı",
-  "notConnected": "Bağlı Değil"
+  "notConnected": "Bağlı Değil",
+  "maintenanceMode": "Bakım Modu",
+  "forceUpdate": "Zorunlu Güncelleme",
+  "updateAvailable": "Güncelleme Mevcut",
+  "currentVersion": "Mevcut Versiyon",
+  "newVersion": "Yeni Versiyon",
+  "ok": "Tamam",
+  "later": "Sonra",
+  "update": "Güncelle",
+  "storeCannotOpen": "Store açılamadı",
+  "storeOpenError": "Store açılırken hata"
 }

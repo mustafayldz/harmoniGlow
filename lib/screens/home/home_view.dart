@@ -2,6 +2,8 @@ import 'package:drumly/screens/home/components/home_cards_grid.dart';
 import 'package:drumly/screens/home/components/modern_app_bar.dart';
 import 'package:drumly/screens/home/components/promotion_card.dart';
 import 'package:drumly/screens/home/home_viewmodel.dart';
+import 'package:drumly/widgets/version_update_dialog.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,7 +21,34 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _viewModel = HomeViewModel(vsync: this);
-    _viewModel.initialize();
+    
+    // initState'de context henüz ready olmayabilir, post frame callback kullan
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _viewModel.initialize(context);
+      _checkForUpdates();
+    });
+  }
+  
+  /// 🔄 Version kontrolü ve popup gösterimi
+  void _checkForUpdates() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    // Eğer bu session'da zaten gösterildiyse tekrar gösterme
+    if (userProvider.hasShownVersionCheckThisSession) {
+      return;
+    }
+    
+    // Uygulama tam yüklendikten sonra kontrol et
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    if (mounted) {
+      final wasDialogShown = await VersionChecker.checkAndShowUpdateDialog(context);
+      
+      // Sadece dialog gösterildiyse flag'i işaretle
+      if (wasDialogShown) {
+        userProvider.markVersionCheckAsShown();
+      }
+    }
   }
 
   @override

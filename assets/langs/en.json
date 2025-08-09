@@ -167,7 +167,17 @@
   "button_text_short": "Send Request",
   "button_text_long": "Send Song Request",
   "connected": "Connected",
-  "notConnected": "Not Connected"
+  "notConnected": "Not Connected",
+  "maintenanceMode": "Maintenance Mode",
+  "forceUpdate": "Force Update",
+  "updateAvailable": "Update Available",
+  "currentVersion": "Current Version",
+  "newVersion": "New Version",
+  "ok": "OK",
+  "later": "Later",
+  "update": "Update",
+  "storeCannotOpen": "Store cannot be opened",
+  "storeOpenError": "Error opening store"
 }
 
 

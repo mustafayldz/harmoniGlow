@@ -7,6 +7,7 @@ import 'package:drumly/provider/notification_provider.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/notification_handler.dart';
+import 'package:drumly/services/version_control_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -69,6 +70,11 @@ void main() async {
 
   // Token alma işlemi - performansı optimize et
   await notificationService.getTokenManually();
+
+  // 📱 Version Control Service'i başlat (background'da)
+  VersionControlService().initialize().catchError((e) {
+    debugPrint('❌ [VERSION] Version Control başlatma hatası: $e');
+  });
 
   runApp(
     EasyLocalization(

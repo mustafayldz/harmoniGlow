@@ -167,5 +167,15 @@
   "button_text_short": "Отправить запрос",
   "button_text_long": "Отправить запрос песни",
   "connected": "Подключено",
-  "notConnected": "Не подключено"
+  "notConnected": "Не подключено",
+  "maintenanceMode": "Режим обслуживания",
+  "forceUpdate": "Принудительное обновление",
+  "updateAvailable": "Доступно обновление",
+  "currentVersion": "Текущая версия",
+  "newVersion": "Новая версия",
+  "ok": "ОК",
+  "later": "Позже",
+  "update": "Обновить",
+  "storeCannotOpen": "Невозможно открыть магазин",
+  "storeOpenError": "Ошибка при открытии магазина"
 }

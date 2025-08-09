@@ -2,9 +2,12 @@ import 'package:drumly/screens/home/components/card_data.dart';
 import 'package:drumly/screens/my_drum/drum_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/adMob/ad_service.dart';
+import 'package:drumly/services/version_control_service.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:drumly/constants.dart';
+import 'package:provider/provider.dart';
 
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({required TickerProvider vsync}) {
@@ -48,20 +51,31 @@ class HomeViewModel extends ChangeNotifier {
     );
   }
 
-  void initialize() {
+  void initialize(BuildContext context) {
     _checkLocalStorage();
     _initCards();
     _animationController.forward();
-
+    
     // 🎯 Ana sayfa açıldıktan 30 saniye sonra reklam göster
-    _scheduleInitialAd();
+    _scheduleInitialAd(context);
   }
 
   /// 📺 Ana sayfa için zamanlı reklam
-  void _scheduleInitialAd() {
-    Future.delayed(const Duration(seconds: 30), () {
-      AdService.instance.showInterstitialAd();
-    });
+  void _scheduleInitialAd(BuildContext context) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    
+    // Eğer bu session'da zaten gösterildiyse tekrar gösterme
+    if (userProvider.hasShownInitialAdThisSession) {
+      return;
+    }
+    
+    await Future.delayed(const Duration(seconds: 30));
+    
+    // Flag'i işaretle ki bir daha gösterilmesin
+    userProvider.markInitialAdAsShown();
+    
+    // Reklam göster
+    AdService.instance.showInterstitialAd();
   }
 
   void _initCards() {

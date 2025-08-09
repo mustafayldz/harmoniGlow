@@ -167,5 +167,15 @@
   "button_text_short": "Enviar Solicitud",
   "button_text_long": "Enviar Solicitud de Canción",
   "connected": "Conectado",
-  "notConnected": "No Conectado"
+  "notConnected": "No Conectado",
+  "maintenanceMode": "Modo de Mantenimiento",
+  "forceUpdate": "Actualización Forzada",
+  "updateAvailable": "Actualización Disponible",
+  "currentVersion": "Versión Actual",
+  "newVersion": "Nueva Versión",
+  "ok": "OK",
+  "later": "Más Tarde",
+  "update": "Actualizar",
+  "storeCannotOpen": "No se puede abrir la tienda",
+  "storeOpenError": "Error al abrir la tienda"
 }

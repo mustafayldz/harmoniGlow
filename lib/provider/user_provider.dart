@@ -11,12 +11,38 @@ class UserProvider with ChangeNotifier {
   // User data
   UserModel? _userModel;
   bool _isLoading = false;
+  
+  // 🎯 Session flags
+  bool _hasShownVersionCheckThisSession = false;
+  bool _hasShownInitialAdThisSession = false;
 
   // Getters
   UserModel? get userModel => _userModel;
   UserModel get user => _userModel!;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _userModel != null;
+  
+  // 🎯 Session flag getters
+  bool get hasShownVersionCheckThisSession => _hasShownVersionCheckThisSession;
+  bool get hasShownInitialAdThisSession => _hasShownInitialAdThisSession;
+
+  // 🎯 Session flag setters
+  void markVersionCheckAsShown() {
+    _hasShownVersionCheckThisSession = true;
+    notifyListeners();
+  }
+  
+  void markInitialAdAsShown() {
+    _hasShownInitialAdThisSession = true;
+    notifyListeners();
+  }
+  
+  // 🔄 Reset session flags (uygulamanın tamamen yeniden başlatılması durumunda)
+  void resetSessionFlags() {
+    _hasShownVersionCheckThisSession = false;
+    _hasShownInitialAdThisSession = false;
+    notifyListeners();
+  }
 
   // Setter for user data
   void setUser(UserModel user) {
