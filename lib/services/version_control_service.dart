@@ -53,7 +53,6 @@ class VersionControlService {
         latestVersion: '',
         message: '',
         storeUrl: '',
-        isForceUpdate: false,
       );
     }
 
@@ -62,7 +61,8 @@ class VersionControlService {
 
     debugPrint('📱 [VERSION] Mevcut versiyon: $currentVersion');
     debugPrint(
-        '📱 [VERSION] Platform: ${defaultTargetPlatform == TargetPlatform.iOS ? "iOS" : "Android"}');
+      '📱 [VERSION] Platform: ${defaultTargetPlatform == TargetPlatform.iOS ? "iOS" : "Android"}',
+    );
 
     // Platform'a göre config al
     final platformConfig = _config!.getPlatformConfig();
@@ -84,9 +84,11 @@ class VersionControlService {
       final message =
           _config!.messages.getLocalizedMessage(isForceUpdate: isForceUpdate);
 
-      debugPrint(isForceUpdate
-          ? '🚨 [VERSION] Force update gerekli'
-          : '📢 [VERSION] Güncelleme mevcut');
+      debugPrint(
+        isForceUpdate
+            ? '🚨 [VERSION] Force update gerekli'
+            : '📢 [VERSION] Güncelleme mevcut',
+      );
 
       // Her durumda updateAvailable döndür, ama result içinde force bilgisini tut
       return VersionCheckResult(
@@ -105,7 +107,6 @@ class VersionControlService {
         latestVersion: latestVersion,
         message: '',
         storeUrl: storeUrl,
-        isForceUpdate: false,
       );
     }
   }

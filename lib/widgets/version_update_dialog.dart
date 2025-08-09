@@ -203,13 +203,8 @@ class VersionUpdateDialog extends StatelessWidget {
 class VersionChecker {
   static Future<bool> checkAndShowUpdateDialog(BuildContext context) async {
     try {
-      debugPrint(
-          '...................................................Checking for updates...');
       final versionService = VersionControlService();
       final result = await versionService.checkVersion();
-
-      debugPrint(
-          '...................................................Version check result: ${result.status}');
 
       if (!context.mounted) return false;
 

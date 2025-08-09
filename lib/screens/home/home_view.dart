@@ -33,9 +33,6 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   void _checkForUpdates() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    debugPrint(
-        '...................................................Checking for updates... ${userProvider.hasShownVersionCheckThisSession}');
-
     // Eğer bu session'da zaten gösterildiyse tekrar gösterme
     if (userProvider.hasShownVersionCheckThisSession) {
       return;

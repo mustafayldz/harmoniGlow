@@ -21,7 +21,6 @@ class VersionConfigModel {
       debugPrint('🔍 [VERSION] Raw config JSON: $configJson');
 
       final rawConfig = json.decode(configJson) as Map<String, dynamic>;
-      debugPrint('🔍 [VERSION] Parsed config: $rawConfig');
 
       // version_config anahtarının altındaki veriyi al
       final config = rawConfig['version_config'] as Map<String, dynamic>?;
@@ -37,12 +36,6 @@ class VersionConfigModel {
         androidConfig: PlatformConfig.fromJson(config['android'] ?? {}),
         iosConfig: PlatformConfig.fromJson(config['ios'] ?? {}),
       );
-
-      debugPrint('✅ [VERSION] Config başarıyla parse edildi');
-      debugPrint(
-          '📱 [VERSION] Android latest: ${model.androidConfig.latest}, force: ${model.androidConfig.force}');
-      debugPrint(
-          '📱 [VERSION] iOS latest: ${model.iosConfig.latest}, force: ${model.iosConfig.force}');
 
       return model;
     } catch (e) {
@@ -62,11 +55,8 @@ class VersionConfigModel {
   final PlatformConfig iosConfig;
 
   // Platform'a göre config al
-  PlatformConfig getPlatformConfig() {
-    return defaultTargetPlatform == TargetPlatform.iOS
-        ? iosConfig
-        : androidConfig;
-  }
+  PlatformConfig getPlatformConfig() =>
+      defaultTargetPlatform == TargetPlatform.iOS ? iosConfig : androidConfig;
 }
 
 class VersionMessages {
@@ -75,12 +65,11 @@ class VersionMessages {
     required this.force,
   });
 
-  factory VersionMessages.fromJson(Map<String, dynamic> json) {
-    return VersionMessages(
-      normal: Map<String, String>.from(json['normal'] ?? {}),
-      force: Map<String, String>.from(json['force'] ?? {}),
-    );
-  }
+  factory VersionMessages.fromJson(Map<String, dynamic> json) =>
+      VersionMessages(
+        normal: Map<String, String>.from(json['normal'] ?? {}),
+        force: Map<String, String>.from(json['force'] ?? {}),
+      );
 
   final Map<String, String> normal;
   final Map<String, String> force;
@@ -101,13 +90,11 @@ class PlatformConfig {
     required this.storeUrl,
   });
 
-  factory PlatformConfig.fromJson(Map<String, dynamic> json) {
-    return PlatformConfig(
-      latest: json['latest']?.toString() ?? '1.0.0',
-      force: json['force'] ?? false,
-      storeUrl: json['storeUrl']?.toString() ?? '',
-    );
-  }
+  factory PlatformConfig.fromJson(Map<String, dynamic> json) => PlatformConfig(
+        latest: json['latest']?.toString() ?? '1.0.0',
+        force: json['force'] ?? false,
+        storeUrl: json['storeUrl']?.toString() ?? '',
+      );
 
   final String latest;
   final bool force;
