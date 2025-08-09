@@ -204,7 +204,6 @@ class _SongViewState extends State<SongView> {
                 maxBlastForce: 100,
                 minBlastForce: 80,
                 gravity: 0.3,
-                particleDrag: 0.05,
                 colors: const [
                   Colors.green,
                   Colors.blue,
