@@ -1,6 +1,6 @@
 name: drumly
 description: "Light Up Your Beat"
-version: 1.0.7+19
+version: 1.0.8+20
 
 environment:
   sdk: ^3.5.4
@@ -51,8 +51,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
-  build_runner: ^2.4.15
-  hive_generator: ^2.0.1
+  build_runner: ^2.8.0
 
 flutter:
   uses-material-design: true
@@ -67,3 +66,8 @@ flutter:
     - assets/sounds/
     - assets/langs/
     - assets/animation/
+
+dependency_overrides:
+  # Updated versions that support Java 21 and Android SDK 35
+  path_provider_android: ^2.2.18
+  webview_flutter_android: ^4.10.2

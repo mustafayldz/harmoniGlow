@@ -94,7 +94,7 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                             child: Switch(
                               value: appProvider.isDarkMode,
                               onChanged: (_) => vm.toggleTheme(),
-                              activeColor: const Color(0xFF6366F1),
+                              activeThumbColor: const Color(0xFF6366F1),
                               activeTrackColor: const Color(0xFF6366F1)
                                   .withValues(alpha: 0.3),
                               inactiveThumbColor: Colors.grey,

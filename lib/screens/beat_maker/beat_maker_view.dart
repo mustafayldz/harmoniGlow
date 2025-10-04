@@ -12,8 +12,9 @@ class BeatMakerView extends StatefulWidget {
 }
 
 class _BeatMakerViewState extends State<BeatMakerView> {
-  late final BeatMakerViewmodel vm;
+  BeatMakerViewmodel? vm;
   bool isRecording = false;
+  bool _disposed = false;
 
   final List<Map<String, dynamic>> drumPieces = [
     {
@@ -61,7 +62,7 @@ class _BeatMakerViewState extends State<BeatMakerView> {
   @override
   void initState() {
     super.initState();
-    vm = BeatMakerViewmodel();
+    _initializeViewModel();
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
@@ -69,18 +70,63 @@ class _BeatMakerViewState extends State<BeatMakerView> {
     ]);
   }
 
+  void _initializeViewModel() {
+    try {
+      vm = BeatMakerViewmodel();
+    } catch (e) {
+      debugPrint('Error initializing BeatMakerViewmodel: \$e');
+    }
+  }
+
   @override
   void dispose() {
-    vm.disposeAll(); // 🎯 player’ları ve timer’ı temizle
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    _disposed = true;
+
+    try {
+      vm?.disposeAll();
+    } catch (e) {
+      debugPrint('Error disposing BeatMakerViewmodel: \$e');
+    }
+
+    try {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } catch (e) {
+      debugPrint('Error resetting orientation: \$e');
+    }
+
     super.dispose();
+  }
+
+  void _safeRecordingToggle() {
+    if (_disposed || vm == null) return;
+
+    try {
+      setState(() => isRecording = !isRecording);
+      if (isRecording) {
+        vm!.startRecording();
+      } else {
+        vm!.stopRecording(context);
+      }
+    } catch (e) {
+      debugPrint('Error toggling recording: \$e');
+      if (mounted) {
+        setState(() => isRecording = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (vm == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text('makeYourOwnBeat'.tr())),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final screenSize = MediaQuery.of(context).size;
     final screenWidth = screenSize.width;
     final screenHeight = screenSize.height;
@@ -99,11 +145,15 @@ class _BeatMakerViewState extends State<BeatMakerView> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) {
-          vm.disposeAll(); // 🎯 player’ları ve timer’ı temizle
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
+          try {
+            vm?.disposeAll();
+            SystemChrome.setPreferredOrientations([
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+            ]);
+          } catch (e) {
+            debugPrint('Error in PopScope callback: \$e');
+          }
         }
       },
       child: Scaffold(
@@ -114,14 +164,7 @@ class _BeatMakerViewState extends State<BeatMakerView> {
               padding: const EdgeInsets.only(right: 16),
               child: InkWell(
                 borderRadius: BorderRadius.circular(24),
-                onTap: () {
-                  setState(() => isRecording = !isRecording);
-                  if (isRecording) {
-                    vm.startRecording();
-                  } else {
-                    vm.stopRecording(context);
-                  }
-                },
+                onTap: _safeRecordingToggle,
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -171,7 +214,7 @@ class _BeatMakerViewState extends State<BeatMakerView> {
                   imagePath: piece['image']!,
                   drumKey: piece['key']!,
                   initialPosition: initialPositions[index],
-                  vm: vm,
+                  vm: vm!,
                   scale: piece['scale']!,
                 );
               }),
@@ -204,44 +247,95 @@ class DrumPiece extends StatefulWidget {
 }
 
 class _DrumPieceState extends State<DrumPiece> {
-  late Offset position = widget.initialPosition;
+  Offset? position;
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
+    position = widget.initialPosition;
     _loadPosition();
   }
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   Future<void> _loadPosition() async {
-    final saved = await StorageService().loadDrumPosition(widget.drumKey);
-    if (saved != null && mounted) {
-      setState(() => position = saved);
+    if (_disposed) return;
+
+    try {
+      final saved = await StorageService().loadDrumPosition(widget.drumKey);
+      if (saved != null && mounted && !_disposed) {
+        setState(() => position = saved);
+      }
+    } catch (e) {
+      debugPrint('Error loading drum position for ${widget.drumKey}: \$e');
+    }
+  }
+
+  Future<void> _savePosition(Offset newPosition) async {
+    if (_disposed) return;
+
+    try {
+      await StorageService().saveDrumPosition(widget.drumKey, newPosition);
+    } catch (e) {
+      debugPrint('Error saving drum position for ${widget.drumKey}: \$e');
+    }
+  }
+
+  void _onTap() {
+    if (_disposed) return;
+
+    try {
+      widget.vm.playSound(context, widget.drumKey);
+    } catch (e) {
+      debugPrint('Error playing sound for ${widget.drumKey}: \$e');
+    }
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (_disposed || position == null) return;
+
+    try {
+      final screenSize = MediaQuery.of(context).size;
+      final double pieceSize = screenSize.width * widget.scale;
+
+      final Offset newPosition = position! + details.delta;
+      final double maxX = screenSize.width - pieceSize;
+      final double maxY = screenSize.height - pieceSize;
+
+      final clampedPosition = Offset(
+        newPosition.dx.clamp(0.0, maxX),
+        newPosition.dy.clamp(0.0, maxY),
+      );
+
+      if (mounted && !_disposed) {
+        setState(() => position = clampedPosition);
+        _savePosition(clampedPosition);
+      }
+    } catch (e) {
+      debugPrint('Error updating drum position for ${widget.drumKey}: \$e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_disposed || position == null) {
+      return const SizedBox.shrink();
+    }
+
     final screenSize = MediaQuery.of(context).size;
     final double pieceSize = screenSize.width * widget.scale;
 
     return Positioned(
-      left: position.dx,
-      top: position.dy,
+      left: position!.dx,
+      top: position!.dy,
       child: GestureDetector(
-        onTap: () => widget.vm.playSound(context, widget.drumKey),
-        onPanUpdate: (details) async {
-          setState(() {
-            final Offset newPosition = position + details.delta;
-            final double maxX = screenSize.width - pieceSize;
-            final double maxY = screenSize.height - pieceSize;
-
-            position = Offset(
-              newPosition.dx.clamp(0.0, maxX),
-              newPosition.dy.clamp(0.0, maxY),
-            );
-          });
-          await StorageService().saveDrumPosition(widget.drumKey, position);
-        },
+        onTap: _onTap,
+        onPanUpdate: _onPanUpdate,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -250,12 +344,33 @@ class _DrumPieceState extends State<DrumPiece> {
               semanticLabel: widget.drumKey,
               width: pieceSize,
               height: pieceSize,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: pieceSize,
+                height: pieceSize,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.music_note,
+                  size: pieceSize * 0.5,
+                  color: Colors.grey.shade600,
+                ),
+              ),
             ),
             Text(
               widget.drumKey.toUpperCase(),
               style: TextStyle(
                 fontSize: pieceSize * 0.08,
                 color: Colors.white,
+                fontWeight: FontWeight.bold,
+                shadows: const [
+                  Shadow(
+                    offset: Offset(1, 1),
+                    blurRadius: 2,
+                    color: Colors.black54,
+                  ),
+                ],
               ),
               textAlign: TextAlign.center,
             ),

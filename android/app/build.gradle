@@ -16,8 +16,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.drumly.mobile"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "25.1.8937393"
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -31,7 +31,7 @@ android {
 
     defaultConfig {
         applicationId = "com.drumly.mobile"
-        minSdk = 23
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
