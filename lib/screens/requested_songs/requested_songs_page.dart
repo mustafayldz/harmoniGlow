@@ -16,38 +16,30 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
   List<SongRequestModel> _songRequests = [];
   bool _isLoading = false;
   String _selectedStatus = 'all';
-  late TabController _tabController;
 
   // Pagination
   int _currentPage = 0;
   final int _limit = 20;
   bool _hasMore = true;
 
+  late TabController _tabController;
+  void _handleTabChange() {
+    if (!_tabController.indexIsChanging) {
+      _onTabChanged();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-
-    // Tab değişikliklerini dinle
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        _onTabChanged();
-      }
-    });
-
-    // İlk veriyi yükle
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadSongRequests();
-    });
+    _tabController.addListener(_handleTabChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSongRequests());
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(() {
-      if (!_tabController.indexIsChanging) {
-        _onTabChanged();
-      }
-    });
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
   }
@@ -56,7 +48,6 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
     final statuses = ['all', 'pending', 'approved', 'rejected', 'completed'];
     final newStatus = statuses[_tabController.index];
 
-    // Sadece status gerçekten değiştiyse yeni veri yükle
     if (newStatus != _selectedStatus) {
       debugPrint('🔄 Tab changed from $_selectedStatus to $newStatus');
 
@@ -64,11 +55,14 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         _selectedStatus = newStatus;
         _currentPage = 0;
         _hasMore = true;
-        _songRequests.clear();
       });
 
-      // Yeni veriyi yükle
-      _loadSongRequests();
+      // Liste temizleme + yükleme işlemini sonraki frame'e ertele
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _songRequests.clear());
+        _loadSongRequests();
+      });
     }
   }
 
@@ -88,19 +82,6 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
       );
 
       if (requests != null) {
-        // Debug: İlk request'i detaylı log'la
-        if (requests.isNotEmpty) {
-          final firstRequest = requests.first;
-          debugPrint('🔍 First request details:');
-          debugPrint('  - songTitle: "${firstRequest.songTitle}"');
-          debugPrint('  - artistName: "${firstRequest.artistName}"');
-          debugPrint('  - description: "${firstRequest.description}"');
-          debugPrint('  - status: "${firstRequest.status}"');
-          debugPrint('  - priority: "${firstRequest.priority}"');
-          debugPrint('  - requestId: "${firstRequest.requestId}"');
-        }
-
-        // Client-side filtering as backup
         List<SongRequestModel> filteredRequests;
         if (_selectedStatus == 'all') {
           filteredRequests = requests;
@@ -155,14 +136,14 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
           gradient: LinearGradient(
             colors: isDarkMode
                 ? [
-                    const Color(0xFF0F172A), // Dark slate
-                    const Color(0xFF1E293B), // Lighter slate
-                    const Color(0xFF334155), // Even lighter
+                    const Color(0xFF0F172A),
+                    const Color(0xFF1E293B),
+                    const Color(0xFF334155),
                   ]
                 : [
-                    const Color(0xFFF8FAFC), // Light gray
-                    const Color(0xFFE2E8F0), // Slightly darker
-                    const Color(0xFFCBD5E1), // Even darker
+                    const Color(0xFFF8FAFC),
+                    const Color(0xFFE2E8F0),
+                    const Color(0xFFCBD5E1),
                   ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -172,14 +153,9 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
           bottom: false,
           child: Column(
             children: [
-              // Modern Header
               _buildModernHeader(isDarkMode),
-              // Tab Bar
               _buildTabBar(isDarkMode),
-              // Content
-              Expanded(
-                child: _buildTabBarView(isDarkMode),
-              ),
+              Expanded(child: _buildTabBarView(isDarkMode)),
             ],
           ),
         ),
@@ -188,7 +164,6 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
     );
   }
 
-  /// 🎨 Modern Header - Songs style
   Widget _buildModernHeader(bool isDarkMode) => Container(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         child: Row(
@@ -219,7 +194,6 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
                 ),
               ),
             ),
-            // Refresh Button
             DecoratedBox(
               decoration: BoxDecoration(
                 color: isDarkMode
@@ -256,48 +230,23 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         child: TabBar(
           controller: _tabController,
           isScrollable: true,
-          tabAlignment: TabAlignment.start, // Sol tarafa hizala
-          padding: EdgeInsets.zero, // Padding'i sıfırla
-          labelPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-          ), // Tab'lar arası mesafe
-          dividerColor: Colors.transparent, // Alt çizgiyi kaldır
-          onTap: (index) {
-            debugPrint('🎯 Tab tapped: $index');
-            // Manuel tab değişimi için
-            final statuses = [
-              'all',
-              'pending',
-              'approved',
-              'rejected',
-              'completed',
-            ];
-            final newStatus = statuses[index];
-            if (newStatus != _selectedStatus) {
-              _onTabChanged();
-            }
-          },
+          tabAlignment: TabAlignment.start,
+          padding: EdgeInsets.zero,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+          dividerColor: Colors.transparent,
+          // ❌ Buradaki _onTabChanged() çağrısını kaldırıyoruz
+          onTap: (index) => debugPrint('🎯 Tab tapped: $index'),
           indicator: BoxDecoration(
             color: isDarkMode
                 ? const Color(0xFF6366F1).withValues(alpha: 0.2)
                 : const Color(0xFF4F46E5).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          indicatorSize: TabBarIndicatorSize.tab,
-          indicatorPadding: const EdgeInsets.all(4),
           labelColor:
               isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
           unselectedLabelColor: isDarkMode
               ? Colors.white.withValues(alpha: 0.6)
               : Colors.black.withValues(alpha: 0.6),
-          labelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.normal,
-          ),
           tabs: [
             Tab(text: 'all_requests'.tr()),
             Tab(text: 'pending_requests'.tr()),
@@ -310,13 +259,14 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
   Widget _buildTabBarView(bool isDarkMode) => TabBarView(
         controller: _tabController,
-        physics:
-            const NeverScrollableScrollPhysics(), // Tab değişimini sadece tab tıklamasıyla sınırla
+        physics: const NeverScrollableScrollPhysics(),
         children: List.generate(5, (index) => _buildRequestsList(isDarkMode)),
       );
 
   Widget _buildRequestsList(bool isDarkMode) {
-    if (_isLoading && _songRequests.isEmpty) {
+    final items = List<SongRequestModel>.of(_songRequests); // snapshot
+
+    if (_isLoading && items.isEmpty) {
       return Center(
         child: CircularProgressIndicator(
           color: isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
@@ -324,9 +274,7 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
       );
     }
 
-    if (_songRequests.isEmpty) {
-      return _buildEmptyState(isDarkMode);
-    }
+    if (items.isEmpty) return _buildEmptyState(isDarkMode);
 
     return RefreshIndicator(
       onRefresh: _refreshRequests,
@@ -344,13 +292,13 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
         },
         child: ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          itemCount: _songRequests.length + (_hasMore ? 1 : 0),
+          itemCount: items.length + (_hasMore ? 1 : 0),
           itemBuilder: (context, index) {
-            if (index == _songRequests.length) {
+            if (index == items.length) {
               return _isLoading
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Center(
                         child: CircularProgressIndicator(
                           color: isDarkMode
                               ? const Color(0xFF6366F1)
@@ -361,7 +309,10 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
                   : const SizedBox.shrink();
             }
 
-            return _buildRequestCard(_songRequests[index], isDarkMode);
+            // ✅ Guard: Eğer liste kısaldıysa index hatasını önle
+            if (index >= items.length) return const SizedBox.shrink();
+
+            return _buildRequestCard(items[index], isDarkMode);
           },
         ),
       ),

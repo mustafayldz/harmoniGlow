@@ -200,9 +200,15 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
 
               const Spacer(),
 
+              Text(
+                widget.song.title ?? 'Unknown Title',
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+
               // 2️⃣ Video player
               SizedBox(
-                height: screenSize.height * 0.15,
+                height: screenSize.height * 0,
                 child: YoutubePlayer(
                   controller: _controller,
                   showVideoProgressIndicator: true,
