@@ -134,6 +134,34 @@ class VirtualDrumViewModel extends ChangeNotifier {
     }
   }
 
+  /// 🎯 Convert Virtual Drum pad index (0-8) to LED number (1-8)
+  /// Virtual Drum: [0=Kick, 1=Snare, 2=HiHat Close, 3=HiHat Open, 4=Tom1, 5=Tom2, 6=Floor Tom, 7=Crash, 8=Ride]
+  /// LED Numbers: [1=Hi-Hat, 2=Crash, 3=Ride, 4=Snare, 5=Tom1, 6=Tom2, 7=Floor Tom, 8=Kick]
+  int _padIndexToLedNumber(int padIndex) {
+    switch (padIndex) {
+      case 0:
+        return 8; // Kick (virtual pad 0) → LED 8 (Kick Drum)
+      case 1:
+        return 4; // Snare (virtual pad 1) → LED 4 (Snare Drum)
+      case 2:
+        return 1; // Hi-Hat Close (virtual pad 2) → LED 1 (Hi-Hat)
+      case 3:
+        return 1; // Hi-Hat Open (virtual pad 3) → LED 1 (Hi-Hat)
+      case 4:
+        return 5; // Tom 1 (virtual pad 4) → LED 5 (Tom 1)
+      case 5:
+        return 6; // Tom 2 (virtual pad 5) → LED 6 (Tom 2)
+      case 6:
+        return 7; // Floor Tom (virtual pad 6) → LED 7 (Tom Floor)
+      case 7:
+        return 2; // Crash (virtual pad 7) → LED 2 (Crash Cymbal)
+      case 8:
+        return 3; // Ride (virtual pad 8) → LED 3 (Ride Cymbal)
+      default:
+        return 0;
+    }
+  }
+
   void _initializeDrumPads() {
     _drumPads = [
       // 0: Kick - Drum (scale: 0.3 in beat maker = 2.5x here)
@@ -267,16 +295,17 @@ class VirtualDrumViewModel extends ChangeNotifier {
       if (_isRecording && _recordingStartTime != null) {
         final now = DateTime.now();
         final ms = now.difference(_recordingStartTime!).inMilliseconds;
+        final ledNumber = _padIndexToLedNumber(padIndex);
         _recordedNotes.add(
           NoteModel(
             i: _recordedNotes.length + 1,
             sM: ms,
             eM: ms + 300,
-            led: [padIndex],
+            led: [ledNumber],
           ),
         );
         print(
-          '📝 Note recorded: pad $padIndex at ${ms}ms (total: ${_recordedNotes.length})',
+          '📝 Note recorded: pad $padIndex (LED $ledNumber) at ${ms}ms (total: ${_recordedNotes.length})',
         );
       }
 

@@ -335,13 +335,13 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
                   boxShadow: [
                     if (isActive)
                       BoxShadow(
-                        color: pad.color.withOpacity(0.8),
+                        color: pad.color.withValues(alpha: 0.8),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
                     if (isActive)
                       BoxShadow(
-                        color: pad.color.withOpacity(0.5),
+                        color: pad.color.withValues(alpha: 0.5),
                         blurRadius: 30,
                         spreadRadius: 4,
                       ),
