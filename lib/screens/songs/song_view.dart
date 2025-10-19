@@ -1,6 +1,6 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/user_provider.dart';
-import 'package:drumly/screens/player/player_view_youtube.dart';
+import 'package:drumly/screens/player/new_player.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
@@ -38,7 +38,7 @@ class _SongViewState extends State<SongView> {
     vm = SongViewModel();
     vm.init(context);
     _confettiController =
-        ConfettiController(duration: const Duration(seconds: 3));
+        ConfettiController(duration: const Duration(seconds: 1));
 
     // Build sırasında setState çağrılmasını önlemek için
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1057,34 +1057,31 @@ class _SongViewState extends State<SongView> {
           final theme = Theme.of(context);
           return ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: ColoredBox(
-              color: theme.scaffoldBackgroundColor,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.grey[600]
-                          : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.grey[600]
+                        : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.9,
-                    child: DraggableScrollableSheet(
-                      initialChildSize: 1.0,
-                      minChildSize: 0.3,
-                      expand: false,
-                      builder: (context, scrollCtrl) =>
-                          YoutubeSongPlayer(song: fullSong),
-                    ),
+                ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.93,
+                  child: DraggableScrollableSheet(
+                    initialChildSize: 1.0,
+                    minChildSize: 0.3,
+                    expand: false,
+                    builder: (context, scrollCtrl) =>
+                        SongVisualizer(song: fullSong),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

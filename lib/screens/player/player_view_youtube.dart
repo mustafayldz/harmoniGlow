@@ -66,7 +66,6 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
 
     // Listen for every frame update
     _controller.addListener(() {
-      // rebuild whenever anything about the player changes:
       setState(() {});
       _onPlayerValueChange();
     });
