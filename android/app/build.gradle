@@ -17,11 +17,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.drumly.mobile"
     compileSdk = 36
-    ndkVersion = "26.1.10909125"
-
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:-options" << "-Xlint:-deprecation" << "-Xlint:-unchecked"
-    }
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21

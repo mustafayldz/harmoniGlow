@@ -34,8 +34,8 @@ class VirtualDrumViewModel extends ChangeNotifier {
   late List<DrumPadModel> _drumPads;
 
   bool _isInitialized = false;
-  List<int> _recordedSequence = [];
-  List<NoteModel> _recordedNotes = [];
+  final List<int> _recordedSequence = [];
+  final List<NoteModel> _recordedNotes = [];
   bool _isRecording = false;
   bool _isPlayingRecording = false;
   DateTime? _recordingStartTime;
@@ -276,7 +276,8 @@ class VirtualDrumViewModel extends ChangeNotifier {
           ),
         );
         print(
-            '📝 Note recorded: pad $padIndex at ${ms}ms (total: ${_recordedNotes.length})');
+          '📝 Note recorded: pad $padIndex at ${ms}ms (total: ${_recordedNotes.length})',
+        );
       }
 
       // Apply effects if enabled

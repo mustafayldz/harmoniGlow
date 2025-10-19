@@ -1,15 +1,12 @@
 /// Alternative Virtual Drum Implementation without flutter_soloud
 /// This uses waveform generation for audio instead of loading asset files
+library;
 
 import 'dart:math';
 import 'package:flutter/material.dart';
 
 class SimpleDrumPadModel {
-  final String name;
-  final String emoji;
-  final Color color;
-  final String key;
-  final double frequency; // Hz - for sound generation
+  // Hz - for sound generation
 
   SimpleDrumPadModel({
     required this.name,
@@ -18,6 +15,11 @@ class SimpleDrumPadModel {
     required this.key,
     required this.frequency,
   });
+  final String name;
+  final String emoji;
+  final Color color;
+  final String key;
+  final double frequency;
 }
 
 class MockAudioProvider {
@@ -53,24 +55,3 @@ class MockAudioProvider {
     return waveform;
   }
 }
-
-/// If you need this, use frequencies:
-/// Kick: 60-80 Hz
-/// Snare: 200-300 Hz
-/// Hi-Hat Close: 8000-12000 Hz
-/// Hi-Hat Open: 10000-15000 Hz
-/// Tom: 300-500 Hz (various tones)
-/// Crash: 4000-8000 Hz
-/// Ride: 5000-9000 Hz
-
-// Example usage in VirtualDrumViewModel:
-/*
-final MockAudioProvider _mockAudio = MockAudioProvider();
-
-// When flutter_soloud fails:
-final waveformData = _mockAudio.generateDrumSound(200); // Snare-like sound
-
-// For visualization:
-final waveform = _mockAudio.getWaveformData(200);
-waveformNotifier.value = waveform;
-*/
