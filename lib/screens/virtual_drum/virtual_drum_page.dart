@@ -31,38 +31,39 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
   void _generateRandomPositions() {
     _padPositions.clear();
 
-    // Fixed drum pad layout:
-    // 0=Kick (center-bottom), 1=Snare (left of Kick), 2=HiHat Close (far left)
-    // 3=HiHat Open (far left, lower), 4=Tom1 (above Kick), 5=Tom2 (right of Tom1)
-    // 6=Floor Tom (right of Kick), 7=Crash (far left, upper), 8=Ride (upper right)
+    // Professional drum kit layout (like the reference image):
+    // Top row: Cymbals (Crash, Hi-Hats, Ride)
+    // Middle: Tom1, Tom2
+    // Center: Kick
+    // Bottom: Snare (left), Floor Tom (right)
 
     _padPositions.addAll([
-      // 0: Kick - center-bottom
-      const Offset(0.45, 0.65),
+      // 0: Kick - center of kit
+      const Offset(0.50, 1),
 
-      // 1: Snare - left of Kick
-      const Offset(0.25, 0.65),
+      // 1: Snare - left-bottom
+      const Offset(0.32, 0.80),
 
-      // 2: HiHat Close - far left
-      const Offset(0.10, 0.75),
+      // 2: HiHat Close - left cymbal
+      const Offset(0.20, 0.80),
 
-      // 3: HiHat Open - far left, lower
-      const Offset(0.10, 0.85),
+      // 3: HiHat Open - left cymbal (slightly lower)
+      const Offset(0.25, 0.4),
 
-      // 4: Tom1 - above Kick
-      const Offset(0.35, 0.40),
+      // 4: Tom1 - upper left (high tom)
+      const Offset(0.4, 0.175),
 
-      // 5: Tom2 - right of Tom1
-      const Offset(0.55, 0.40),
+      // 5: Tom2 - upper center (mid tom)
+      const Offset(0.6, 0.175),
 
-      // 6: Floor Tom - right of Kick
-      const Offset(0.65, 0.65),
+      // 6: Floor Tom - right-bottom
+      const Offset(0.7, 0.75),
 
-      // 7: Crash - far left, upper
-      const Offset(0.10, 0.25),
+      // 7: Crash - left-top cymbal
+      const Offset(0.10, 0.05),
 
-      // 8: Ride - upper right (above Floor Tom)
-      const Offset(0.75, 0.35),
+      // 8: Ride - right-top cymbal
+      const Offset(0.9, 0.05),
     ]);
   }
 
@@ -289,7 +290,7 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
   /// 🥁 Drum Pads - Random positions in circular shape
   Widget _buildDrumPads(bool isDark) => LayoutBuilder(
         builder: (context, constraints) {
-          const padSize = 65.0; // Smaller pad size
+          const basePadSize = 65.0; // Base size for medium pads (1.0x)
           final width = constraints.maxWidth;
           final height = constraints.maxHeight;
 
@@ -297,17 +298,20 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
             children: List.generate(
               _viewModel.drumPads.length,
               (index) {
+                final pad = _viewModel.drumPads[index];
                 final normalizedPos = _padPositions[index];
-                final left = normalizedPos.dx * (width - padSize);
-                final top = normalizedPos.dy * (height - padSize);
+                final actualPadSize = basePadSize * pad.size;
+                final left = normalizedPos.dx * (width - actualPadSize);
+                final top = normalizedPos.dy * (height - actualPadSize);
 
                 return Positioned(
                   left: left,
                   top: top,
                   child: _buildDrumPad(
-                    _viewModel.drumPads[index],
+                    pad,
                     isDark,
                     index,
+                    actualPadSize,
                   ),
                 );
               },
@@ -317,24 +321,21 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
       );
 
   /// Single Drum Pad - Circular shape
-  Widget _buildDrumPad(DrumPadModel pad, bool isDark, int index) =>
+  Widget _buildDrumPad(DrumPadModel pad, bool isDark, int index, double size) =>
       ValueListenableBuilder<Set<int>>(
         valueListenable: _viewModel.activePadsNotifier,
         builder: (context, activePads, _) {
           final isActive = activePads.contains(index);
 
           return SizedBox(
-            width: 65,
-            height: 65,
+            width: size,
+            height: size,
             child: GestureDetector(
               onTap: () => _viewModel.playDrumSound(index),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 30),
                 curve: Curves.easeOut,
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? pad.color.withOpacity(1.0)
-                      : pad.color.withOpacity(0.7),
                   shape: BoxShape.circle,
                   boxShadow: [
                     if (isActive)
@@ -354,18 +355,14 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
                 transform: isActive
                     ? (Matrix4.identity()..scale(0.9))
                     : Matrix4.identity(),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedScale(
-                      scale: isActive ? 1.2 : 1.0,
-                      duration: const Duration(milliseconds: 30),
-                      child: Text(
-                        pad.emoji,
-                        style: const TextStyle(fontSize: 18),
-                      ),
+                child: ClipOval(
+                  child: Image.asset(
+                    pad.imagePath,
+                    fit: BoxFit.cover,
+                    opacity: AlwaysStoppedAnimation(
+                      isActive ? 1.0 : 0.85,
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

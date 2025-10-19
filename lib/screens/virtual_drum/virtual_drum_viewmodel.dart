@@ -3,19 +3,22 @@ import 'package:just_audio/just_audio.dart';
 import 'dart:async';
 
 class DrumPadModel {
-  final String name;
-  final String emoji;
-  final String soundFile;
-  final Color color;
-  final String key;
+  // Size multiplier (1.0 = base size)
 
   DrumPadModel({
     required this.name,
-    required this.emoji,
     required this.soundFile,
     required this.color,
     required this.key,
+    required this.imagePath,
+    required this.size,
   });
+  final String name;
+  final String soundFile;
+  final Color color;
+  final String key;
+  final String imagePath;
+  final double size;
 }
 
 class VirtualDrumViewModel extends ChangeNotifier {
@@ -26,7 +29,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
   late List<DrumPadModel> _drumPads;
 
   bool _isInitialized = false;
-  List<int> _recordedSequence = [];
+  final List<int> _recordedSequence = [];
   bool _isRecording = false;
   bool _isPlayingRecording = false;
 
@@ -125,60 +128,95 @@ class VirtualDrumViewModel extends ChangeNotifier {
 
   void _initializeDrumPads() {
     _drumPads = [
+      // 0: Kick - Drum (scale: 0.3 in beat maker = 2.5x here)
       DrumPadModel(
-          name: 'Kick',
-          emoji: '🎯',
-          soundFile: 'assets/sounds/kick.ogg',
-          color: const Color(0xFF1E3A8A),
-          key: 'Q'),
+        name: 'Kick',
+        soundFile: 'assets/sounds/kick.ogg',
+        color: const Color(0xFF1E3A8A),
+        key: 'Q',
+        imagePath: 'assets/images/classicDrum/c_kick.png',
+        size: 3.5,
+      ),
+
+      // 1: Snare - Drum (scale: 0.13 in beat maker = 1.08x here)
       DrumPadModel(
-          name: 'Snare',
-          emoji: '✨',
-          soundFile: 'assets/sounds/snare_hard.ogg',
-          color: const Color(0xFF7C3AED),
-          key: 'W'),
+        name: 'Snare',
+        soundFile: 'assets/sounds/snare_hard.ogg',
+        color: const Color(0xFF7C3AED),
+        key: 'W',
+        imagePath: 'assets/images/classicDrum/c_snare.png',
+        size: 1.75,
+      ),
+
+      // 2: HiHat Close - Cymbal (scale: 0.12 in beat maker = 1.0x here)
       DrumPadModel(
-          name: 'Hi-Hat\nClose',
-          emoji: '⚡',
-          soundFile: 'assets/sounds/close_hihat.ogg',
-          color: const Color(0xFFDC2626),
-          key: 'E'),
+        name: 'Hi-Hat\nClose',
+        soundFile: 'assets/sounds/close_hihat.ogg',
+        color: const Color(0xFFDC2626),
+        key: 'E',
+        imagePath: 'assets/images/classicDrum/c_hihat.png',
+        size: 1,
+      ),
+
+      // 3: HiHat Open - Cymbal (scale: 0.12 in beat maker = 1.0x here)
       DrumPadModel(
-          name: 'Hi-Hat\nOpen',
-          emoji: '💫',
-          soundFile: 'assets/sounds/open_hihat.ogg',
-          color: const Color(0xFFEA580C),
-          key: 'A'),
+        name: 'Hi-Hat\nOpen',
+        soundFile: 'assets/sounds/open_hihat.ogg',
+        color: const Color(0xFFEA580C),
+        key: 'A',
+        imagePath: 'assets/images/classicDrum/c_hihat.png',
+        size: 1.75,
+      ),
+
+      // 4: Tom1 - Drum (scale: 0.13 in beat maker = 1.08x here)
       DrumPadModel(
-          name: 'Tom 1',
-          emoji: '🎪',
-          soundFile: 'assets/sounds/tom_1.ogg',
-          color: const Color(0xFF0891B2),
-          key: 'S'),
+        name: 'Tom 1',
+        soundFile: 'assets/sounds/tom_1.ogg',
+        color: const Color(0xFF0891B2),
+        key: 'S',
+        imagePath: 'assets/images/classicDrum/c_tom1.png',
+        size: 1.75,
+      ),
+
+      // 5: Tom2 - Drum (scale: 0.15 in beat maker = 1.25x here)
       DrumPadModel(
-          name: 'Tom 2',
-          emoji: '🎭',
-          soundFile: 'assets/sounds/tom_2.ogg',
-          color: const Color(0xFF059669),
-          key: 'D'),
+        name: 'Tom 2',
+        soundFile: 'assets/sounds/tom_2.ogg',
+        color: const Color(0xFF059669),
+        key: 'D',
+        imagePath: 'assets/images/classicDrum/c_tom2.png',
+        size: 1.75,
+      ),
+
+      // 6: Floor Tom - Drum (scale: 0.2 in beat maker = 1.67x here)
       DrumPadModel(
-          name: 'Floor Tom',
-          emoji: '🥁',
-          soundFile: 'assets/sounds/tom_floor.ogg',
-          color: const Color(0xFF7C2D12),
-          key: 'F'),
+        name: 'Floor Tom',
+        soundFile: 'assets/sounds/tom_floor.ogg',
+        color: const Color(0xFF7C2D12),
+        key: 'F',
+        imagePath: 'assets/images/classicDrum/c_tom_floor.png',
+        size: 2.25,
+      ),
+
+      // 7: Crash - Cymbal (scale: 0.17 in beat maker = 1.42x here)
       DrumPadModel(
-          name: 'Crash',
-          emoji: '💥',
-          soundFile: 'assets/sounds/crash_2.ogg',
-          color: const Color(0xFFCA8A04),
-          key: 'Z'),
+        name: 'Crash',
+        soundFile: 'assets/sounds/crash_2.ogg',
+        color: const Color(0xFFCA8A04),
+        key: 'Z',
+        imagePath: 'assets/images/classicDrum/c_crash.png',
+        size: 2.25,
+      ),
+
+      // 8: Ride - Cymbal (scale: 0.17 in beat maker = 1.42x here)
       DrumPadModel(
-          name: 'Ride',
-          emoji: '🌊',
-          soundFile: 'assets/sounds/ride_1.ogg',
-          color: const Color(0xFF0F766E),
-          key: 'X'),
+        name: 'Ride',
+        soundFile: 'assets/sounds/ride_1.ogg',
+        color: const Color(0xFF0F766E),
+        key: 'X',
+        imagePath: 'assets/images/classicDrum/c_ride.png',
+        size: 2.25,
+      ),
     ];
   }
 
@@ -191,7 +229,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
     activePadsNotifier.value = newActivePads;
 
     // Get current player and rotate to next
-    int playerIndex = _playerPoolIndex[padIndex];
+    final int playerIndex = _playerPoolIndex[padIndex];
     final player = _playerPool[padIndex][playerIndex];
     _playerPoolIndex[padIndex] = (playerIndex + 1) % 3;
 
@@ -237,7 +275,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
         if (echoNotifier.value > 0) {
           try {
             // Rotate through the pad's player pool for echo
-            int playerIdx = _playerPoolIndex[padIndex];
+            final int playerIdx = _playerPoolIndex[padIndex];
             final echoPlayer = padPlayers[playerIdx];
             _playerPoolIndex[padIndex] = (playerIdx + 1) % 3;
 
@@ -262,7 +300,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
           if (reverbNotifier.value > 0) {
             try {
               // Rotate through the pad's player pool for reverb
-              int playerIdx = _playerPoolIndex[padIndex];
+              final int playerIdx = _playerPoolIndex[padIndex];
               final revPlayer = padPlayers[playerIdx];
               _playerPoolIndex[padIndex] = (playerIdx + 1) % 3;
 
