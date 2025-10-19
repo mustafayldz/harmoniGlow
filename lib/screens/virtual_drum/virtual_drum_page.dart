@@ -14,7 +14,7 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
     with SingleTickerProviderStateMixin {
   late VirtualDrumViewModel _viewModel;
   bool _effectsExpanded = false;
-  bool _playbackExpanded = false;
+  bool _isRecording = false;
   final List<Offset> _padPositions = [];
 
   @override
@@ -147,6 +147,43 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
                       // Title
                       const Expanded(child: SizedBox()),
 
+                      const SizedBox(width: 10),
+
+                      // Record button (toggles Record/Stop)
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton(
+                          onPressed: _handleRecordToggle,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            backgroundColor:
+                                _isRecording ? Colors.red : Colors.grey[600],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _isRecording
+                                    ? Icons.stop
+                                    : Icons.fiber_manual_record,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _isRecording ? 'Stop' : 'Record',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+
                       // Effects toggle button
                       SizedBox(
                         height: 32,
@@ -179,39 +216,6 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
                         ),
                       ),
                       const SizedBox(width: 10),
-
-                      // Playback toggle button
-                      SizedBox(
-                        height: 32,
-                        child: ElevatedButton(
-                          onPressed: () => setState(
-                            () => _playbackExpanded = !_playbackExpanded,
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            backgroundColor: _playbackExpanded
-                                ? Colors.orange
-                                : Colors.grey[600],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                '🎵',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                _playbackExpanded
-                                    ? Icons.expand_less
-                                    : Icons.expand_more,
-                                size: 16,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
                     ],
                   ),
                 ),
@@ -229,24 +233,15 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
                         ),
                       ),
 
-                      // Right side: Effects and Playback (expandable)
-                      if (_effectsExpanded || _playbackExpanded)
+                      // Right side: Effects (expandable)
+                      if (_effectsExpanded)
                         Expanded(
                           child: Container(
                             color: isDark ? Colors.grey[850] : Colors.grey[100],
                             child: SingleChildScrollView(
                               child: Padding(
                                 padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  children: [
-                                    if (_effectsExpanded) ...[
-                                      _buildExpandableEffects(isDark),
-                                      const SizedBox(height: 8),
-                                    ],
-                                    if (_playbackExpanded)
-                                      _buildExpandablePlayback(isDark),
-                                  ],
-                                ),
+                                child: _buildExpandableEffects(isDark),
                               ),
                             ),
                           ),
@@ -493,121 +488,21 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
       );
 
   /// 🎵 Expandable Playback Controls
-  Widget _buildExpandablePlayback(bool isDark) => Card(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: () =>
-                  setState(() => _playbackExpanded = !_playbackExpanded),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[700] : Colors.grey[200],
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(12),
-                    topRight: const Radius.circular(12),
-                    bottomLeft: Radius.circular(_playbackExpanded ? 0 : 12),
-                    bottomRight: Radius.circular(_playbackExpanded ? 0 : 12),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      '🎵 Playback',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Icon(
-                      _playbackExpanded ? Icons.expand_less : Icons.expand_more,
-                      size: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (_playbackExpanded)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _viewModel.recordStart,
-                            icon: const Icon(Icons.mic, size: 16),
-                            label: const Text(
-                              'Record',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _viewModel.recordStop,
-                            icon: const Icon(Icons.stop, size: 16),
-                            label: const Text(
-                              'Stop',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _viewModel.clearAll,
-                            icon: const Icon(Icons.delete, size: 16),
-                            label: const Text(
-                              'Clear',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _viewModel.playRecording,
-                            icon: const Icon(Icons.play_arrow, size: 16),
-                            label: const Text(
-                              'Play',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _viewModel.pauseRecording,
-                            icon: const Icon(Icons.pause, size: 16),
-                            label: const Text(
-                              'Pause',
-                              style: TextStyle(fontSize: 11),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      );
+  void _handleRecordToggle() {
+    if (!_isRecording) {
+      // Start recording
+      setState(() {
+        _isRecording = true;
+      });
+      _viewModel.recordStart();
+    } else {
+      // Stop recording - show dialog with context
+      _viewModel.recordStopWithDialog(context);
+      if (mounted) {
+        setState(() {
+          _isRecording = false;
+        });
+      }
+    }
+  }
 }

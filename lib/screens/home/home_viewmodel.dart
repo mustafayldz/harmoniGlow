@@ -115,18 +115,6 @@ class HomeViewModel extends ChangeNotifier {
       //     end: Alignment.bottomRight,
       //   ),
       // ),
-      // CardData(
-      //   key: 'my beats',
-      //   title: 'myBeats'.tr(),
-      //   subtitle: 'listenToBeats'.tr(),
-      //   color: AppColors.beatsPurple,
-      //   icon: Icons.headphones_outlined,
-      //   gradient: const LinearGradient(
-      //     colors: [Color(0xFFA855F7), Color(0xFF9333EA)],
-      //     begin: Alignment.topLeft,
-      //     end: Alignment.bottomRight,
-      //   ),
-      // ),
       CardData(
         key: 'virtual drum',
         title: 'Virtual Drum',
@@ -135,6 +123,18 @@ class HomeViewModel extends ChangeNotifier {
         icon: Icons.music_note_outlined,
         gradient: const LinearGradient(
           colors: [Color(0xFF0F766E), Color(0xFF115E59)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      CardData(
+        key: 'my beats',
+        title: 'myBeats'.tr(),
+        subtitle: 'listenToBeats'.tr(),
+        color: AppColors.beatsPurple,
+        icon: Icons.headphones_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFA855F7), Color(0xFF9333EA)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

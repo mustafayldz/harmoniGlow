@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:drumly/hive/db_service.dart';
+import 'package:drumly/hive/models/beat_maker_model.dart';
+import 'package:drumly/hive/models/note_model.dart';
+import 'package:drumly/shared/common_functions.dart';
 
 class DrumPadModel {
   // Size multiplier (1.0 = base size)
@@ -29,9 +34,12 @@ class VirtualDrumViewModel extends ChangeNotifier {
   late List<DrumPadModel> _drumPads;
 
   bool _isInitialized = false;
-  final List<int> _recordedSequence = [];
+  List<int> _recordedSequence = [];
+  List<NoteModel> _recordedNotes = [];
   bool _isRecording = false;
   bool _isPlayingRecording = false;
+  DateTime? _recordingStartTime;
+  String? _recordingId;
 
   final ValueNotifier<double> masterVolumeNotifier = ValueNotifier(0.8);
   final ValueNotifier<double> reverbNotifier = ValueNotifier(0.0);
@@ -255,6 +263,22 @@ class VirtualDrumViewModel extends ChangeNotifier {
       // Now play
       await player.play();
 
+      // ✅ Record note if recording is active (Beat Maker pattern)
+      if (_isRecording && _recordingStartTime != null) {
+        final now = DateTime.now();
+        final ms = now.difference(_recordingStartTime!).inMilliseconds;
+        _recordedNotes.add(
+          NoteModel(
+            i: _recordedNotes.length + 1,
+            sM: ms,
+            eM: ms + 300,
+            led: [padIndex],
+          ),
+        );
+        print(
+            '📝 Note recorded: pad $padIndex at ${ms}ms (total: ${_recordedNotes.length})');
+      }
+
       // Apply effects if enabled
       _applyEffects(padIndex, _playerPool[padIndex]);
     } catch (e) {
@@ -376,6 +400,10 @@ class VirtualDrumViewModel extends ChangeNotifier {
     stopRecording();
   }
 
+  void recordStopWithDialog(BuildContext context) {
+    stopRecordingWithDialog(context);
+  }
+
   void pauseRecording() {
     if (_isRecording) {
       _isRecording = false;
@@ -386,7 +414,10 @@ class VirtualDrumViewModel extends ChangeNotifier {
 
   void startRecording() {
     _recordedSequence.clear();
+    _recordedNotes.clear();
     _isRecording = true;
+    _recordingStartTime = DateTime.now();
+    _recordingId = DateTime.now().millisecondsSinceEpoch.toString();
     print('🔴 Recording started');
     notifyListeners();
   }
@@ -395,6 +426,160 @@ class VirtualDrumViewModel extends ChangeNotifier {
     _isRecording = false;
     print('⏹ Recording stopped - ${_recordedSequence.length} pads');
     notifyListeners();
+  }
+
+  Future<void> stopRecordingWithDialog(BuildContext context) async {
+    if (!_isRecording || _recordingStartTime == null) return;
+
+    // Check context mounted
+    if (!context.mounted) {
+      print('⚠️ Context is no longer mounted');
+      _isRecording = false;
+      return;
+    }
+
+    try {
+      if (_recordedNotes.isEmpty) {
+        showClassicSnackBar(context, 'noNotesRecorded'.tr());
+        _isRecording = false;
+        return;
+      }
+
+      // Ask for title and genre
+      final result = await _askForTitleAndGenre(context);
+      if (result == null) {
+        _isRecording = false;
+        return;
+      }
+
+      final endTime = DateTime.now();
+      final duration = endTime.difference(_recordingStartTime!).inSeconds;
+      final int noteCount = _recordedNotes.length;
+      final int bpm =
+          duration > 0 ? ((noteCount / duration) * 60).round() : 120;
+
+      // Create beat model
+      final beat = BeatMakerModel(
+        beatId: _recordingId,
+        title: result['title'],
+        bpm: bpm,
+        genre: result['genre'],
+        rhythm: '4/4',
+        durationSeconds: duration,
+        fileUrl: '',
+        createdAt: _recordingStartTime!,
+        updatedAt: endTime,
+        notes: _recordedNotes,
+      );
+
+      // Save to DB
+      await saveBeatMakerModel(beat);
+
+      _isRecording = false;
+      _recordedNotes.clear();
+      _recordedSequence.clear();
+
+      if (context.mounted) {
+        showClassicSnackBar(
+          context,
+          '${'beatSavedAs'.tr()}${beat.title} ($bpm BPM)',
+        );
+      }
+    } catch (e) {
+      print('❌ Error stopping recording: $e');
+      _isRecording = false;
+    }
+  }
+
+  Future<Map<String, String>?> _askForTitleAndGenre(
+    BuildContext context,
+  ) async {
+    if (!context.mounted) {
+      print('⚠️ Context is no longer mounted, cannot show dialog');
+      return null;
+    }
+
+    String title = '';
+    String genre = '';
+    String? titleError;
+    String? genreError;
+
+    try {
+      return await showDialog<Map<String, String>>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => MediaQuery.removeViewInsets(
+          removeBottom: true,
+          context: dialogContext,
+          child: StatefulBuilder(
+            builder: (builderContext, setState) => AlertDialog(
+              title: Text('saveBeat'.tr()),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: 'title'.tr(),
+                      errorText: titleError,
+                    ),
+                    onChanged: (value) {
+                      title = value.trim();
+                      if (titleError != null && title.isNotEmpty) {
+                        setState(() => titleError = null);
+                      }
+                    },
+                  ),
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: 'genre'.tr(),
+                      errorText: genreError,
+                    ),
+                    onChanged: (value) {
+                      genre = value.trim();
+                      if (genreError != null && genre.isNotEmpty) {
+                        setState(() => genreError = null);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: Text('cancel'.tr()),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    bool hasError = false;
+                    if (title.isEmpty) {
+                      setState(() => titleError = 'titleCantbeEmpty'.tr());
+                      hasError = true;
+                    }
+                    if (genre.isEmpty) {
+                      setState(() => genreError = 'genreCantbeEmpty'.tr());
+                      hasError = true;
+                    }
+                    if (!hasError) {
+                      Navigator.pop(
+                        dialogContext,
+                        {
+                          'title': title,
+                          'genre': genre,
+                        },
+                      );
+                    }
+                  },
+                  child: Text('save'.tr()),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      print('❌ Error showing dialog: $e');
+      return null;
+    }
   }
 
   Future<void> playRecording() async {
