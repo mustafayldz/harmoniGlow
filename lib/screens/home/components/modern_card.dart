@@ -7,6 +7,7 @@ import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
+import 'package:drumly/screens/virtual_drum/virtual_drum_page.dart';
 import 'package:drumly/adMob/ad_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
@@ -145,6 +146,8 @@ class ModernCard extends StatelessWidget {
         return const TrainingView();
       case 'songs':
         return const SongView();
+      case 'virtual drum':
+        return const VirtualDrumPage();
       case 'my drum':
         return isConnected ? const DrumAdjustment() : const FindDevicesView();
       case 'beat maker':

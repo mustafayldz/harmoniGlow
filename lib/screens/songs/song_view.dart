@@ -1,6 +1,6 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/user_provider.dart';
-import 'package:drumly/screens/player/new_player.dart';
+import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/common_functions.dart';
@@ -1072,13 +1072,13 @@ class _SongViewState extends State<SongView> {
                   ),
                 ),
                 SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.93,
+                  height: MediaQuery.of(context).size.height * 0.9,
                   child: DraggableScrollableSheet(
                     initialChildSize: 1.0,
                     minChildSize: 0.3,
                     expand: false,
                     builder: (context, scrollCtrl) =>
-                        SongVisualizer(song: fullSong),
+                        YoutubeSongPlayer(song: fullSong),
                   ),
                 ),
               ],
