@@ -1,7 +1,10 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:drumly/env.dart';
 
+/// SECURITY: This file now uses environment variables
+/// Run with: flutter run --dart-define-from-file=.env
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -37,21 +40,20 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAYqPjlG6-TTDyAVUfRFcpeDuSM1vf7ms0',
-    appId: '1:914876532693:android:cb07e77c172303d2d81f5c',
-    messagingSenderId: '914876532693',
-    projectId: 'drumly-mobile',
-    storageBucket: 'drumly-mobile.firebasestorage.app',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: Env.firebaseAndroidApiKey,
+    appId: Env.firebaseAppIdAndroid,
+    messagingSenderId: Env.firebaseMessagingSenderId,
+    projectId: Env.firebaseProjectId,
+    storageBucket: Env.firebaseStorageBucket,
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAsDhQ1SC-LR73PpiF_afbI-ZhuR28xltg',
-    appId: '1:914876532693:ios:1c510bbac560f531d81f5c',
-    messagingSenderId: '914876532693',
-    projectId: 'drumly-mobile',
-    storageBucket: 'drumly-mobile.firebasestorage.app',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: Env.firebaseIosApiKey,
+    appId: Env.firebaseAppIdIos,
+    messagingSenderId: Env.firebaseMessagingSenderId,
+    projectId: Env.firebaseProjectId,
+    storageBucket: Env.firebaseStorageBucket,
     iosBundleId: 'com.drumly.mobile',
   );
-
 }
