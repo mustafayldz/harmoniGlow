@@ -2,37 +2,30 @@ class Env {
   // Firebase Configuration
   static const String firebaseAndroidApiKey = String.fromEnvironment(
     'FIREBASE_ANDROID_API_KEY',
-    defaultValue: '',
   );
 
   static const String firebaseIosApiKey = String.fromEnvironment(
     'FIREBASE_IOS_API_KEY',
-    defaultValue: '',
   );
 
   static const String firebaseProjectId = String.fromEnvironment(
     'FIREBASE_PROJECT_ID',
-    defaultValue: '',
   );
 
   static const String firebaseMessagingSenderId = String.fromEnvironment(
     'FIREBASE_MESSAGING_SENDER_ID',
-    defaultValue: '',
   );
 
   static const String firebaseAppIdAndroid = String.fromEnvironment(
     'FIREBASE_APP_ID_ANDROID',
-    defaultValue: '',
   );
 
   static const String firebaseAppIdIos = String.fromEnvironment(
     'FIREBASE_APP_ID_IOS',
-    defaultValue: '',
   );
 
   static const String firebaseStorageBucket = String.fromEnvironment(
     'FIREBASE_STORAGE_BUCKET',
-    defaultValue: '',
   );
 
   // AdMob Configuration
@@ -57,9 +50,8 @@ class Env {
   );
 
   // Validate environment variables
-  static bool get isValid {
-    return firebaseAndroidApiKey.isNotEmpty &&
-        firebaseIosApiKey.isNotEmpty &&
-        firebaseProjectId.isNotEmpty;
-  }
+  static bool get isValid =>
+      firebaseAndroidApiKey.isNotEmpty &&
+      firebaseIosApiKey.isNotEmpty &&
+      firebaseProjectId.isNotEmpty;
 }

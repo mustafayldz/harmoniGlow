@@ -348,7 +348,7 @@ class _VirtualDrumPageState extends State<VirtualDrumPage>
                   ],
                 ),
                 transform: isActive
-                    ? (Matrix4.identity()..scale(0.9))
+                    ? Matrix4.diagonal3Values(0.9, 0.9, 1.0)
                     : Matrix4.identity(),
                 child: ClipOval(
                   child: Image.asset(

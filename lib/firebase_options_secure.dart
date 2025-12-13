@@ -40,7 +40,7 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static FirebaseOptions get android => FirebaseOptions(
+  static FirebaseOptions get android => const FirebaseOptions(
         apiKey: Env.firebaseAndroidApiKey,
         appId: Env.firebaseAppIdAndroid,
         messagingSenderId: Env.firebaseMessagingSenderId,
@@ -48,7 +48,7 @@ class DefaultFirebaseOptions {
         storageBucket: Env.firebaseStorageBucket,
       );
 
-  static FirebaseOptions get ios => FirebaseOptions(
+  static FirebaseOptions get ios => const FirebaseOptions(
         apiKey: Env.firebaseIosApiKey,
         appId: Env.firebaseAppIdIos,
         messagingSenderId: Env.firebaseMessagingSenderId,

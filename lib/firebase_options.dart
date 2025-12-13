@@ -40,20 +40,20 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static FirebaseOptions get android => FirebaseOptions(
-    apiKey: Env.firebaseAndroidApiKey,
-    appId: Env.firebaseAppIdAndroid,
-    messagingSenderId: Env.firebaseMessagingSenderId,
-    projectId: Env.firebaseProjectId,
-    storageBucket: Env.firebaseStorageBucket,
-  );
+  static FirebaseOptions get android => const FirebaseOptions(
+        apiKey: Env.firebaseAndroidApiKey,
+        appId: Env.firebaseAppIdAndroid,
+        messagingSenderId: Env.firebaseMessagingSenderId,
+        projectId: Env.firebaseProjectId,
+        storageBucket: Env.firebaseStorageBucket,
+      );
 
-  static FirebaseOptions get ios => FirebaseOptions(
-    apiKey: Env.firebaseIosApiKey,
-    appId: Env.firebaseAppIdIos,
-    messagingSenderId: Env.firebaseMessagingSenderId,
-    projectId: Env.firebaseProjectId,
-    storageBucket: Env.firebaseStorageBucket,
-    iosBundleId: 'com.drumly.mobile',
-  );
+  static FirebaseOptions get ios => const FirebaseOptions(
+        apiKey: Env.firebaseIosApiKey,
+        appId: Env.firebaseAppIdIos,
+        messagingSenderId: Env.firebaseMessagingSenderId,
+        projectId: Env.firebaseProjectId,
+        storageBucket: Env.firebaseStorageBucket,
+        iosBundleId: 'com.drumly.mobile',
+      );
 }

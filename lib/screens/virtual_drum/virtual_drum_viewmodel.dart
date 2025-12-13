@@ -57,10 +57,10 @@ class VirtualDrumViewModel extends ChangeNotifier {
 
   Future<void> initialize() async {
     try {
-      print('🎵 Starting Virtual Drum initialization...');
+      debugPrint('🎵 Starting Virtual Drum initialization...');
       _initializeDrumPads();
 
-      print('🔧 Initializing audio player pool...');
+      debugPrint('🔧 Initializing audio player pool...');
 
       _soundFiles = [
         'assets/sounds/kick.ogg',
@@ -85,15 +85,15 @@ class VirtualDrumViewModel extends ChangeNotifier {
 
       _playerPoolIndex = List.filled(9, 0);
 
-      print('📀 Loading drum sounds...');
+      debugPrint('📀 Loading drum sounds...');
       await _loadDrumSounds();
       _startWaveformUpdates();
 
       _isInitialized = true;
       notifyListeners();
-      print('✅ Virtual Drum initialized successfully');
+      debugPrint('✅ Virtual Drum initialized successfully');
     } catch (e, stacktrace) {
-      print('❌ Error initializing: $e\n$stacktrace');
+      debugPrint('❌ Error initializing: $e\n$stacktrace');
       _isInitialized = true;
       notifyListeners();
     }
@@ -104,7 +104,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
       for (int padIndex = 0; padIndex < _soundFiles.length; padIndex++) {
         final soundFile = _soundFiles[padIndex];
         final fileName = soundFile.split('/').last;
-        print('  Loading $fileName...');
+        debugPrint('  Loading $fileName...');
 
         try {
           // Load the same sound into all 3 players for this pad
@@ -119,18 +119,18 @@ class VirtualDrumViewModel extends ChangeNotifier {
               await player.seek(Duration.zero);
               // Set default volume
               await player.setVolume(masterVolumeNotifier.value);
-              print('    ✓ Player $poolIndex configured');
+              debugPrint('    ✓ Player $poolIndex configured');
             } catch (e) {
-              print('    ⚠️ Config error: $e');
+              debugPrint('    ⚠️ Config error: $e');
             }
           }
-          print('  ✓ $fileName loaded (3x player pool)');
+          debugPrint('  ✓ $fileName loaded (3x player pool)');
         } catch (e) {
-          print('  ✗ Failed to load $fileName: $e');
+          debugPrint('  ✗ Failed to load $fileName: $e');
         }
       }
     } catch (e) {
-      print('Error in _loadDrumSounds: $e');
+      debugPrint('Error in _loadDrumSounds: $e');
     }
   }
 
@@ -304,7 +304,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
             led: [ledNumber],
           ),
         );
-        print(
+        debugPrint(
           '📝 Note recorded: pad $padIndex (LED $ledNumber) at ${ms}ms (total: ${_recordedNotes.length})',
         );
       }
@@ -312,7 +312,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
       // Apply effects if enabled
       _applyEffects(padIndex, _playerPool[padIndex]);
     } catch (e) {
-      print('Error playing sound on pad $padIndex: $e');
+      debugPrint('Error playing sound on pad $padIndex: $e');
     } finally {
       // Remove from active after playing
       final newActivePads = Set<int>.from(activePadsNotifier.value);
@@ -340,7 +340,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
             echoPlayer.setVolume(echoVol).ignore();
             echoPlayer.play().ignore();
           } catch (e) {
-            print('Echo err: $e');
+            debugPrint('Echo err: $e');
           }
         }
       });
@@ -365,7 +365,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
                 revPlayer.play().ignore();
               }
             } catch (e) {
-              print('Reverb err: $e');
+              debugPrint('Reverb err: $e');
             }
           }
         });
@@ -381,7 +381,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
         await player.stop();
       }
     } catch (e) {
-      print('Error stopping: $e');
+      debugPrint('Error stopping: $e');
     }
   }
 
@@ -396,29 +396,29 @@ class VirtualDrumViewModel extends ChangeNotifier {
 
   void setReverb(double value) {
     reverbNotifier.value = value;
-    print('🌊 Reverb set to: ${(value * 100).toStringAsFixed(0)}%');
+    debugPrint('🌊 Reverb set to: ${(value * 100).toStringAsFixed(0)}%');
   }
 
   void setEcho(double value) {
     echoNotifier.value = value;
-    print('📢 Echo set to: ${(value * 100).toStringAsFixed(0)}%');
+    debugPrint('📢 Echo set to: ${(value * 100).toStringAsFixed(0)}%');
   }
 
   void setBassBoost(double value) {
     bassBoostNotifier.value = value;
-    print('🔊 Bass Boost set to: ${(value * 100).toStringAsFixed(0)}%');
+    debugPrint('🔊 Bass Boost set to: ${(value * 100).toStringAsFixed(0)}%');
   }
 
   Future<void> setPitchShift(double value) async {
     pitchShiftNotifier.value = value;
-    print('Pitch Shift set to: ${(value * 100).toStringAsFixed(0)}%');
+    debugPrint('Pitch Shift set to: ${(value * 100).toStringAsFixed(0)}%');
     // Note: Pitch shift will be applied to newly played sounds only
     // It won't affect currently playing sounds
   }
 
   void setVisualizationType(int type) {
     visualizationTypeNotifier.value = type;
-    print('Visualization type set to: $type');
+    debugPrint('Visualization type set to: $type');
     notifyListeners();
   }
 
@@ -437,7 +437,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
   void pauseRecording() {
     if (_isRecording) {
       _isRecording = false;
-      print('⏸ Recording paused');
+      debugPrint('⏸ Recording paused');
       notifyListeners();
     }
   }
@@ -448,13 +448,13 @@ class VirtualDrumViewModel extends ChangeNotifier {
     _isRecording = true;
     _recordingStartTime = DateTime.now();
     _recordingId = DateTime.now().millisecondsSinceEpoch.toString();
-    print('🔴 Recording started');
+    debugPrint('🔴 Recording started');
     notifyListeners();
   }
 
   void stopRecording() {
     _isRecording = false;
-    print('⏹ Recording stopped - ${_recordedSequence.length} pads');
+    debugPrint('⏹ Recording stopped - ${_recordedSequence.length} pads');
     notifyListeners();
   }
 
@@ -463,7 +463,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
 
     // Check context mounted
     if (!context.mounted) {
-      print('⚠️ Context is no longer mounted');
+      debugPrint('⚠️ Context is no longer mounted');
       _isRecording = false;
       return;
     }
@@ -516,7 +516,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
-      print('❌ Error stopping recording: $e');
+      debugPrint('❌ Error stopping recording: $e');
       _isRecording = false;
     }
   }
@@ -525,7 +525,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
     BuildContext context,
   ) async {
     if (!context.mounted) {
-      print('⚠️ Context is no longer mounted, cannot show dialog');
+      debugPrint('⚠️ Context is no longer mounted, cannot show dialog');
       return null;
     }
 
@@ -607,19 +607,19 @@ class VirtualDrumViewModel extends ChangeNotifier {
         ),
       );
     } catch (e) {
-      print('❌ Error showing dialog: $e');
+      debugPrint('❌ Error showing dialog: $e');
       return null;
     }
   }
 
   Future<void> playRecording() async {
     if (_recordedSequence.isEmpty) {
-      print('No recording to play');
+      debugPrint('No recording to play');
       return;
     }
     _isPlayingRecording = true;
     notifyListeners();
-    print('Playing recording');
+    debugPrint('Playing recording');
 
     try {
       for (int padIndex in _recordedSequence) {
@@ -627,7 +627,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
         await Future.delayed(const Duration(milliseconds: 150));
       }
     } catch (e) {
-      print('Error playing: $e');
+      debugPrint('Error playing: $e');
     }
     _isPlayingRecording = false;
     notifyListeners();
@@ -638,7 +638,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
     _isRecording = false;
     _isPlayingRecording = false;
     activePadsNotifier.value = {};
-    print('Cleared all');
+    debugPrint('Cleared all');
     notifyListeners();
   }
 
@@ -681,7 +681,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error disposing: $e');
+      debugPrint('Error disposing: $e');
     }
     super.dispose();
   }

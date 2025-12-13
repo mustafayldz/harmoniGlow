@@ -1,1 +1,0 @@
-/Users/mustafayildiz/project/drumly/build/app/intermediates/cxx/RelWithDebInfo/5e5b6x1m/obj/armeabi-v7a
