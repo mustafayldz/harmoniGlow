@@ -1,4 +1,5 @@
 import 'package:drumly/screens/training/trraning_model.dart';
+import 'package:drumly/shared/app_gradients.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
@@ -51,53 +52,35 @@ class _TrainingViewState extends State<TrainingView>
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
+    
     return ChangeNotifierProvider<TrainingViewModel>.value(
-      value: _viewModel,
-      child: Scaffold(
-        body: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDarkMode
-                  ? [
-                      const Color(0xFF0F172A), // Dark slate
-                      const Color(0xFF1E293B), // Lighter slate
-                      const Color(0xFF334155), // Even lighter
-                    ]
-                  : [
-                      const Color(0xFFF8FAFC), // Light gray
-                      const Color(0xFFE2E8F0), // Slightly darker
-                      const Color(0xFFCBD5E1), // Even darker
-                    ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                // Modern App Bar
-                _buildModernAppBar(context, isDarkMode),
-
-                const SizedBox(height: 20),
-
-                // Modern Tab Bar
-                _buildModernTabBar(context, isDarkMode),
-
-                // Content
-                Expanded(
-                  child: _TrainingBody(
-                    levels: trainingLevels,
-                    tabController: _tabController,
-                  ),
+    value: _viewModel,
+    child: Scaffold(
+      body: DecoratedBox(
+        decoration: AppDecorations.backgroundDecoration(isDarkMode),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              // Modern App Bar
+              _buildModernAppBar(context, isDarkMode),
+              const SizedBox(height: 20),
+              // Modern Tab Bar
+              _buildModernTabBar(context, isDarkMode),
+              // Content
+              Expanded(
+                child: _TrainingBody(
+                  levels: trainingLevels,
+                  tabController: _tabController,
+                  isDarkMode: isDarkMode,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
@@ -105,16 +88,11 @@ class _TrainingViewState extends State<TrainingView>
         child: Row(
           children: [
             DecoratedBox(
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
+              decoration: AppDecorations.iconContainerDecoration(isDarkMode),
               child: IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_rounded,
-                  color: isDarkMode ? Colors.white : Colors.black,
+                  color: AppColors.textColor(isDarkMode),
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -126,7 +104,7 @@ class _TrainingViewState extends State<TrainingView>
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
+                  color: AppColors.textColor(isDarkMode),
                 ),
               ),
             ),
@@ -138,24 +116,18 @@ class _TrainingViewState extends State<TrainingView>
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.black.withValues(alpha: 0.05),
+          color: AppColors.overlayColor(isDarkMode, alpha: isDarkMode ? 0.1 : 0.05),
           borderRadius: BorderRadius.circular(16),
         ),
         child: TabBar(
           controller: _tabController,
           isScrollable: true,
           indicator: BoxDecoration(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.2)
-                : Colors.white.withValues(alpha: 0.9),
+            color: AppColors.overlayColor(isDarkMode, alpha: isDarkMode ? 0.2 : 0.1),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: isDarkMode
-                    ? Colors.black.withValues(alpha: 0.3)
-                    : Colors.grey.withValues(alpha: 0.2),
+                color: AppColors.shadowColor(isDarkMode),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -163,40 +135,32 @@ class _TrainingViewState extends State<TrainingView>
           ),
           indicatorSize: TabBarIndicatorSize.tab,
           dividerColor: Colors.transparent,
-          labelColor: isDarkMode ? Colors.white : Colors.black,
-          unselectedLabelColor: isDarkMode
-              ? Colors.white.withValues(alpha: 0.6)
-              : Colors.black.withValues(alpha: 0.6),
-          labelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          labelColor: AppColors.textColor(isDarkMode),
+          unselectedLabelColor: AppColors.textColor(isDarkMode, alpha: 0.6),
+          labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           tabAlignment: TabAlignment.start,
           tabs: trainingLevels
-              .map(
-                (level) => Tab(
-                  child: Text(capitalizeFirst(level.name.tr())),
-                ),
-              )
+              .map((level) => Tab(child: Text(capitalizeFirst(level.name.tr()))))
               .toList(),
         ),
       );
 }
 
 class _TrainingBody extends StatelessWidget {
-  const _TrainingBody({required this.levels, required this.tabController});
+  const _TrainingBody({
+    required this.levels,
+    required this.tabController,
+    required this.isDarkMode,
+  });
   final List<TrainingLevel> levels;
   final TabController tabController;
+  final bool isDarkMode;
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<TrainingViewModel>();
     final bluetoothBloc = context.read<BluetoothBloc>();
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     if (vm.loading) {
       return Center(

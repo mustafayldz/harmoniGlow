@@ -8,8 +8,6 @@ import 'package:drumly/hive/models/note_model.dart';
 import 'package:drumly/shared/common_functions.dart';
 
 class DrumPadModel {
-  // Size multiplier (1.0 = base size)
-
   DrumPadModel({
     required this.name,
     required this.soundFile,
@@ -27,11 +25,15 @@ class DrumPadModel {
 }
 
 class VirtualDrumViewModel extends ChangeNotifier {
-  // Player pool: 3 players per pad for polyphonic playback
-  late List<List<AudioPlayer>> _playerPool; // 9 pads x 3 players each
-  late List<int> _playerPoolIndex; // Track which player to use next
+  // 🚀 OPTIMIZATION: Reduced player pool from 3 to 2 per pad (18 total instead of 27)
+  late List<List<AudioPlayer>> _playerPool;
+  late List<int> _playerPoolIndex;
   late List<String> _soundFiles;
   late List<DrumPadModel> _drumPads;
+  
+  // 🚀 OPTIMIZATION: Track loaded sounds to enable lazy loading
+  final Set<int> _loadedPads = {};
+  bool _isDisposed = false;
 
   bool _isInitialized = false;
   final List<int> _recordedSequence = [];
@@ -40,6 +42,9 @@ class VirtualDrumViewModel extends ChangeNotifier {
   bool _isPlayingRecording = false;
   DateTime? _recordingStartTime;
   String? _recordingId;
+  
+  // 🚀 OPTIMIZATION: Waveform timer reference for proper cleanup
+  Timer? _waveformTimer;
 
   final ValueNotifier<double> masterVolumeNotifier = ValueNotifier(0.8);
   final ValueNotifier<double> reverbNotifier = ValueNotifier(0.0);
@@ -56,6 +61,8 @@ class VirtualDrumViewModel extends ChangeNotifier {
   bool get isPlayingRecording => _isPlayingRecording;
 
   Future<void> initialize() async {
+    if (_isDisposed) return;
+    
     try {
       debugPrint('🎵 Starting Virtual Drum initialization...');
       _initializeDrumPads();
@@ -74,63 +81,57 @@ class VirtualDrumViewModel extends ChangeNotifier {
         'assets/sounds/ride_1.ogg',
       ];
 
-      // Create player pool: 3 players per pad
+      // 🚀 OPTIMIZATION: Create player pool with 2 players per pad (reduced from 3)
       _playerPool = List.generate(
         9,
-        (padIndex) => List.generate(
-          3,
-          (poolIndex) => AudioPlayer(),
-        ),
+        (padIndex) => List.generate(2, (poolIndex) => AudioPlayer()),
       );
 
       _playerPoolIndex = List.filled(9, 0);
 
-      debugPrint('📀 Loading drum sounds...');
-      await _loadDrumSounds();
+      // 🚀 OPTIMIZATION: Only preload most commonly used sounds (kick, snare, hihat)
+      debugPrint('📀 Preloading essential drum sounds...');
+      await _preloadEssentialSounds();
       _startWaveformUpdates();
 
       _isInitialized = true;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
       debugPrint('✅ Virtual Drum initialized successfully');
     } catch (e, stacktrace) {
       debugPrint('❌ Error initializing: $e\n$stacktrace');
       _isInitialized = true;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
-  Future<void> _loadDrumSounds() async {
+  /// 🚀 OPTIMIZATION: Only preload kick, snare, and hi-hat on startup
+  Future<void> _preloadEssentialSounds() async {
+    const essentialPads = [0, 1, 2]; // Kick, Snare, Hi-Hat Close
+    for (final padIndex in essentialPads) {
+      await _loadPadSound(padIndex);
+    }
+  }
+
+  /// 🚀 OPTIMIZATION: Lazy load sound when pad is first played
+  Future<void> _loadPadSound(int padIndex) async {
+    if (_isDisposed || _loadedPads.contains(padIndex)) return;
+    if (padIndex < 0 || padIndex >= _soundFiles.length) return;
+    
+    final soundFile = _soundFiles[padIndex];
+    final fileName = soundFile.split('/').last;
+    
     try {
-      for (int padIndex = 0; padIndex < _soundFiles.length; padIndex++) {
-        final soundFile = _soundFiles[padIndex];
-        final fileName = soundFile.split('/').last;
-        debugPrint('  Loading $fileName...');
-
-        try {
-          // Load the same sound into all 3 players for this pad
-          for (int poolIndex = 0; poolIndex < 3; poolIndex++) {
-            final player = _playerPool[padIndex][poolIndex];
-            await player.setAsset(soundFile);
-            await player.setLoopMode(LoopMode.off);
-
-            // Pre-configure player
-            try {
-              // Seek to start to pre-buffer
-              await player.seek(Duration.zero);
-              // Set default volume
-              await player.setVolume(masterVolumeNotifier.value);
-              debugPrint('    ✓ Player $poolIndex configured');
-            } catch (e) {
-              debugPrint('    ⚠️ Config error: $e');
-            }
-          }
-          debugPrint('  ✓ $fileName loaded (3x player pool)');
-        } catch (e) {
-          debugPrint('  ✗ Failed to load $fileName: $e');
-        }
+      for (int poolIndex = 0; poolIndex < 2; poolIndex++) {
+        final player = _playerPool[padIndex][poolIndex];
+        await player.setAsset(soundFile);
+        await player.setLoopMode(LoopMode.off);
+        await player.seek(Duration.zero);
+        await player.setVolume(masterVolumeNotifier.value);
       }
+      _loadedPads.add(padIndex);
+      debugPrint('  ✓ $fileName loaded (2x player pool)');
     } catch (e) {
-      debugPrint('Error in _loadDrumSounds: $e');
+      debugPrint('  ✗ Failed to load $fileName: $e');
     }
   }
 
@@ -257,17 +258,22 @@ class VirtualDrumViewModel extends ChangeNotifier {
   }
 
   Future<void> playDrumSound(int padIndex) async {
-    if (padIndex < 0 || padIndex >= _playerPool.length) return;
+    if (_isDisposed || padIndex < 0 || padIndex >= _playerPool.length) return;
+
+    // 🚀 OPTIMIZATION: Lazy load sound if not already loaded
+    if (!_loadedPads.contains(padIndex)) {
+      await _loadPadSound(padIndex);
+    }
 
     // Mark pad as active (visual feedback)
     final newActivePads = Set<int>.from(activePadsNotifier.value);
     newActivePads.add(padIndex);
     activePadsNotifier.value = newActivePads;
 
-    // Get current player and rotate to next
+    // Get current player and rotate to next (2 players now instead of 3)
     final int playerIndex = _playerPoolIndex[padIndex];
     final player = _playerPool[padIndex][playerIndex];
-    _playerPoolIndex[padIndex] = (playerIndex + 1) % 3;
+    _playerPoolIndex[padIndex] = (playerIndex + 1) % 2;
 
     try {
       // Stop cleanly - wait for it
@@ -322,26 +328,27 @@ class VirtualDrumViewModel extends ChangeNotifier {
   }
 
   void _applyEffects(int padIndex, List<AudioPlayer> padPlayers) {
+    if (_isDisposed) return;
+    
     // Echo effect
     if (echoNotifier.value > 0) {
       final delayMs = (echoNotifier.value * 400).toInt();
       Future.delayed(Duration(milliseconds: delayMs), () {
-        if (echoNotifier.value > 0) {
-          try {
-            // Rotate through the pad's player pool for echo
-            final int playerIdx = _playerPoolIndex[padIndex];
-            final echoPlayer = padPlayers[playerIdx];
-            _playerPoolIndex[padIndex] = (playerIdx + 1) % 3;
+        if (_isDisposed || echoNotifier.value <= 0) return;
+        try {
+          // Rotate through the pad's player pool for echo
+          final int playerIdx = _playerPoolIndex[padIndex];
+          final echoPlayer = padPlayers[playerIdx];
+          _playerPoolIndex[padIndex] = (playerIdx + 1) % 2;
 
-            final echoVol =
-                masterVolumeNotifier.value * (1.0 - echoNotifier.value);
+          final echoVol =
+              masterVolumeNotifier.value * (1.0 - echoNotifier.value);
 
-            // Use fire-and-forget for effects (non-critical)
-            echoPlayer.setVolume(echoVol).ignore();
-            echoPlayer.play().ignore();
-          } catch (e) {
-            debugPrint('Echo err: $e');
-          }
+          // Use fire-and-forget for effects (non-critical)
+          echoPlayer.setVolume(echoVol).ignore();
+          echoPlayer.play().ignore();
+        } catch (e) {
+          debugPrint('Echo err: $e');
         }
       });
     }
@@ -351,22 +358,21 @@ class VirtualDrumViewModel extends ChangeNotifier {
       for (int i = 1; i <= 2; i++) {
         final delayMs = (reverbNotifier.value * 120 * i).toInt();
         Future.delayed(Duration(milliseconds: delayMs), () {
-          if (reverbNotifier.value > 0) {
-            try {
-              // Rotate through the pad's player pool for reverb
-              final int playerIdx = _playerPoolIndex[padIndex];
-              final revPlayer = padPlayers[playerIdx];
-              _playerPoolIndex[padIndex] = (playerIdx + 1) % 3;
+          if (_isDisposed || reverbNotifier.value <= 0) return;
+          try {
+            // Rotate through the pad's player pool for reverb
+            final int playerIdx = _playerPoolIndex[padIndex];
+            final revPlayer = padPlayers[playerIdx];
+            _playerPoolIndex[padIndex] = (playerIdx + 1) % 2;
 
-              final revVol = masterVolumeNotifier.value *
-                  (1.0 - (reverbNotifier.value * 0.3 * i));
-              if (revVol > 0.05) {
-                revPlayer.setVolume(revVol).ignore();
-                revPlayer.play().ignore();
-              }
-            } catch (e) {
-              debugPrint('Reverb err: $e');
+            final revVol = masterVolumeNotifier.value *
+                (1.0 - (reverbNotifier.value * 0.3 * i));
+            if (revVol > 0.05) {
+              revPlayer.setVolume(revVol).ignore();
+              revPlayer.play().ignore();
             }
+          } catch (e) {
+            debugPrint('Reverb err: $e');
           }
         });
       }
@@ -643,7 +649,12 @@ class VirtualDrumViewModel extends ChangeNotifier {
   }
 
   void _startWaveformUpdates() {
-    Timer.periodic(const Duration(milliseconds: 50), (timer) {
+    _waveformTimer?.cancel();
+    _waveformTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (_isDisposed) {
+        timer.cancel();
+        return;
+      }
       final waveform = _generateWaveform();
       waveformNotifier.value = waveform;
     });
@@ -673,7 +684,28 @@ class VirtualDrumViewModel extends ChangeNotifier {
   }
 
   @override
-  Future<void> dispose() async {
+  void dispose() {
+    _isDisposed = true;
+    _waveformTimer?.cancel();
+    _waveformTimer = null;
+    
+    // Dispose all ValueNotifiers
+    masterVolumeNotifier.dispose();
+    reverbNotifier.dispose();
+    echoNotifier.dispose();
+    bassBoostNotifier.dispose();
+    pitchShiftNotifier.dispose();
+    activePadsNotifier.dispose();
+    waveformNotifier.dispose();
+    visualizationTypeNotifier.dispose();
+    
+    // Dispose audio players asynchronously
+    _disposePlayersAsync();
+    
+    super.dispose();
+  }
+  
+  Future<void> _disposePlayersAsync() async {
     try {
       for (var padPlayers in _playerPool) {
         for (var player in padPlayers) {
@@ -681,8 +713,7 @@ class VirtualDrumViewModel extends ChangeNotifier {
         }
       }
     } catch (e) {
-      debugPrint('Error disposing: $e');
+      debugPrint('Error disposing players: $e');
     }
-    super.dispose();
   }
 }

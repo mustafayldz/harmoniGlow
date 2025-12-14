@@ -28,7 +28,7 @@ class RequestHelper {
     final StorageService storageService = StorageService();
     String? token = await storageService.getFirebaseToken();
 
-    if (token != null || token!.isNotEmpty) {
+    if (token != null && token.isNotEmpty) {
       if (isJwtExpired(token)) {
         token = await getValidFirebaseToken();
       }
@@ -49,7 +49,7 @@ class RequestHelper {
           request.headers.set('content-type', 'application/json');
           request.headers.set('accept', 'application/json');
 
-          if (token.isNotEmpty) {
+          if (token != null && token.isNotEmpty) {
             request.headers.set('authorization', 'Bearer $token');
           }
           final jsonBody = json.encode(body);
@@ -64,7 +64,7 @@ class RequestHelper {
 
           request.headers.set('content-type', 'application/json');
           request.headers.set('accept', 'application/json');
-          if (token.isNotEmpty) {
+          if (token != null && token.isNotEmpty) {
             request.headers.set('authorization', 'Bearer $token');
           }
           final jsonBody = json.encode(body);
@@ -77,7 +77,7 @@ class RequestHelper {
           final request = await client.getUrl(Uri.parse(url));
           request.headers.set('content-type', 'application/json-patch+json');
           // request.headers.set('accept', 'application/json');
-          if (token.isNotEmpty) {
+          if (token != null && token.isNotEmpty) {
             request.headers.set('authorization', 'Bearer $token');
           }
           response = await request.close().timeout(Duration(seconds: timeout));
@@ -86,7 +86,7 @@ class RequestHelper {
           final request = await client.deleteUrl(Uri.parse(url));
           request.headers.set('content-type', 'application/json-patch+json');
           request.headers.set('accept', 'application/json');
-          if (token.isNotEmpty) {
+          if (token != null && token.isNotEmpty) {
             request.headers.set('authorization', 'Bearer $token');
           }
           response = await request.close().timeout(Duration(seconds: timeout));

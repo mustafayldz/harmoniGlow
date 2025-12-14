@@ -17,65 +17,48 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+// 🔥 Singleton providers - her seferinde yeniden oluşturulmaz
+late final UserProvider _userProvider;
+late final AppProvider _appProvider;
+late final NotificationProvider _notificationProvider;
+late final BluetoothBloc _bluetoothBloc;
+
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (_) {}
   await NotificationHandler().saveNotificationInBackground(message);
 }
 
 void main() async {
+  // 🚀 ADIM 1: Minimum başlatma - sadece Flutter engine
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Status bar'ı gizle (tüm uygulama boyunca)
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
+  // 🎨 ADIM 2: UI ayarları (senkron, çok hafif)
+  _configureSystemUI();
 
-  // Status bar'ı tamamen gizle
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  // 🔥 ADIM 3: Firebase'i başlat (zorunlu, diğer servislerin bağımlılığı)
+  await Firebase.initializeApp();
 
-  // Paralel başlatma - performans iyileştirmesi
-  await Future.wait([
-    Firebase.initializeApp(),
-    MobileAds.instance.initialize(),
-    EasyLocalization.ensureInitialized(),
-  ]);
-
-  // Servisleri başlat
-  setupLocator();
-
-  // Background message handler'ı kaydet
+  // 📱 ADIM 4: Background handler kaydı (Firebase'den hemen sonra)
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Firebase Notification Service'i başlat (paralel değil, dependency var)
-  await FirebaseNotificationService().initialize();
+  // 🌍 ADIM 5: Sadece EasyLocalization (UI için kritik)
+  // MobileAds'ı arka plana taşıyoruz - UI'ı bloklamasın
+  await EasyLocalization.ensureInitialized();
 
-  // Notification handler'ı başlat
-  NotificationHandler.initialize();
+  // 📦 ADIM 6: Singleton servisleri hazırla
+  setupLocator();
+  _initializeProviders();
 
-  // Default topic'lere abone ol
-  await NotificationHandler.subscribeToDefaultTopics();
-
-  // FCM Token'ı al ve debug için yazdır
-  final notificationService = FirebaseNotificationService();
-
-  // Token alma işlemi - performansı optimize et
-  await notificationService.getTokenManually();
-
-  // 📱 Version Control Service'i başlat (background'da)
-  VersionControlService().initialize().catchError((e) {
-    debugPrint('❌ [VERSION] Version Control başlatma hatası: $e');
-  });
-
+  // 🚀 ADIM 7: UI'ı HEMEN başlat
   runApp(
     EasyLocalization(
       supportedLocales: const [
@@ -90,6 +73,96 @@ void main() async {
       child: const DrumlyApp(),
     ),
   );
+
+  // 🔔 ADIM 8: Ağır işlemleri UI başladıktan SONRA arka planda yap
+  _initializeBackgroundServicesAsync();
+}
+
+/// System UI yapılandırması (senkron, hafif)
+void _configureSystemUI() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+  
+  // Immersive mode - async ama bloklamaz
+  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
+}
+
+/// Provider'ları bir kere oluştur (singleton pattern)
+void _initializeProviders() {
+  _userProvider = UserProvider();
+  _appProvider = AppProvider();
+  _notificationProvider = NotificationProvider();
+  _bluetoothBloc = BluetoothBloc();
+}
+
+/// Arka plan servisleri - UI'ı bloklamaz
+void _initializeBackgroundServicesAsync() {
+  // İlk frame renderdan sonra başlat
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _runBackgroundTasks();
+  });
+}
+
+/// Arka plan görevleri
+Future<void> _runBackgroundTasks() async {
+  try {
+    // 1. MobileAds - arka planda başlat (UI'dan bağımsız)
+    unawaited(
+      MobileAds.instance.initialize().catchError((e) {
+        debugPrint('⚠️ MobileAds init error: $e');
+        return InitializationStatus({});
+      }),
+    );
+
+    // 2. Firebase Notification - 1 saniye sonra
+    Future.delayed(const Duration(seconds: 1), () async {
+      try {
+        await FirebaseNotificationService().initialize();
+        NotificationHandler.initialize();
+        
+        // Topic subscription - arka planda
+        unawaited(
+          NotificationHandler.subscribeToDefaultTopics().catchError((e) {
+            debugPrint('⚠️ Topic subscription error: $e');
+            return null;
+          }),
+        );
+        
+        debugPrint('✅ Notification services initialized');
+      } catch (e) {
+        debugPrint('⚠️ Notification init error: $e');
+      }
+    });
+
+    // 3. FCM Token - 3 saniye sonra (Firebase Installations Service hazır olsun)
+    Future.delayed(const Duration(seconds: 3), () {
+      unawaited(
+        FirebaseNotificationService().getTokenManually().catchError((e) {
+          debugPrint('⚠️ FCM Token error: $e');
+          return null;
+        }),
+      );
+    });
+
+    // 4. Version Control - 5 saniye sonra (en düşük öncelik)
+    Future.delayed(const Duration(seconds: 5), () {
+      unawaited(
+        VersionControlService().initialize().catchError((e) {
+          debugPrint('⚠️ Version control error: $e');
+        }),
+      );
+    });
+
+  } catch (e) {
+    debugPrint('❌ Background tasks error: $e');
+  }
 }
 
 class DrumlyApp extends StatelessWidget {
@@ -98,11 +171,12 @@ class DrumlyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MultiProvider(
         providers: [
-          ChangeNotifierProvider(create: (_) => UserProvider()),
-          ChangeNotifierProvider(create: (_) => AppProvider()),
-          ChangeNotifierProvider(create: (_) => NotificationProvider()),
+          // Singleton provider'ları kullan - her build'de yeniden oluşturma
+          ChangeNotifierProvider.value(value: _userProvider),
+          ChangeNotifierProvider.value(value: _appProvider),
+          ChangeNotifierProvider.value(value: _notificationProvider),
           RepositoryProvider(create: (_) => StorageService()),
-          BlocProvider(create: (_) => BluetoothBloc()),
+          BlocProvider.value(value: _bluetoothBloc),
         ],
         child: const Drumly(),
       );
@@ -111,40 +185,49 @@ class DrumlyApp extends StatelessWidget {
 class Drumly extends StatelessWidget {
   const Drumly({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final appProvider = Provider.of<AppProvider>(context);
+  // 🎨 Tema cache - her seferinde yeniden oluşturma
+  static final _lightTheme = ThemeData(
+    primarySwatch: Colors.blue,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: Colors.white,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+    ),
+  );
 
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: context.localizationDelegates,
-      supportedLocales: context.supportedLocales,
-      locale: context.locale,
-      navigatorObservers: [
-        FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
-      ],
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-        ),
+  static final _darkTheme = ThemeData(
+    primarySwatch: Colors.blue,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: Colors.black,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+    ),
+  );
+
+  // 🔍 Analytics observer cache
+  static final _analyticsObserver = FirebaseAnalyticsObserver(
+    analytics: FirebaseAnalytics.instance,
+  );
+
+  @override
+  Widget build(BuildContext context) =>
+    // Selector ile sadece isDarkMode değiştiğinde rebuild
+    Selector<AppProvider, bool>(
+      selector: (_, provider) => provider.isDarkMode,
+      builder: (context, isDarkMode, child) => MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: context.localizationDelegates,
+        supportedLocales: context.supportedLocales,
+        locale: context.locale,
+        navigatorObservers: [_analyticsObserver],
+        theme: _lightTheme,
+        darkTheme: _darkTheme,
+        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+        initialRoute: AppRoute.getInitialRoute(),
+        routes: AppRoute.getRoute(),
       ),
-      darkTheme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-        ),
-      ),
-      themeMode: appProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: AppRoute.getInitialRoute(),
-      routes: AppRoute.getRoute(),
     );
-  }
 }

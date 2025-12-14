@@ -28,27 +28,46 @@ class FirebaseNotificationService {
   Function(String)? onTokenRefresh;
 
   /// Firebase Messaging'i başlat
+  /// Ağ hatalarında graceful degradation - uygulama çalışmaya devam eder
   Future<void> initialize() async {
     try {
       // İzin ve local notification işlemlerini paralel başlat
+      // Bu işlemler ağ gerektirmez
       await Future.wait([
         _requestPermission(),
         _initializeLocalNotifications(),
-      ]);
+      ]).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          developer.log('⚠️ Permission/Local notification timeout', name: 'FCM');
+          return [null, null];
+        },
+      );
 
       // iOS için APNS token'ı arka planda başlat
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         unawaited(_getAPNSToken());
       }
 
-      // FCM token'ı arka planda başlat
-      unawaited(_getToken());
+      // FCM token'ı arka planda başlat (hata yakalama ile)
+      // Ağ yoksa sessizce başarısız olur
+      unawaited(
+        _getToken().catchError((e) {
+          final isNetworkError = e.toString().contains('unavailable') ||
+              e.toString().contains('network');
+          if (isNetworkError) {
+            developer.log('🌐 FCM Token ağ hatası - daha sonra alınacak', name: 'FCM');
+          } else {
+            developer.log('FCM Token error (will retry later): $e', name: 'FCM');
+          }
+        }),
+      );
 
       // Token yenileme dinleyicisi
       _firebaseMessaging.onTokenRefresh.listen((token) {
         _fcmToken = token;
         onTokenRefresh?.call(token);
-        developer.log('FCM Token refreshed: $token', name: 'FCM');
+        developer.log('FCM Token refreshed: ${token.substring(0, 20)}...', name: 'FCM');
       });
 
       // Foreground mesaj dinleyicisi
@@ -60,13 +79,25 @@ class FirebaseNotificationService {
       // Uygulama kapalıyken gelen mesajları kontrol et
       unawaited(_checkInitialMessage());
 
-      developer.log('Firebase Messaging initialized successfully', name: 'FCM');
+      developer.log('✅ Firebase Messaging initialized successfully', name: 'FCM');
     } catch (e) {
-      developer.log(
-        'Firebase Messaging initialization failed',
-        name: 'FCM',
-        error: e,
-      );
+      final isNetworkError = e.toString().contains('unavailable') ||
+          e.toString().contains('network') ||
+          e.toString().contains('timeout');
+      
+      if (isNetworkError) {
+        developer.log(
+          '🌐 Firebase Messaging: Ağ bağlantısı yok - bildirimler daha sonra aktif olacak',
+          name: 'FCM',
+        );
+      } else {
+        developer.log(
+          'Firebase Messaging initialization failed: $e',
+          name: 'FCM',
+          error: e,
+        );
+      }
+      // Kritik olmayan hata - uygulamanın çalışmaya devam etmesine izin ver
     }
   }
 
@@ -282,10 +313,59 @@ class FirebaseNotificationService {
     }
   }
 
-  /// FCM token'ı manuel olarak al (public metod)
+  /// FCM token'ı manuel olarak al (public metod) - retry mekanizmalı
+  /// Ağ bağlantısı yoksa sessizce başarısız olur
   Future<String?> getTokenManually() async {
-    await _getToken();
-    return _fcmToken;
+    const maxRetries = 3;
+    // Firebase Installations Service'in hazır olması için daha uzun bekleme
+    const retryDelays = [Duration(seconds: 3), Duration(seconds: 5), Duration(seconds: 8)];
+
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        await _getToken();
+        if (_fcmToken != null && _fcmToken!.isNotEmpty) {
+          developer.log('✅ FCM Token başarıyla alındı', name: 'FCM');
+          return _fcmToken;
+        }
+
+        // Token alınamadıysa bekle ve tekrar dene
+        if (i < maxRetries - 1) {
+          final delay = retryDelays[i];
+          developer.log(
+            '⚠️ FCM Token alınamadı, ${delay.inSeconds}s sonra tekrar denenecek... (${i + 1}/$maxRetries)',
+            name: 'FCM',
+          );
+          await Future.delayed(delay);
+        }
+      } catch (e) {
+        // Firebase Installations Service hatası - ağ sorunu olabilir
+        final isNetworkError = e.toString().contains('unavailable') ||
+            e.toString().contains('network') ||
+            e.toString().contains('timeout');
+        
+        if (isNetworkError) {
+          developer.log(
+            '🌐 Ağ bağlantısı sorunu - FCM Token daha sonra alınacak (${i + 1}/$maxRetries)',
+            name: 'FCM',
+          );
+        } else {
+          developer.log(
+            '❌ FCM Token alma hatası (deneme ${i + 1}/$maxRetries): $e',
+            name: 'FCM',
+          );
+        }
+        
+        if (i < maxRetries - 1) {
+          await Future.delayed(retryDelays[i]);
+        }
+      }
+    }
+
+    developer.log(
+      '⚠️ FCM Token şu an alınamadı - uygulama bildirimsiz çalışacak',
+      name: 'FCM',
+    );
+    return null;
   }
 
   /// iOS için APNS token'ı al

@@ -183,5 +183,15 @@
   "unlockSongMessage": "Bu şarkıyı dinlemek için önce bir destek reklamı izlemeniz gerekir.",
   "watchAd": "Reklam İzle",
   "loadingAd": "Reklam yükleniyor...",
-  "errorOccurred": "Hata oluştu"
+  "errorOccurred": "Hata oluştu",
+  "auth": {
+    "sign_in_failed": "Giriş başarısız",
+    "sign_up_failed": "Kayıt başarısız",
+    "network_error": "İnternet bağlantısı yok. Lütfen ağ bağlantınızı kontrol edin ve tekrar deneyin.",
+    "user_not_found": "Kullanıcı bulunamadı. Lütfen e-posta adresinizi kontrol edin.",
+    "wrong_password": "Yanlış şifre. Lütfen tekrar deneyin.",
+    "invalid_email": "Geçersiz e-posta adresi.",
+    "too_many_requests": "Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.",
+    "email_already_in_use": "Bu e-posta adresi zaten kayıtlı."
+  }
 }

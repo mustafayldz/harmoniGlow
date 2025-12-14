@@ -134,8 +134,36 @@ class AuthViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ Login error: $e');
+      
+      // Kullanıcı dostu hata mesajı
+      String errorMessage = 'auth.sign_in_failed'.tr();
+      
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'network-request-failed':
+            errorMessage = 'auth.network_error'.tr();
+            break;
+          case 'user-not-found':
+            errorMessage = 'auth.user_not_found'.tr();
+            break;
+          case 'wrong-password':
+            errorMessage = 'auth.wrong_password'.tr();
+            break;
+          case 'invalid-email':
+            errorMessage = 'auth.invalid_email'.tr();
+            break;
+          case 'too-many-requests':
+            errorMessage = 'auth.too_many_requests'.tr();
+            break;
+          default:
+            errorMessage = e.message ?? 'auth.sign_in_failed'.tr();
+        }
+      } else if (e.toString().contains('network')) {
+        errorMessage = 'auth.network_error'.tr();
+      }
+      
       Future.delayed(Duration.zero, () {
-        showTopSnackBar(context, 'Sign in failed: $e');
+        showTopSnackBar(context, errorMessage);
       });
     } finally {
       isButtonLoading = false;

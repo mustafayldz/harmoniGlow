@@ -3,6 +3,7 @@ import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
 import 'package:drumly/screens/songs/songs_model.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
+import 'package:drumly/shared/app_gradients.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -20,28 +21,31 @@ class SongView extends StatefulWidget {
 
 class _SongViewState extends State<SongView> {
   late final SongViewModel vm;
-  // Tab controller kaldırıldı
 
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final ConfettiController _confettiController;
   String _lastSearch = '';
-  bool _isGridView = false; // Grid/List toggle için
+  bool _isGridView = false;
   late final UserProvider userProvider;
+  
+  // 🚀 OPTIMIZATION: Cache SharedPreferences and unlock states
+  SharedPreferences? _prefs;
+  final Map<String, bool> _unlockCache = {};
 
   @override
   void initState() {
     super.initState();
 
     userProvider = Provider.of<UserProvider>(context, listen: false);
-    // Tab controller artık gerekli değil
     vm = SongViewModel();
     vm.init(context);
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 1));
 
-    // Build sırasında setState çağrılmasını önlemek için
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 🚀 OPTIMIZATION: Initialize SharedPreferences once
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _prefs = await SharedPreferences.getInstance();
       vm.fetchInitialSongsWithCache(context);
     });
 
@@ -50,10 +54,10 @@ class _SongViewState extends State<SongView> {
 
   @override
   void dispose() {
-    // Tab controller dispose kaldırıldı
     _searchController.dispose();
     _scrollController.dispose();
     _confettiController.dispose();
+    _unlockCache.clear();
     super.dispose();
   }
 
@@ -66,62 +70,68 @@ class _SongViewState extends State<SongView> {
     }
   }
 
-  /// 🔐 KILIT DURUMU KONTROLÜ - Tüm kurallar burada
-  Future<bool> _isSongLocked(SongModel song, bool isBluetoothConnected) async {
+  /// 🔐 KILIT DURUMU KONTROLÜ - Optimized with caching
+  /// Synchronous check using cached values
+  bool _isSongLockedSync(SongModel song, bool isBluetoothConnected) {
     // Eğer şarkı zaten kilitsizse veya Bluetooth bağlıysa -> kilitsiz
     if (!song.isLocked || isBluetoothConnected) {
       return false;
     }
 
     // Eğer kullanıcıya atanmış şarkılar arasında varsa -> kilitsiz
-    if (userProvider.user.assignedSongIds.contains(song.songId)) {
+    final assignedSongs = userProvider.userModel?.assignedSongIds ?? [];
+    if (assignedSongs.contains(song.songId)) {
       return false;
     }
 
-    // Eğer geçici olarak kilit açılmışsa -> kilitsiz
-    final hasUnlock = await _hasValidUnlock(song.songId);
-    if (hasUnlock) {
-      return false;
+    // Check cache first
+    final songId = song.songId;
+    if (songId != null && _unlockCache.containsKey(songId)) {
+      final isUnlocked = _unlockCache[songId] ?? false;
+      return !isUnlocked;
     }
 
-    // Yukarıdaki hiçbir durum gerçekleşmediyse -> kilitli
+    // Default to locked, will be updated when cache is populated
     return true;
   }
 
-  /// ⏰ 2 saatlik unlock kontrolü
-  Future<bool> _hasValidUnlock(String? songId) async {
-    if (songId == null) {
-      return false;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final unlockTimeKey = 'unlock_time_$songId';
-    final unlockTime = prefs.getInt(unlockTimeKey);
-
-    if (unlockTime == null) {
-      return false;
-    }
-
+  /// 🚀 OPTIMIZATION: Batch load unlock states for visible songs
+  void _preloadUnlockStates(List<SongModel> songs) {
+    if (_prefs == null) return;
+    
     final currentTime = DateTime.now().millisecondsSinceEpoch;
-    final twoMinutesInMs = 2 * 60 * 60 * 1000; // 🎯 PRODUCTION: 2 saat
-    final timeElapsed = currentTime - unlockTime;
-
-    // 2 dakika geçti mi kontrol et
-    if (timeElapsed > twoMinutesInMs) {
-      // Süresi dolmuş, temizle
-      await prefs.remove(unlockTimeKey);
-      return false;
+    const twoHoursInMs = 2 * 60 * 60 * 1000;
+    
+    for (final song in songs) {
+      final songId = song.songId;
+      if (songId == null || _unlockCache.containsKey(songId)) continue;
+      
+      final unlockTimeKey = 'unlock_time_$songId';
+      final unlockTime = _prefs!.getInt(unlockTimeKey);
+      
+      if (unlockTime != null) {
+        final timeElapsed = currentTime - unlockTime;
+        _unlockCache[songId] = timeElapsed <= twoHoursInMs;
+        
+        // Clean up expired unlocks
+        if (timeElapsed > twoHoursInMs) {
+          _prefs!.remove(unlockTimeKey);
+        }
+      } else {
+        _unlockCache[songId] = false;
+      }
     }
-    return true; // Hala geçerli
   }
 
   /// 🎁 Rewarded reklam sonrası unlock kaydet
   Future<void> _saveUnlockTime(String songId) async {
-    final prefs = await SharedPreferences.getInstance();
+    _prefs ??= await SharedPreferences.getInstance();
     final unlockTimeKey = 'unlock_time_$songId';
     final currentTime = DateTime.now().millisecondsSinceEpoch;
 
-    await prefs.setInt(unlockTimeKey, currentTime);
+    await _prefs!.setInt(unlockTimeKey, currentTime);
+    // Update cache immediately
+    _unlockCache[songId] = true;
   }
 
   void _onSearchChanged(String query) {
@@ -150,72 +160,66 @@ class _SongViewState extends State<SongView> {
     return ChangeNotifierProvider<SongViewModel>.value(
       value: vm,
       child: Consumer<SongViewModel>(
-        builder: (context, vm, _) => Stack(
-          children: [
-            Scaffold(
-              body: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isDarkMode
-                        ? [
-                            const Color(0xFF0F172A), // Dark slate
-                            const Color(0xFF1E293B), // Lighter slate
-                            const Color(0xFF334155), // Even lighter
-                          ]
-                        : [
-                            const Color(0xFFF8FAFC), // Light gray
-                            const Color(0xFFE2E8F0), // Slightly darker
-                            const Color(0xFFCBD5E1), // Even darker
-                          ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Column(
-                    children: [
-                      // Modern App Bar + Search
-                      _buildModernHeader(context, isDarkMode),
+        builder: (context, vm, _) {
+          // 🚀 OPTIMIZATION: Preload unlock states when songs change
+          if (vm.songs.isNotEmpty) {
+            _preloadUnlockStates(vm.songs);
+          }
+          if (vm.popularSongs.isNotEmpty) {
+            _preloadUnlockStates(vm.popularSongs);
+          }
+          
+          return Stack(
+            children: [
+              Scaffold(
+                body: DecoratedBox(
+                  decoration: AppDecorations.backgroundDecoration(isDarkMode),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        // Modern App Bar + Search
+                        _buildModernHeader(context, isDarkMode),
 
-                      // Main Content - No Tabs
-                      Expanded(
-                        child: _buildMainContent(
-                          vm,
-                          isConnected,
-                          bluetoothBloc,
-                          isDarkMode,
+                        // Main Content - No Tabs
+                        Expanded(
+                          child: _buildMainContent(
+                            vm,
+                            isConnected,
+                            bluetoothBloc,
+                            isDarkMode,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            // Confetti Widget
-            Align(
-              alignment: Alignment.topCenter,
-              child: ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirection: 1.57, // radians - downwards
-                blastDirectionality: BlastDirectionality.explosive,
-                emissionFrequency: 0.05,
-                numberOfParticles: 50,
-                maxBlastForce: 100,
-                minBlastForce: 80,
-                gravity: 0.3,
-                colors: const [
-                  Colors.green,
-                  Colors.blue,
-                  Colors.pink,
-                  Colors.orange,
-                  Colors.purple,
-                  Colors.yellow,
-                ],
+              // Confetti Widget
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirection: 1.57, // radians - downwards
+                  blastDirectionality: BlastDirectionality.explosive,
+                  emissionFrequency: 0.05,
+                  numberOfParticles: 50,
+                  maxBlastForce: 100,
+                  minBlastForce: 80,
+                  gravity: 0.3,
+                  colors: const [
+                    Colors.green,
+                    Colors.blue,
+                    Colors.pink,
+                    Colors.orange,
+                    Colors.purple,
+                    Colors.yellow,
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -458,24 +462,19 @@ class _SongViewState extends State<SongView> {
           itemCount: songs.length,
           itemBuilder: (context, index) {
             final song = songs[index];
+            // 🚀 OPTIMIZATION: Use synchronous cached check instead of FutureBuilder
+            final isLocked = _isSongLockedSync(song, isConnected);
             return Container(
               width: 160,
               margin: const EdgeInsets.only(right: 12),
-              child: FutureBuilder<bool>(
-                future: _isSongLocked(song, isConnected),
-                builder: (context, snapshot) {
-                  final isLocked =
-                      snapshot.data ?? false; // Default false for safety
-                  return _buildHorizontalSongCard(
-                    context,
-                    song,
-                    isConnected,
-                    bluetoothBloc,
-                    vm,
-                    isLocked,
-                    isDarkMode,
-                  );
-                },
+              child: _buildHorizontalSongCard(
+                context,
+                song,
+                isConnected,
+                bluetoothBloc,
+                vm,
+                isLocked,
+                isDarkMode,
               ),
             );
           },
@@ -625,21 +624,16 @@ class _SongViewState extends State<SongView> {
         itemCount: songs.length,
         itemBuilder: (context, index) {
           final song = songs[index];
-          return FutureBuilder<bool>(
-            future: _isSongLocked(song, isConnected),
-            builder: (context, snapshot) {
-              final isLocked =
-                  snapshot.data ?? false; // Default false for safety
-              return _buildGridSongCard(
-                context,
-                song,
-                isConnected,
-                bluetoothBloc,
-                vm,
-                isLocked,
-                isDarkMode,
-              );
-            },
+          // 🚀 OPTIMIZATION: Use synchronous cached check instead of FutureBuilder
+          final isLocked = _isSongLockedSync(song, isConnected);
+          return _buildGridSongCard(
+            context,
+            song,
+            isConnected,
+            bluetoothBloc,
+            vm,
+            isLocked,
+            isDarkMode,
           );
         },
       );
@@ -781,21 +775,16 @@ class _SongViewState extends State<SongView> {
         itemCount: songs.length,
         itemBuilder: (context, index) {
           final song = songs[index];
-          return FutureBuilder<bool>(
-            future: _isSongLocked(song, isConnected),
-            builder: (context, snapshot) {
-              final isLocked =
-                  snapshot.data ?? false; // Default false for safety
-              return _buildModernSongCard(
-                context,
-                song,
-                isConnected,
-                bluetoothBloc,
-                vm,
-                isLocked,
-                isDarkMode,
-              );
-            },
+          // 🚀 OPTIMIZATION: Use synchronous cached check instead of FutureBuilder
+          final isLocked = _isSongLockedSync(song, isConnected);
+          return _buildModernSongCard(
+            context,
+            song,
+            isConnected,
+            bluetoothBloc,
+            vm,
+            isLocked,
+            isDarkMode,
           );
         },
       );

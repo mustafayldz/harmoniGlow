@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:drumly/models/user_model.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/services/local_service.dart';
@@ -15,6 +17,9 @@ class UserProvider with ChangeNotifier {
   // 🎯 Session flags
   bool _hasShownVersionCheckThisSession = false;
   bool _hasShownInitialAdThisSession = false;
+  
+  // 🔒 Debounce
+  bool _isNotifying = false;
 
   // Getters
   UserModel? get userModel => _userModel;
@@ -28,135 +33,79 @@ class UserProvider with ChangeNotifier {
 
   // 🎯 Session flag setters
   void markVersionCheckAsShown() {
-    _hasShownVersionCheckThisSession = true;
-    notifyListeners();
+    if (!_hasShownVersionCheckThisSession) {
+      _hasShownVersionCheckThisSession = true;
+      _safeNotifyListeners();
+    }
   }
   
   void markInitialAdAsShown() {
-    _hasShownInitialAdThisSession = true;
-    notifyListeners();
+    if (!_hasShownInitialAdThisSession) {
+      _hasShownInitialAdThisSession = true;
+      _safeNotifyListeners();
+    }
   }
   
-  // 🔄 Reset session flags (uygulamanın tamamen yeniden başlatılması durumunda)
+  // 🔄 Reset session flags
   void resetSessionFlags() {
     _hasShownVersionCheckThisSession = false;
     _hasShownInitialAdThisSession = false;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   // Setter for user data
   void setUser(UserModel user) {
-    _userModel = user;
-    notifyListeners();
+    if (_userModel != user) {
+      _userModel = user;
+      _safeNotifyListeners();
+    }
   }
 
   void clearUser() {
-    _userModel = null;
-    notifyListeners();
+    if (_userModel != null) {
+      _userModel = null;
+      _safeNotifyListeners();
+    }
   }
 
   /// App başlangıcında token kontrolü ve kullanıcı güncelleme
+  /// Optimize edilmiş - ana thread'i bloklamaz
   Future<void> initializeUser(BuildContext context) async {
+    if (_isLoading) return; // Zaten yükleniyor
+    
     _isLoading = true;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final firebaseUser = FirebaseAuth.instance.currentUser;
 
       if (firebaseUser != null) {
-        // Firebase'den fresh token al
-        final idToken = await firebaseUser.getIdToken(true);
+        // Firebase'den fresh token al - timeout ile
+        final idToken = await firebaseUser.getIdToken(true).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => null,
+        );
 
         if (idToken != null) {
-          await StorageService.saveFirebaseToken(idToken);
+          // Token kaydetmeyi arka planda yap
+          unawaited(StorageService.saveFirebaseToken(idToken));
 
           // Önce mevcut kullanıcıyı kontrol et
           final existingUser = await _userService.getUser(context);
 
           if (existingUser != null) {
-            // Kullanıcı mevcut, FCM token'ı kontrol et ve güncelle
+            // Kullanıcı mevcut
             debugPrint('👤 User found: ${existingUser.email}');
-            debugPrint(
-              '🔍 Checking FCM token... Current: ${existingUser.fcmToken ?? "null"}',
-            );
+            
+            setUser(existingUser);
 
-            // FCM token'ı kontrol et - null veya boşsa güncelle
-            if (existingUser.fcmToken == null ||
-                existingUser.fcmToken!.isEmpty) {
-              debugPrint(
-                '🔔 FCM token is missing, attempting to get and update...',
-              );
-
-              // FCM token'ı al
-              var fcmToken = await FirebaseNotificationService().fcmToken;
-
-              // Eğer hala null ise manuel olarak almaya çalış
-              if (fcmToken == null) {
-                debugPrint('🔄 FCM token null, trying to get manually...');
-                try {
-                  fcmToken =
-                      await FirebaseNotificationService().getTokenManually();
-                } catch (e) {
-                  debugPrint('❌ Failed to get FCM token manually: $e');
-                }
-              }
-
-              if (fcmToken != null && fcmToken.isNotEmpty) {
-                debugPrint(
-                  '🔔 Updating missing FCM token for existing user: ${existingUser.email}',
-                );
-                debugPrint(
-                  '🔔 FCM Token to send: ${fcmToken.substring(0, 20)}...',
-                );
-
-                final updatedUser = await _userService.updateFCMToken(
-                  context,
-                  fcmToken: fcmToken,
-                );
-
-                if (updatedUser != null) {
-                  setUser(updatedUser);
-                  debugPrint(
-                    '✅ FCM token updated for existing user: ${updatedUser.email}',
-                  );
-                } else {
-                  // FCM token güncellenemedi ama mevcut kullanıcıyı yükle
-                  setUser(existingUser);
-                  debugPrint(
-                    'ℹ️ User loaded (FCM token update failed): ${existingUser.email}',
-                  );
-                }
-              } else {
-                // FCM token alınamadı, kullanıcıyı olduğu gibi yükle
-                setUser(existingUser);
-                debugPrint(
-                  '⚠️ FCM token could not be obtained, user loaded without update',
-                );
-              }
-            } else {
-              // FCM token zaten var, kullanıcıyı yükle
-              setUser(existingUser);
-              debugPrint(
-                '✅ User loaded with existing tokens: ${existingUser.email}',
-              );
+            // FCM token güncellemesini arka planda yap
+            if (existingUser.fcmToken == null || existingUser.fcmToken!.isEmpty) {
+              unawaited(_updateFCMTokenInBackground(context));
             }
           } else {
-            // Backend'e kullanıcı bilgilerini gönder/güncelle (yeni kullanıcı veya token mevcut)
-            // FCM token'ı al
-            final fcmToken = await FirebaseNotificationService().fcmToken;
-
-            final user = await _userService.createOrUpdateUser(
-              context,
-              firebaseToken: idToken,
-              email: firebaseUser.email,
-              name: firebaseUser.displayName,
-              fcmToken: fcmToken,
-            );
-
-            if (user != null) {
-              setUser(user);
-              debugPrint('✅ User initialized: ${user.email}');
-            }
+            // Yeni kullanıcı - arka planda oluştur
+            unawaited(_createUserInBackground(context, firebaseUser, idToken));
           }
         }
       }
@@ -164,7 +113,61 @@ class UserProvider with ChangeNotifier {
       debugPrint('❌ Error initializing user: $e');
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
+    }
+  }
+
+  /// FCM token güncellemesi - arka planda
+  Future<void> _updateFCMTokenInBackground(BuildContext context) async {
+    try {
+      debugPrint('🔔 Updating FCM token in background...');
+      
+      var fcmToken = await FirebaseNotificationService().fcmToken;
+      fcmToken ??= await FirebaseNotificationService().getTokenManually();
+
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        final updatedUser = await _userService.updateFCMToken(
+          context,
+          fcmToken: fcmToken,
+        );
+
+        if (updatedUser != null) {
+          setUser(updatedUser);
+          debugPrint('✅ FCM token updated in background');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Background FCM update error: $e');
+    }
+  }
+
+  /// Kullanıcı oluşturma - arka planda
+  Future<void> _createUserInBackground(
+    BuildContext context,
+    User firebaseUser,
+    String idToken,
+  ) async {
+    try {
+      // FCM token'ı al - ama bekleme
+      String? fcmToken;
+      try {
+        fcmToken = await FirebaseNotificationService().fcmToken;
+      } catch (_) {}
+
+      final user = await _userService.createOrUpdateUser(
+        context,
+        firebaseToken: idToken,
+        email: firebaseUser.email,
+        name: firebaseUser.displayName,
+        fcmToken: fcmToken,
+      );
+
+      if (user != null) {
+        setUser(user);
+        debugPrint('✅ User created in background: ${user.email}');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Background user creation error: $e');
     }
   }
 
@@ -210,6 +213,23 @@ class UserProvider with ChangeNotifier {
       } catch (e) {
         debugPrint('❌ Error updating FCM token: $e');
       }
+    }
+  }
+  
+  /// Safe notify - aynı frame'de birden fazla notify'ı önler
+  void _safeNotifyListeners() {
+    if (_isNotifying) return;
+    _isNotifying = true;
+    
+    // Build sırasındaysa, sonraki frame'e ertele
+    if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _isNotifying = false;
+        notifyListeners();
+      });
+    } else {
+      _isNotifying = false;
+      notifyListeners();
     }
   }
 }

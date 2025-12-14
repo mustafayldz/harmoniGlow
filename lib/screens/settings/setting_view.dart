@@ -2,6 +2,7 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/home/home_view.dart';
 import 'package:drumly/screens/settings/settings_viewmodel.dart';
+import 'package:drumly/shared/app_gradients.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +30,9 @@ class _SettingViewBody extends StatefulWidget {
 
 class _SettingViewBodyState extends State<_SettingViewBody> {
   bool _isProfileExpanded = false;
+  
+  // 🚀 OPTIMIZATION: Cache frequently used values
+  late bool _isDarkMode;
 
   @override
   void initState() {
@@ -39,39 +43,28 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
       vm.refreshUserInfo(context);
     });
   }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _isDarkMode = Theme.of(context).brightness == Brightness.dark;
+  }
 
   @override
   Widget build(BuildContext context) {
     final vm = Provider.of<SettingViewModel>(context);
     final appProvider = vm.appProvider;
     final bluetoothState = context.watch<BluetoothBloc>().state;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF0F172A), // Dark slate
-                    const Color(0xFF1E293B), // Lighter slate
-                    const Color(0xFF334155), // Even lighter
-                  ]
-                : [
-                    const Color(0xFFF8FAFC), // Light gray
-                    const Color(0xFFE2E8F0), // Slightly darker
-                    const Color(0xFFCBD5E1), // Even darker
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        decoration: AppDecorations.backgroundDecoration(_isDarkMode),
         child: SafeArea(
           bottom: false,
           child: Column(
             children: [
               // Modern App Bar
-              _buildModernAppBar(context, isDarkMode),
+              _buildModernAppBar(context),
 
               // Content
               Expanded(
@@ -83,19 +76,19 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           // Profile Section
-                          _buildProfileSection(vm, isDarkMode),
+                          _buildProfileSection(vm),
                           const SizedBox(height: 24),
 
                           // Dark Mode Toggle
-                          _buildSimpleSettingCard(
-                            isDarkMode: isDarkMode,
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
                             icon: Icons.brightness_6_outlined,
                             title: 'darkMode'.tr(),
                             child: Switch(
                               value: appProvider.isDarkMode,
                               onChanged: (_) => vm.toggleTheme(),
-                              activeThumbColor: const Color(0xFF6366F1),
-                              activeTrackColor: const Color(0xFF6366F1)
+                              activeThumbColor: AppGradients.primaryAccent,
+                              activeTrackColor: AppGradients.primaryAccent
                                   .withValues(alpha: 0.3),
                               inactiveThumbColor: Colors.grey,
                               inactiveTrackColor:
@@ -105,255 +98,60 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                           const SizedBox(height: 16),
 
                           // Countdown Adjust
-                          _buildSimpleSettingCard(
-                            isDarkMode: isDarkMode,
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
                             icon: Icons.timer_outlined,
                             title: 'adjustCountdown'.tr(),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.remove_rounded),
-                                  onPressed: () => vm.adjustCountdown(false),
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.1)
-                                        : Colors.black.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    '${appProvider.countdownValue} s',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: isDarkMode
-                                          ? Colors.white
-                                          : Colors.black,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.add_rounded),
-                                  onPressed: () => vm.adjustCountdown(true),
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
-                              ],
+                            child: _CountdownControl(
+                              isDarkMode: _isDarkMode,
+                              value: appProvider.countdownValue,
+                              onDecrease: () => vm.adjustCountdown(false),
+                              onIncrease: () => vm.adjustCountdown(true),
                             ),
                           ),
                           const SizedBox(height: 16),
 
                           // Drum Type Toggle (only if connected)
                           if (bluetoothState.isConnected) ...[
-                            _buildSimpleSettingCard(
-                              isDarkMode: isDarkMode,
+                            _SettingCard(
+                              isDarkMode: _isDarkMode,
                               icon: Icons.music_note_outlined,
                               title: 'drumType'.tr(),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: !appProvider.isClassic
-                                          ? const Color(0xFF6366F1)
-                                          : isDarkMode
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.1)
-                                              : Colors.black
-                                                  .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: TextButton(
-                                      onPressed: () => vm.setDrumStyle(false),
-                                      child: Text(
-                                        'electronic'.tr(),
-                                        style: TextStyle(
-                                          color: !appProvider.isClassic
-                                              ? Colors.white
-                                              : isDarkMode
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: appProvider.isClassic
-                                          ? const Color(0xFF6366F1)
-                                          : isDarkMode
-                                              ? Colors.white
-                                                  .withValues(alpha: 0.1)
-                                              : Colors.black
-                                                  .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: TextButton(
-                                      onPressed: () => vm.setDrumStyle(true),
-                                      child: Text(
-                                        'classic'.tr(),
-                                        style: TextStyle(
-                                          color: appProvider.isClassic
-                                              ? Colors.white
-                                              : isDarkMode
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              child: _DrumTypeSelector(
+                                isDarkMode: _isDarkMode,
+                                isClassic: appProvider.isClassic,
+                                onElectronic: () => vm.setDrumStyle(false),
+                                onClassic: () => vm.setDrumStyle(true),
                               ),
                             ),
                             const SizedBox(height: 16),
                           ],
 
                           // Language Selector
-                          _buildSimpleSettingCard(
-                            isDarkMode: isDarkMode,
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
                             icon: Icons.language_outlined,
                             title: 'language'.tr(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isDarkMode
-                                    ? Colors.white.withValues(alpha: 0.1)
-                                    : Colors.black.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButton<Locale>(
-                                value: context.locale,
-                                dropdownColor: isDarkMode
-                                    ? Colors.grey[800]
-                                    : Colors.white,
-                                icon: Icon(
-                                  Icons.arrow_drop_down,
-                                  color:
-                                      isDarkMode ? Colors.white : Colors.black,
-                                ),
-                                underline: const SizedBox(),
-                                borderRadius: BorderRadius.circular(8),
-                                onChanged: (Locale? newLocale) async {
-                                  if (newLocale != null) {
-                                    await context.setLocale(newLocale);
-                                    await Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const HomeView(),
-                                      ),
-                                    );
-                                  }
-                                },
-                                items: [
-                                  DropdownMenuItem(
-                                    value: const Locale('en'),
-                                    child: Text(
-                                      'English',
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: const Locale('tr'),
-                                    child: Text(
-                                      'Türkçe',
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: const Locale('es'),
-                                    child: Text(
-                                      'Español',
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: const Locale('fr'),
-                                    child: Text(
-                                      'Français',
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: const Locale('ru'),
-                                    child: Text(
-                                      'Русский',
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            child: _LanguageSelector(isDarkMode: _isDarkMode),
                           ),
                           const SizedBox(height: 16),
 
                           // App Info
-                          _buildSimpleSettingCard(
-                            isDarkMode: isDarkMode,
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
                             icon: Icons.info_outlined,
                             title: 'appInformation'.tr(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Version: ${vm.version}',
-                                  style: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.8)
-                                        : Colors.black.withValues(alpha: 0.8),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  'Build #: ${vm.buildNumber}',
-                                  style: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.white.withValues(alpha: 0.8)
-                                        : Colors.black.withValues(alpha: 0.8),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                            child: _AppInfo(
+                              isDarkMode: _isDarkMode,
+                              version: vm.version,
+                              buildNumber: vm.buildNumber,
                             ),
                           ),
                           const SizedBox(height: 24),
 
                           // Logout Button
-                          _buildSimpleSettingCard(
-                            isDarkMode: isDarkMode,
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
                             icon: Icons.logout_rounded,
                             title: 'logout'.tr(),
                             isButton: true,
@@ -378,21 +176,16 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
     );
   }
 
-  Widget _buildModernAppBar(BuildContext context, bool isDarkMode) => Container(
+  Widget _buildModernAppBar(BuildContext context) => Container(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
         child: Row(
           children: [
             DecoratedBox(
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
+              decoration: AppDecorations.iconContainerDecoration(_isDarkMode),
               child: IconButton(
                 icon: Icon(
                   Icons.arrow_back_ios_rounded,
-                  color: isDarkMode ? Colors.white : Colors.black,
+                  color: AppColors.textColor(_isDarkMode),
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -404,7 +197,7 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: isDarkMode ? Colors.white : Colors.black,
+                  color: AppColors.textColor(_isDarkMode),
                 ),
               ),
             ),
@@ -413,178 +206,68 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
       );
 
   /// 🎨 Profile Section - Modern Design with Expandable
-  Widget _buildProfileSection(SettingViewModel vm, bool isDarkMode) =>
-      DecoratedBox(
+  Widget _buildProfileSection(SettingViewModel vm) => DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF1E293B).withValues(alpha: 0.9),
-                    const Color(0xFF334155).withValues(alpha: 0.7),
-                  ]
-                : [
-                    Colors.white,
-                    const Color(0xFFF8FAFC),
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: AppGradients.cardGradient(_isDarkMode, alphaStart: 0.9, alphaEnd: 0.7),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.05),
-          ),
+          border: Border.all(color: AppColors.borderColor(_isDarkMode)),
         ),
         child: Material(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              setState(() {
-                _isProfileExpanded = !_isProfileExpanded;
-              });
-            },
+            onTap: () => setState(() => _isProfileExpanded = !_isProfileExpanded),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header Row
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.person_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'profile'.tr(),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                            ),
-                            if (!_isProfileExpanded)
-                              Text(
-                                vm.userModel?.email ?? 'tap_to_view'.tr(),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkMode
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (vm.isLoadingUser)
-                        const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else
-                        Icon(
-                          _isProfileExpanded
-                              ? Icons.expand_less_rounded
-                              : Icons.expand_more_rounded,
-                          color:
-                              isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        ),
-                    ],
+                  _ProfileHeader(
+                    isDarkMode: _isDarkMode,
+                    isExpanded: _isProfileExpanded,
+                    isLoading: vm.isLoadingUser,
+                    email: vm.userModel?.email,
                   ),
 
                   // Expandable Content
                   if (_isProfileExpanded) ...[
                     const SizedBox(height: 20),
                     if (vm.userModel != null) ...[
-                      _buildUserInfoCard(
+                      _UserInfoCard(
                         icon: Icons.email_rounded,
                         title: 'email'.tr(),
                         value: vm.userModel!.email,
-                        isDarkMode: isDarkMode,
+                        isDarkMode: _isDarkMode,
                       ),
                       const SizedBox(height: 12),
-                      _buildUserInfoCard(
+                      _UserInfoCard(
                         icon: Icons.badge_rounded,
                         title: 'name'.tr(),
                         value: vm.userModel!.name,
-                        isDarkMode: isDarkMode,
+                        isDarkMode: _isDarkMode,
                       ),
                       const SizedBox(height: 12),
-                      _buildUserInfoCard(
+                      _UserInfoCard(
                         icon: Icons.library_music_rounded,
                         title: 'assigned_songs'.tr(),
-                        value:
-                            '${vm.userModel!.assignedSongIds.length} ${'song_count'.tr()}',
-                        isDarkMode: isDarkMode,
+                        value: '${vm.userModel!.assignedSongIds.length} ${'song_count'.tr()}',
+                        isDarkMode: _isDarkMode,
                       ),
                       if (vm.userModel!.devices.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        _buildUserInfoCard(
+                        _UserInfoCard(
                           icon: Icons.devices_rounded,
                           title: 'connected_devices'.tr(),
-                          value:
-                              '${vm.userModel!.devices.length} ${'device_count'.tr()}',
-                          isDarkMode: isDarkMode,
+                          value: '${vm.userModel!.devices.length} ${'device_count'.tr()}',
+                          isDarkMode: _isDarkMode,
                         ),
                       ],
                     ] else if (!vm.isLoadingUser) ...[
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? Colors.red.withValues(alpha: 0.1)
-                              : Colors.red.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.red.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline_rounded,
-                              color: Colors.red[400],
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'failed_to_load_profile'.tr(),
-                                style: TextStyle(
-                                  color: Colors.red[400],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _ErrorCard(isDarkMode: _isDarkMode),
                     ] else ...[
-                      // Loading state
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        child: const Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
+                      const _LoadingCard(),
                     ],
                   ],
                 ],
@@ -593,145 +276,431 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
           ),
         ),
       );
+}
 
-  /// 🔖 User Info Card Widget
-  Widget _buildUserInfoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required bool isDarkMode,
-  }) =>
+// ===== EXTRACTED WIDGETS FOR BETTER PERFORMANCE =====
+
+/// 🎨 Profile Header Widget
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.isDarkMode,
+    required this.isExpanded,
+    required this.isLoading,
+    this.email,
+  });
+  
+  final bool isDarkMode;
+  final bool isExpanded;
+  final bool isLoading;
+  final String? email;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
       Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.02),
+          color: AppGradients.primaryAccent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.05),
-          ),
         ),
-        child: Row(
+        child: const Icon(
+          Icons.person_rounded,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+      const SizedBox(width: 16),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.7)
-                  : Colors.black.withValues(alpha: 0.7),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.6)
-                          : Colors.black.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ],
+            Text(
+              'profile'.tr(),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textColor(isDarkMode),
               ),
             ),
+            if (!isExpanded)
+              Text(
+                email ?? 'tap_to_view'.tr(),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
-      );
+      ),
+      if (isLoading)
+        const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        )
+      else
+        Icon(
+          isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+        ),
+    ],
+  );
+}
 
-  /// 🎨 Simple Setting Card Widget
-  Widget _buildSimpleSettingCard({
-    required bool isDarkMode,
-    required IconData icon,
-    required String title,
-    required Widget child,
-    bool isButton = false,
-    VoidCallback? onTap,
-  }) =>
-      DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDarkMode
-                ? [
-                    const Color(0xFF1E293B).withValues(alpha: 0.8),
-                    const Color(0xFF334155).withValues(alpha: 0.6),
-                  ]
-                : [
-                    Colors.white,
-                    const Color(0xFFF8FAFC),
-                  ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.05),
+/// 🔖 User Info Card Widget
+class _UserInfoCard extends StatelessWidget {
+  const _UserInfoCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.isDarkMode,
+  });
+  
+  final IconData icon;
+  final String title;
+  final String value;
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.overlayColor(isDarkMode, alpha: isDarkMode ? 0.05 : 0.02),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.borderColor(isDarkMode)),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: AppColors.secondaryTextColor(isDarkMode),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textColor(isDarkMode, alpha: 0.6),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textColor(isDarkMode),
+                ),
+              ),
+            ],
           ),
         ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isButton && title == 'logout'.tr()
-                          ? Colors.red.withValues(alpha: 0.1)
-                          : const Color(0xFF6366F1).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      icon,
-                      color: isButton && title == 'logout'.tr()
-                          ? Colors.red
-                          : const Color(0xFF6366F1),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isButton && title == 'logout'.tr()
-                            ? Colors.red
-                            : isDarkMode
-                                ? Colors.white
-                                : Colors.black,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  child,
-                ],
+      ],
+    ),
+  );
+}
+
+/// ❌ Error Card Widget
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.isDarkMode});
+  
+  final bool isDarkMode;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.red.withValues(alpha: isDarkMode ? 0.1 : 0.05),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+    ),
+    child: Row(
+      children: [
+        Icon(Icons.error_outline_rounded, color: Colors.red[400], size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'failed_to_load_profile'.tr(),
+            style: TextStyle(color: Colors.red[400], fontSize: 14),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// ⏳ Loading Card Widget
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(24),
+    child: const Center(child: CircularProgressIndicator()),
+  );
+}
+
+/// 🎨 Setting Card Widget
+class _SettingCard extends StatelessWidget {
+  const _SettingCard({
+    required this.isDarkMode,
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.isButton = false,
+    this.onTap,
+  });
+  
+  final bool isDarkMode;
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final bool isButton;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: AppGradients.cardGradient(isDarkMode),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.borderColor(isDarkMode)),
+    ),
+    child: Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: AppDecorations.accentIconContainerDecoration(
+                  color: isButton && title == 'logout'.tr() ? Colors.red : null,
+                ),
+                child: Icon(
+                  icon,
+                  color: isButton && title == 'logout'.tr()
+                      ? Colors.red
+                      : AppGradients.primaryAccent,
+                  size: 24,
+                ),
               ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isButton && title == 'logout'.tr()
+                        ? Colors.red
+                        : AppColors.textColor(isDarkMode),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// ⏱️ Countdown Control Widget
+class _CountdownControl extends StatelessWidget {
+  const _CountdownControl({
+    required this.isDarkMode,
+    required this.value,
+    required this.onDecrease,
+    required this.onIncrease,
+  });
+  
+  final bool isDarkMode;
+  final int value;
+  final VoidCallback onDecrease;
+  final VoidCallback onIncrease;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton(
+        icon: const Icon(Icons.remove_rounded),
+        onPressed: onDecrease,
+        color: AppColors.textColor(isDarkMode),
+      ),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: AppDecorations.chipDecoration(isDarkMode),
+        child: Text(
+          '$value s',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textColor(isDarkMode),
+          ),
+        ),
+      ),
+      IconButton(
+        icon: const Icon(Icons.add_rounded),
+        onPressed: onIncrease,
+        color: AppColors.textColor(isDarkMode),
+      ),
+    ],
+  );
+}
+
+/// 🎵 Drum Type Selector Widget
+class _DrumTypeSelector extends StatelessWidget {
+  const _DrumTypeSelector({
+    required this.isDarkMode,
+    required this.isClassic,
+    required this.onElectronic,
+    required this.onClassic,
+  });
+  
+  final bool isDarkMode;
+  final bool isClassic;
+  final VoidCallback onElectronic;
+  final VoidCallback onClassic;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: !isClassic
+              ? AppGradients.primaryAccent
+              : AppColors.overlayColor(isDarkMode),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: TextButton(
+          onPressed: onElectronic,
+          child: Text(
+            'electronic'.tr(),
+            style: TextStyle(
+              color: !isClassic ? Colors.white : AppColors.textColor(isDarkMode),
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-      );
+      ),
+      const SizedBox(width: 8),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          color: isClassic
+              ? AppGradients.primaryAccent
+              : AppColors.overlayColor(isDarkMode),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: TextButton(
+          onPressed: onClassic,
+          child: Text(
+            'classic'.tr(),
+            style: TextStyle(
+              color: isClassic ? Colors.white : AppColors.textColor(isDarkMode),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// 🌐 Language Selector Widget
+class _LanguageSelector extends StatelessWidget {
+  const _LanguageSelector({required this.isDarkMode});
+  
+  final bool isDarkMode;
+
+  static const _locales = [
+    (Locale('en'), 'English'),
+    (Locale('tr'), 'Türkçe'),
+    (Locale('es'), 'Español'),
+    (Locale('fr'), 'Français'),
+    (Locale('ru'), 'Русский'),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: AppDecorations.chipDecoration(isDarkMode),
+    child: DropdownButton<Locale>(
+      value: context.locale,
+      dropdownColor: isDarkMode ? Colors.grey[800] : Colors.white,
+      icon: Icon(
+        Icons.arrow_drop_down,
+        color: AppColors.textColor(isDarkMode),
+      ),
+      underline: const SizedBox(),
+      borderRadius: BorderRadius.circular(8),
+      onChanged: (Locale? newLocale) async {
+        if (newLocale != null) {
+          await context.setLocale(newLocale);
+          if (context.mounted) {
+            await Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeView()),
+            );
+          }
+        }
+      },
+      items: _locales.map((locale) => DropdownMenuItem(
+        value: locale.$1,
+        child: Text(
+          locale.$2,
+          style: TextStyle(color: AppColors.textColor(isDarkMode)),
+        ),
+      ),).toList(),
+    ),
+  );
+}
+
+/// ℹ️ App Info Widget
+class _AppInfo extends StatelessWidget {
+  const _AppInfo({
+    required this.isDarkMode,
+    required this.version,
+    required this.buildNumber,
+  });
+  
+  final bool isDarkMode;
+  final String version;
+  final String buildNumber;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Text(
+        'Version: $version',
+        style: TextStyle(
+          color: AppColors.textColor(isDarkMode, alpha: 0.8),
+          fontSize: 14,
+        ),
+      ),
+      Text(
+        'Build #: $buildNumber',
+        style: TextStyle(
+          color: AppColors.textColor(isDarkMode, alpha: 0.8),
+          fontSize: 14,
+        ),
+      ),
+    ],
+  );
 }

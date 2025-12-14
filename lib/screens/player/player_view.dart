@@ -18,8 +18,7 @@ import 'package:provider/provider.dart';
 class PlayerView extends StatefulWidget {
   const PlayerView(this.songModel, {super.key, this.hideTimeControls = false});
   final TraningModel songModel;
-  final bool
-      hideTimeControls; // Süre göstergesi ve progress bar'ı gizlemek için
+  final bool hideTimeControls;
 
   @override
   State<PlayerView> createState() => _PlayerViewState();
@@ -38,13 +37,19 @@ class _PlayerViewState extends State<PlayerView> {
   bool showSpeedText = false;
   Timer? _speedTextTimer;
 
-  late final StreamSubscription<PlayerState> _playerStateSub;
+  StreamSubscription<PlayerState>? _playerStateSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<ProcessingState>? _processingStateSub;
+  
   List<int> curretnData = [];
   final Set<int> _sentNoteIndices = {};
   static const int baseLedDuration = 100;
   final List<String> sentDrumParts = [];
   Color rondomColor = Colors.black;
   Duration prevPos = Duration.zero;
+  
+  // 🚀 OPTIMIZATION: Track disposal state
+  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -52,33 +57,39 @@ class _PlayerViewState extends State<PlayerView> {
     appProvider = Provider.of<AppProvider>(context, listen: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initAudio();
+      if (!_isDisposed) _initAudio();
     });
   }
 
   Future<void> _initAudio() async {
+    if (_isDisposed) return;
+    
     try {
-      await FirebaseAnalytics.instance.logEvent(name: widget.songModel.title!);
+      // 🚀 OPTIMIZATION: Fire-and-forget analytics
+      unawaited(
+        FirebaseAnalytics.instance.logEvent(name: widget.songModel.title ?? 'unknown'),
+      );
 
       _playerStateSub = _player.playerStateStream.listen((_) {
-        if (mounted) setState(() {});
+        if (mounted && !_isDisposed) setState(() {});
       });
 
       await _player.setUrl(widget.songModel.fileUrl!);
       _duration = _player.duration ?? Duration.zero;
 
-      if (mounted) setState(() {});
+      if (mounted && !_isDisposed) setState(() {});
       _listenPosition();
 
-      _player.processingStateStream.listen((state) async {
+      _processingStateSub = _player.processingStateStream.listen((state) async {
+        if (_isDisposed) return;
         if (state == ProcessingState.completed) {
-          // Şarkı bitti - loop yapmak yerine durdur
           await _player.seek(Duration.zero);
-          setState(() {
-            prevPos = Duration.zero;
-            _sentNoteIndices.clear();
-          });
-          // await _player.play(); // Bu satırı kaldırarak loop'u durdur
+          if (!_isDisposed) {
+            setState(() {
+              prevPos = Duration.zero;
+              _sentNoteIndices.clear();
+            });
+          }
         }
       });
     } catch (e, stack) {
@@ -87,12 +98,14 @@ class _PlayerViewState extends State<PlayerView> {
   }
 
   void _listenPosition() {
+    if (_isDisposed) return;
+    
     final bluetoothBloc = context.read<BluetoothBloc>();
 
-    _player
+    _positionSub = _player
         .createPositionStream(minPeriod: const Duration(milliseconds: 10))
         .listen((pos) async {
-      if (!mounted) return;
+      if (!mounted || _isDisposed) return;
 
       for (var note in widget.songModel.notes!) {
         final idx = note.i;
@@ -122,14 +135,18 @@ class _PlayerViewState extends State<PlayerView> {
       }
 
       prevPos = pos;
-      setState(() => _position = pos);
+      if (!_isDisposed) setState(() => _position = pos);
     });
   }
 
   @override
   void dispose() {
-    _playerStateSub.cancel();
+    _isDisposed = true;
+    _playerStateSub?.cancel();
+    _positionSub?.cancel();
+    _processingStateSub?.cancel();
     _player.stop();
+    _player.dispose();
     _speedTextTimer?.cancel();
     super.dispose();
   }

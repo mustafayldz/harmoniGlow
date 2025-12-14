@@ -183,7 +183,17 @@
   "unlockSongMessage": "To play this song, you first need to watch a support ad.",
   "watchAd": "Watch Ad",
   "loadingAd": "Loading ad...",
-  "errorOccurred": "Error occurred"
+  "errorOccurred": "Error occurred",
+  "auth": {
+    "sign_in_failed": "Sign in failed",
+    "sign_up_failed": "Sign up failed",
+    "network_error": "No internet connection. Please check your network and try again.",
+    "user_not_found": "User not found. Please check your email address.",
+    "wrong_password": "Incorrect password. Please try again.",
+    "invalid_email": "Invalid email address.",
+    "too_many_requests": "Too many attempts. Please try again later.",
+    "email_already_in_use": "This email is already registered."
+  }
 }
 
 
