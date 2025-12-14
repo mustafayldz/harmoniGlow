@@ -80,18 +80,20 @@ void main() async {
 
 /// System UI yapılandırması (senkron, hafif)
 void _configureSystemUI() {
+  // Modern edge-to-edge approach - avoid deprecated statusBarColor
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
+      // Don't set statusBarColor - deprecated in Android 15
+      // Let system handle it with edge-to-edge
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
+      // Don't set systemNavigationBarColor - deprecated in Android 15
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
   
   // Immersive mode - async ama bloklamaz
-  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
+  unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
 }
 
 /// Provider'ları bir kere oluştur (singleton pattern)
