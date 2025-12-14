@@ -31,22 +31,22 @@ class Env {
   // AdMob Configuration
   static const String admobBannerAndroid = String.fromEnvironment(
     'ADMOB_BANNER_ANDROID',
-    defaultValue: 'ca-app-pub-3940256099942544/6300978111', // Test ID
+    defaultValue: 'ca-app-pub-8628075241374370/2951126614',
   );
 
   static const String admobBannerIos = String.fromEnvironment(
     'ADMOB_BANNER_IOS',
-    defaultValue: 'ca-app-pub-3940256099942544/2934735716', // Test ID
+    defaultValue: 'ca-app-pub-8628075241374370/2832782514',
   );
 
   static const String admobRewardedAndroid = String.fromEnvironment(
     'ADMOB_REWARDED_ANDROID',
-    defaultValue: 'ca-app-pub-3940256099942544/5224354917', // Test ID
+    defaultValue: 'ca-app-pub-8628075241374370/5569852413',
   );
 
   static const String admobRewardedIos = String.fromEnvironment(
     'ADMOB_REWARDED_IOS',
-    defaultValue: 'ca-app-pub-3940256099942544/1712485313', // Test ID
+    defaultValue: 'ca-app-pub-8628075241374370/7819469591',
   );
 
   // Validate environment variables
