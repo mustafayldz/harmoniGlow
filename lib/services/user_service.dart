@@ -183,4 +183,51 @@ class UserService {
       return false;
     }
   }
+
+  /*----------------------------------------------------------------------
+                  Delete User Account
+----------------------------------------------------------------------*/
+  Future<bool> deleteAccount(BuildContext context) async {
+    final String url = '${ApiServiceUrl.baseUrl}users/me';
+
+    try {
+      debugPrint('🗑️ Starting account deletion...');
+      debugPrint('🔗 DELETE request to: $url');
+      
+      final response = await RequestHelper.requestAsync(
+        context,
+        RequestType.delete,
+        url,
+      );
+
+      debugPrint('📥 Delete response received: $response');
+
+      if (response != null && response.isNotEmpty) {
+        try {
+          final jsonResponse = json.decode(response);
+          debugPrint('📦 Parsed response: $jsonResponse');
+          
+          // Backend'den gelen response yapısını kontrol et
+          // 404 (user not found) = zaten silinmiş = başarılı kabul et
+          final bool isSuccess = jsonResponse['status'] == 'success' ||
+              jsonResponse['success'] == true ||
+              (jsonResponse['success'] == false && 
+               jsonResponse['message']?.toString().contains('bulunamadı') == true);
+          
+          debugPrint('✅ Delete result: $isSuccess');
+          return isSuccess;
+        } catch (parseError) {
+          debugPrint('❌ JSON parse error: $parseError');
+          debugPrint('Raw response: $response');
+          return false;
+        }
+      }
+      
+      debugPrint('❌ No response received from server');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Error deleting account: $e');
+      return false;
+    }
+  }
 }

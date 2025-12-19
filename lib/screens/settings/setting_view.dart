@@ -162,6 +162,21 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                               color: Colors.red,
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Delete Account Button
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
+                            icon: Icons.delete_forever_rounded,
+                            title: 'deleteAccount'.tr(),
+                            isButton: true,
+                            onTap: () => vm.deleteAccount(context),
+                            child: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 16,
+                              color: Colors.red,
+                            ),
+                          ),
                           const SizedBox(height: 32),
                         ]),
                       ),

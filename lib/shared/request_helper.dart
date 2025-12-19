@@ -95,23 +95,34 @@ class RequestHelper {
 
       final String result = await response.transform(utf8.decoder).join();
 
+      debugPrint('📊 Response status: ${response.statusCode}');
+      debugPrint('📦 Response body: $result');
+
       switch (response.statusCode) {
         case 200:
         case 201:
+          debugPrint('✅ Request successful');
+          break;
         case 401:
+          debugPrint('🔒 Unauthorized - Token may be invalid');
           break;
         case 400:
+          debugPrint('⚠️ Bad Request');
           break;
         case 404:
+          debugPrint('🔍 Not Found');
           break;
         case 405:
+          debugPrint('🚫 Method Not Allowed');
           break;
         case 500:
+          debugPrint('💥 Internal Server Error');
           break;
         case 502:
+          debugPrint('🌐 Bad Gateway');
           break;
         default:
-          debugPrint('Unexpected status code: ${response.statusCode}');
+          debugPrint('❓ Unexpected status code: ${response.statusCode}');
           debugPrint('Response: $result');
           return null;
       }
