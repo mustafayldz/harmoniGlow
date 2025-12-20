@@ -117,7 +117,7 @@ flutter build ios --dart-define-from-file=.env --release
 
 ## 🌐 API Entegrasyonu
 
-Backend API: `https://drumly-backend-541755790098.us-central1.run.app/api/`
+Backend API: `https://drumly-backend.us-central1.run.app/api/`
 
 Endpoints:
 

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:drumly/env.dart';
 
 class Constants {
   static const int timeOutInterval = 15;
@@ -40,9 +41,7 @@ class AppColors {
 }
 
 class ApiServiceUrl {
-  static const baseUrl =
-      'https://drumly-backend-541755790098.us-central1.run.app/api/';
-  // static const baseUrl = 'http://10.0.0.127:8080/api/';
+  static const baseUrl = Env.apiBaseUrl;
 
   static const user = '${baseUrl}users/';
   static const song = '${baseUrl}songs/';

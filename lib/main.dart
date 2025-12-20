@@ -115,13 +115,13 @@ void _initializeBackgroundServicesAsync() {
 /// Arka plan görevleri
 Future<void> _runBackgroundTasks() async {
   try {
-    // 1. MobileAds - arka planda başlat (UI'dan bağımsız)
-    unawaited(
-      MobileAds.instance.initialize().catchError((e) {
-        debugPrint('⚠️ MobileAds init error: $e');
-        return InitializationStatus({});
-      }),
-    );
+    // 1. MobileAds - HEMEN başlat, reklam hazır olsun
+    try {
+      final initStatus = await MobileAds.instance.initialize();
+      debugPrint('✅ MobileAds initialized: ${initStatus.adapterStatuses}');
+    } catch (e) {
+      debugPrint('❌ MobileAds init error: $e');
+    }
 
     // 2. Firebase Notification - 1 saniye sonra
     Future.delayed(const Duration(seconds: 1), () async {

@@ -29,24 +29,25 @@ class Env {
   );
 
   // AdMob Configuration
-  static const String admobBannerAndroid = String.fromEnvironment(
-    'ADMOB_BANNER_ANDROID',
-    defaultValue: 'ca-app-pub-8628075241374370/2951126614',
-  );
-
-  static const String admobBannerIos = String.fromEnvironment(
-    'ADMOB_BANNER_IOS',
-    defaultValue: 'ca-app-pub-8628075241374370/2832782514',
-  );
-
   static const String admobRewardedAndroid = String.fromEnvironment(
     'ADMOB_REWARDED_ANDROID',
-    defaultValue: 'ca-app-pub-8628075241374370/5569852413',
   );
 
   static const String admobRewardedIos = String.fromEnvironment(
     'ADMOB_REWARDED_IOS',
-    defaultValue: 'ca-app-pub-8628075241374370/7819469591',
+  );
+
+  static const String admobInterstitialAndroid = String.fromEnvironment(
+    'ADMOB_INTERSTITIAL_ANDROID',
+  );
+
+  static const String admobInterstitialIos = String.fromEnvironment(
+    'ADMOB_INTERSTITIAL_IOS',
+  );
+
+  // API Configuration
+  static const String apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
   );
 
   // Validate environment variables

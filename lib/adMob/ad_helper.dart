@@ -5,8 +5,9 @@ import 'package:drumly/env.dart';
 /// Run with: flutter run --dart-define-from-file=.env
 class AdHelper {
   String get interstitialAdUnitId {
-    final String id =
-        Platform.isIOS ? Env.admobBannerIos : Env.admobBannerAndroid;
+    final String id = Platform.isIOS 
+        ? Env.admobInterstitialIos 
+        : Env.admobInterstitialAndroid;
     return id;
   }
 
