@@ -56,4 +56,3 @@ android/app/google-services.json
 .env
 .env.*
 !.env.example
-lib/firebase_options.dart
