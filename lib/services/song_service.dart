@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:drumly/constants.dart';
 import 'package:drumly/models/song_types_model.dart';
-import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/models/songs_model.dart';
 import 'package:drumly/screens/training/trraning_model.dart';
 import 'package:drumly/shared/enums.dart';
 import 'package:drumly/shared/request_helper.dart';

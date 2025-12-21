@@ -1,14 +1,14 @@
 import 'dart:convert';
 
-import 'package:drumly/models/notes_model.dart';
+import 'package:drumly/models/score_v2_model.dart';
 
-SongModel songModelNewFromJson(String str) =>
-    SongModel.fromJson(json.decode(str));
+SongModelV2 songModelV2FromJson(String str) =>
+    SongModelV2.fromJson(json.decode(str));
 
-String songModelNewToJson(SongModel data) => json.encode(data.toJson());
+String songModelV2ToJson(SongModelV2 data) => json.encode(data.toJson());
 
-class SongModel {
-  SongModel({
+class SongModelV2 {
+  SongModelV2({
     this.id,
     this.songId, // Backward compatibility
     this.name,
@@ -21,7 +21,7 @@ class SongModel {
     this.duration,
     this.durationSeconds, // Backward compatibility
     this.bpm,
-    this.notes,
+    this.scoreV2, // Yeni LED player için score_v2 Model
     this.rhythm,
     this.fileUrl,
     this.createdAt,
@@ -30,7 +30,7 @@ class SongModel {
     this.isLocked = false,
   });
 
-  factory SongModel.fromJson(Map<String, dynamic> json) => SongModel(
+  factory SongModelV2.fromJson(Map<String, dynamic> json) => SongModelV2(
         id: json['song_id'] as String?, // API'dan song_id'yi al
         songId: json['song_id'] as String?, // Backward compatibility
         name: json['name'] as String?,
@@ -46,11 +46,11 @@ class SongModel {
                 ? (json['duration'] as double).toInt()
                 : null),
         bpm: json['bpm'] as int?,
-        notes: json['notes'] == null
-            ? []
-            : (json['notes'] as List<dynamic>)
-                .map((n) => NoteModel.fromJson(n as Map<String, dynamic>))
-                .toList(),
+        scoreV2: json['score_v2'] != null
+            ? (json['score_v2'] is String
+                ? ScoreV2Model.fromJsonString(json['score_v2'] as String)
+                : ScoreV2Model.fromJson(json['score_v2'] as Map<String, dynamic>))
+            : null,
         rhythm: json['rhythm'] as String?,
         fileUrl: json['file_url'] as String?,
         createdAt: json['created_at'] != null
@@ -71,7 +71,7 @@ class SongModel {
   String? description;
   double? duration;
   int? bpm;
-  List<NoteModel>? notes;
+  ScoreV2Model? scoreV2; // Yeni LED player için score_v2 Model
   String? rhythm;
   DateTime? createdAt;
   DateTime? updatedAt;
@@ -95,13 +95,11 @@ class SongModel {
         'description': description,
         'duration': duration,
         'bpm': bpm,
-        'notes': notes == null ? [] : notes!.map((n) => n.toJson()).toList(),
+        'score_v2': scoreV2?.toJson(),
         'rhythm': rhythm,
         'created_at': createdAt?.toIso8601String(),
         'updated_at': updatedAt?.toIso8601String(),
         'is_active': isActive,
-
-        // Backward compatibility fields
         'song_id': songId ?? id,
         'title': title ?? name,
         'artist': artist,

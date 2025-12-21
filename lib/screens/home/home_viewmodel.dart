@@ -163,6 +163,18 @@ class HomeViewModel extends ChangeNotifier {
           end: Alignment.bottomRight,
         ),
       ),
+      CardData(
+        key: 'led-player-demo',
+        title: 'LED Player Demo',
+        subtitle: 'Test new LED system',
+        color: const Color(0xFF10B981),
+        icon: Icons.lightbulb_outline,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF10B981), Color(0xFF059669)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
     ];
     notifyListeners();
   }

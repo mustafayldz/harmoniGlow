@@ -8,6 +8,7 @@ import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
 import 'package:drumly/screens/virtual_drum/virtual_drum_page.dart';
+import 'package:drumly/screens/player/led_player_demo.dart';
 import 'package:drumly/adMob/ad_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
@@ -156,6 +157,8 @@ class ModernCard extends StatelessWidget {
         return const SettingView();
       case 'my beats':
         return const MyBeatsView();
+      case 'led-player-demo':
+        return const LedPlayerDemoPage();
       default:
         return const SizedBox.shrink();
     }

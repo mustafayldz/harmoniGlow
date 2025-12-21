@@ -4,11 +4,12 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/player/drum_part_badge.dart';
 import 'package:drumly/screens/player/player_shared.dart';
-import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/models/songs_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:drumly/widgets/song_led_player.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -176,113 +177,198 @@ class YoutubeSongPlayerState extends State<YoutubeSongPlayer> {
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     final bluetoothBloc = context.read<BluetoothBloc>();
+    
+    // Eğer scoreV2 varsa yeni LED player sistemini kullan
+    final hasScoreV2 = widget.song.scoreV2 != null && widget.song.scoreV2!.trim().isNotEmpty;
+    
     return Scaffold(
-      body: Stack(
-        alignment: Alignment.bottomCenter,
+      body: hasScoreV2
+          ? _buildLedPlayerView(context, screenSize, bluetoothBloc)
+          : _buildClassicView(context, screenSize, bluetoothBloc),
+    );
+  }
+
+  Widget _buildLedPlayerView(BuildContext context, Size screenSize, BluetoothBloc bluetoothBloc) => SingleChildScrollView(
+      child: Column(
         children: [
-          Column(
-            children: [
-              SizedBox(
-                height: screenSize.height * 0.04,
-              ),
-
-              // 1️⃣ Display triggered drum parts
-              _sentDrumParts.isNotEmpty || _controller.value.isPlaying
-                  ? DrumOverlayView(
-                      selectedParts: _sentDrumParts,
-                      highlightColor: _randomColor,
-                    )
-                  : Lottie.asset(
-                      'assets/animation/drummer.json',
-                      fit: BoxFit.fitWidth,
-                    ),
-
-              const Spacer(),
-
-              Text(
-                widget.song.title ?? 'Unknown Title',
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-
-              // 2️⃣ Video player
-              SizedBox(
-                height: screenSize.height * 0,
-                child: YoutubePlayer(
-                  controller: _controller,
-                  showVideoProgressIndicator: true,
+          SizedBox(height: screenSize.height * 0.04),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
-
-              SizedBox(
-                height: screenSize.height * 0.05,
-              ),
-
-              // 3️⃣ Basic play / pause buttons
-
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    controlButton(
-                      imagePath: 'assets/images/icons/turtle.png',
-                      onPressed: () => _onTurtlePressed(bluetoothBloc),
-                      backgroundColor: turtleColor,
-                    ),
-                    controlButton(
-                      icon: _controller.value.isPlaying
-                          ? Icons.pause
-                          : Icons.play_arrow,
-                      onPressed: () async {
-                        if (_controller.value.isPlaying) {
-                          _controller.pause();
-                          await SendData().sendHexData(bluetoothBloc, [0]);
-                        } else {
-                          await showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (_) => const Countdown(),
-                          ).whenComplete(() async {
-                            if (mounted) {
-                              _controller.play();
-                            }
-                          });
-                        }
-                      },
-                      iconSize: 52,
-                    ),
-                    controlButton(
-                      imagePath: 'assets/images/icons/rabbit.png',
-                      onPressed: () => _onRabbitPressed(bluetoothBloc),
-                      backgroundColor: rabbitColor,
-                    ),
-                  ],
+                Expanded(
+                  child: Text(
+                    widget.song.title ?? 'Unknown Title',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-              ),
-              SizedBox(
-                height: screenSize.height * 0.05,
-              ),
-            ],
-          ),
-          if (showSpeedText)
-            Positioned(
-              bottom: 140,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Speed: ${playerSpeed.toStringAsFixed(2)}x',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
+                const SizedBox(width: 48),
+              ],
             ),
+          ),
+          
+          SizedBox(height: screenSize.height * 0.02),
+          
+          // YouTube Player (minimized)
+          SizedBox(
+            height: screenSize.height * 0.25,
+            child: YoutubePlayer(
+              controller: _controller,
+              showVideoProgressIndicator: true,
+            ),
+          ),
+          
+          // Play/Pause Controls
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                controlButton(
+                  icon: _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  onPressed: () async {
+                    if (_controller.value.isPlaying) {
+                      _controller.pause();
+                      await SendData().sendHexData(bluetoothBloc, [0]);
+                    } else {
+                      await showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => const Countdown(),
+                      ).whenComplete(() async {
+                        if (mounted) {
+                          _controller.play();
+                        }
+                      });
+                    }
+                  },
+                  iconSize: 52,
+                ),
+              ],
+            ),
+          ),
+          
+          const Divider(),
+          
+          // LED Player Widget
+          SongLedPlayer(
+            scoreJson: widget.song.scoreV2,
+          ),
         ],
       ),
     );
-  }
+
+  Widget _buildClassicView(BuildContext context, Size screenSize, BluetoothBloc bluetoothBloc) => Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        Column(
+          children: [
+            SizedBox(
+              height: screenSize.height * 0.04,
+            ),
+
+            // 1️⃣ Display triggered drum parts
+            _sentDrumParts.isNotEmpty || _controller.value.isPlaying
+                ? DrumOverlayView(
+                    selectedParts: _sentDrumParts,
+                    highlightColor: _randomColor,
+                  )
+                : Lottie.asset(
+                    'assets/animation/drummer.json',
+                    fit: BoxFit.fitWidth,
+                  ),
+
+            const Spacer(),
+
+            Text(
+              widget.song.title ?? 'Unknown Title',
+              style:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+
+            // 2️⃣ Video player
+            SizedBox(
+              height: screenSize.height * 0,
+              child: YoutubePlayer(
+                controller: _controller,
+                showVideoProgressIndicator: true,
+              ),
+            ),
+
+            SizedBox(
+              height: screenSize.height * 0.05,
+            ),
+
+            // 3️⃣ Basic play / pause buttons
+
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  controlButton(
+                    imagePath: 'assets/images/icons/turtle.png',
+                    onPressed: () => _onTurtlePressed(bluetoothBloc),
+                    backgroundColor: turtleColor,
+                  ),
+                  controlButton(
+                    icon: _controller.value.isPlaying
+                        ? Icons.pause
+                        : Icons.play_arrow,
+                    onPressed: () async {
+                      if (_controller.value.isPlaying) {
+                        _controller.pause();
+                        await SendData().sendHexData(bluetoothBloc, [0]);
+                      } else {
+                        await showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (_) => const Countdown(),
+                        ).whenComplete(() async {
+                          if (mounted) {
+                            _controller.play();
+                          }
+                        });
+                      }
+                    },
+                    iconSize: 52,
+                  ),
+                  controlButton(
+                    imagePath: 'assets/images/icons/rabbit.png',
+                    onPressed: () => _onRabbitPressed(bluetoothBloc),
+                    backgroundColor: rabbitColor,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: screenSize.height * 0.05,
+            ),
+          ],
+        ),
+        if (showSpeedText)
+          Positioned(
+            bottom: 140,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Speed: ${playerSpeed.toStringAsFixed(2)}x',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    );
 }

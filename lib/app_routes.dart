@@ -4,6 +4,7 @@ import 'package:drumly/screens/auth/auth_view.dart';
 import 'package:drumly/screens/song_request/song_request_page.dart';
 import 'package:drumly/screens/requested_songs/requested_songs_page.dart';
 import 'package:drumly/screens/splash/splash.dart';
+import 'package:drumly/screens/player/led_player_demo.dart';
 import 'package:flutter/material.dart';
 
 class AppRoute {
@@ -15,6 +16,7 @@ class AppRoute {
         '/findDevices': (context) => const FindDevicesView(),
         '/song-request': (context) => const SongRequestPage(),
         '/requested-songs': (context) => const RequestedSongsPage(),
+        '/led-player-demo': (context) => const LedPlayerDemoPage(),
       };
 
   static String getInitialRoute() => '/splash';
@@ -34,6 +36,10 @@ class AppRoute {
       case '/requested-songs':
         return MaterialPageRoute(
           builder: (context) => const RequestedSongsPage(),
+        );
+      case '/led-player-demo':
+        return MaterialPageRoute(
+          builder: (context) => const LedPlayerDemoPage(),
         );
       default:
         return MaterialPageRoute(

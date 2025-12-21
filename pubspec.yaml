@@ -58,6 +58,7 @@ flutter:
 
   assets:
     - assets/
+    - assets/song_notes.json
     - assets/images/
     - assets/images/classicDrum/
     - assets/images/draw/

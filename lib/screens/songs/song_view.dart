@@ -1,7 +1,7 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/player/player_view_youtube.dart';
-import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/models/songs_model.dart';
 import 'package:drumly/screens/songs/songs_viewmodel.dart';
 import 'package:drumly/shared/app_gradients.dart';
 import 'package:drumly/shared/common_functions.dart';

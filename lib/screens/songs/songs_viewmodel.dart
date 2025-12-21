@@ -1,7 +1,7 @@
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/services/song_service.dart';
 import 'package:flutter/material.dart';
-import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/models/songs_model.dart';
 import 'package:provider/provider.dart';
 
 class SongViewModel extends ChangeNotifier {

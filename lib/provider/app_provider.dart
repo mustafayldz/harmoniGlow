@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:drumly/screens/songs/songs_model.dart';
+import 'package:drumly/models/songs_model.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
