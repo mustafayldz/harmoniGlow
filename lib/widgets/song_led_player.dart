@@ -7,50 +7,41 @@ import 'package:flutter/scheduler.dart';
 /// Models
 /// -----------------------------
 
-class ScoreEvent {
-  final int t0; // tick
-  final int dt; // tick duration for glow
-  final int m;  // 8-bit mask
+class ScoreEvent {  // 8-bit mask
 
   const ScoreEvent({required this.t0, required this.dt, required this.m});
 
-  factory ScoreEvent.fromJson(Map<String, dynamic> j) {
-    return ScoreEvent(
+  factory ScoreEvent.fromJson(Map<String, dynamic> j) => ScoreEvent(
       t0: (j['t0'] as num).round(),
       dt: (j['dt'] as num).round(),
       m: (j['m'] as num).round(),
     );
-  }
+  final int t0; // tick
+  final int dt; // tick duration for glow
+  final int m;
 }
 
 class TempoChange {
-  final int tick;
-  final double bpm;
 
   const TempoChange({required this.tick, required this.bpm});
 
-  factory TempoChange.fromJson(Map<String, dynamic> j) {
-    return TempoChange(
+  factory TempoChange.fromJson(Map<String, dynamic> j) => TempoChange(
       tick: (j['tick'] as num).round(),
       bpm: (j['bpm'] as num).toDouble(),
     );
-  }
+  final int tick;
+  final double bpm;
 }
 
 class TempoIndexPoint {
+
+  const TempoIndexPoint({required this.tick, required this.bpm, required this.msAtTick});
   final int tick;
   final double bpm;
   final double msAtTick;
-
-  const TempoIndexPoint({required this.tick, required this.bpm, required this.msAtTick});
 }
 
 class ScoreV2 {
-  final int ppq;
-  final List<TempoChange> tempoMap;
-  final List<ScoreEvent> events;
-
-  late final List<TempoIndexPoint> _tempoIndex;
 
   ScoreV2({
     required this.ppq,
@@ -74,6 +65,11 @@ class ScoreV2 {
         const <ScoreEvent>[];
     return ScoreV2(ppq: ppq, tempoMap: tm, events: ev);
   }
+  final int ppq;
+  final List<TempoChange> tempoMap;
+  final List<ScoreEvent> events;
+
+  late final List<TempoIndexPoint> _tempoIndex;
 
   List<TempoIndexPoint> get tempoIndex => _tempoIndex;
 }
@@ -241,12 +237,6 @@ List<int> lanesFromMask(int mask) {
 double clamp(double v, double a, double b) => math.max(a, math.min(b, v));
 
 class FallingNote {
-  final String key;
-  final int lane; // 0..7
-  final double x; // px
-  final double y; // px
-  final bool isHit;
-  final double opacity;
 
   const FallingNote({
     required this.key,
@@ -256,6 +246,12 @@ class FallingNote {
     required this.isHit,
     required this.opacity,
   });
+  final String key;
+  final int lane; // 0..7
+  final double x; // px
+  final double y; // px
+  final bool isHit;
+  final double opacity;
 }
 
 List<FallingNote> buildVisibleFallingNotes({
@@ -280,7 +276,7 @@ List<FallingNote> buildVisibleFallingNotes({
   final startTick = math.max(0, msToTick(startMs, score, speed: speed, audioOffsetMs: audioOffsetMs));
   final endTick = math.max(0, msToTick(endMs, score, speed: speed, audioOffsetMs: audioOffsetMs)) + 1;
 
-  var idx = lowerBoundByT0(events, startTick);
+  final idx = lowerBoundByT0(events, startTick);
   final notes = <FallingNote>[];
 
   for (var i = idx; i < events.length; i++) {
@@ -321,7 +317,7 @@ List<FallingNote> buildVisibleFallingNotes({
         y: y,
         isHit: isHit,
         opacity: opacity,
-      ));
+      ),);
     }
   }
 
@@ -333,16 +329,16 @@ List<FallingNote> buildVisibleFallingNotes({
 /// -----------------------------
 
 class SongLedPlayer extends StatefulWidget {
-  final String? scoreJson;
-
-  /// If you want to push mask to BLE, use this.
-  final void Function(int mask)? onActiveMask;
 
   const SongLedPlayer({
     super.key,
     this.scoreJson,
     this.onActiveMask,
   });
+  final String? scoreJson;
+
+  /// If you want to push mask to BLE, use this.
+  final void Function(int mask)? onActiveMask;
 
   @override
   State<SongLedPlayer> createState() => _SongLedPlayerState();
@@ -366,7 +362,7 @@ class _SongLedPlayerState extends State<SongLedPlayer> with SingleTickerProvider
   double get _durationMs {
     if (_score == null) return 0;
     final lt = lastTickOf(_score!);
-    return tickToMs(lt, _score!, speed: 1, audioOffsetMs: _audioOffsetMs);
+    return tickToMs(lt, _score!, audioOffsetMs: _audioOffsetMs);
   }
 
   @override
@@ -530,7 +526,6 @@ class _SongLedPlayerState extends State<SongLedPlayer> with SingleTickerProvider
 
           // Scrub
           Slider(
-            min: 0,
             max: dur,
             value: _posMs.clamp(0, dur),
             onChanged: (v) => _setScrub(v),
@@ -576,11 +571,6 @@ class _SongLedPlayerState extends State<SongLedPlayer> with SingleTickerProvider
 /// -----------------------------
 
 class _FallingNotesStageFlutter extends StatelessWidget {
-  final ScoreV2 score;
-  final double posMs;
-  final double speed;
-  final double audioOffsetMs;
-  final int activeMask;
 
   const _FallingNotesStageFlutter({
     required this.score,
@@ -589,6 +579,11 @@ class _FallingNotesStageFlutter extends StatelessWidget {
     required this.audioOffsetMs,
     required this.activeMask,
   });
+  final ScoreV2 score;
+  final double posMs;
+  final double speed;
+  final double audioOffsetMs;
+  final int activeMask;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -629,11 +624,11 @@ class _FallingNotesStageFlutter extends StatelessWidget {
                         border: Border(
                           left: i == 0
                               ? BorderSide.none
-                              : const BorderSide(color: Color.fromRGBO(51, 65, 85, 0.5), width: 1),
+                              : const BorderSide(color: Color.fromRGBO(51, 65, 85, 0.5)),
                         ),
                       ),
                     ),
-                  )),
+                  ),),
               ),
 
               // notes
@@ -663,7 +658,7 @@ class _FallingNotesStageFlutter extends StatelessWidget {
                                 : const Color.fromRGBO(59, 130, 246, 0.25),
                             blurRadius: 18,
                             offset: const Offset(0, 8),
-                          )
+                          ),
                         ],
                         border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.12)),
                       ),
@@ -727,7 +722,7 @@ class _FallingNotesStageFlutter extends StatelessWidget {
                                     color: Color.fromRGBO(16, 185, 129, 0.35),
                                     blurRadius: 18,
                                     offset: Offset(0, 10),
-                                  )
+                                  ),
                                 ]
                               : const [],
                         ),

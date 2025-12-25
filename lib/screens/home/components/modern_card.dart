@@ -1,15 +1,9 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/screens/beat_maker/beat_maker_view.dart';
-import 'package:drumly/screens/bluetooth/find_devices_view.dart';
 import 'package:drumly/screens/home/components/card_data.dart';
-import 'package:drumly/screens/my_beats/my_beats_view.dart';
-import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
-import 'package:drumly/screens/virtual_drum/virtual_drum_page.dart';
 import 'package:drumly/screens/player/led_player_demo.dart';
-import 'package:drumly/adMob/ad_service.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -116,22 +110,6 @@ class ModernCard extends StatelessWidget {
       await FirebaseAnalytics.instance.logEvent(name: key.replaceAll(' ', '_'));
       if (!context.mounted) return;
 
-      // 🎯 Beat Maker için reklam göster ve tamamlanmasını bekle
-      if (key == 'beat maker') {
-        // Reklam yüklenmesini ve gösterilmesini bekle
-        final bool adCompleted = await AdService.instance.showInterstitialAd();
-
-        // Eğer reklam başarıyla gösterilmediyse veya kapatılmadıysa navigasyon yapma
-        if (!adCompleted) {
-          debugPrint('Ad not completed, navigation cancelled');
-          return;
-        }
-
-        // Context'in hala geçerli olduğundan emin ol
-        if (!context.mounted) return;
-      }
-
-      // Reklam tamamlandıktan sonra navigasyon yap
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => destination),
@@ -147,16 +125,8 @@ class ModernCard extends StatelessWidget {
         return const TrainingView();
       case 'songs':
         return const SongView();
-      case 'virtual drum':
-        return const VirtualDrumPage();
-      case 'my drum':
-        return isConnected ? const DrumAdjustment() : const FindDevicesView();
-      case 'beat maker':
-        return const BeatMakerView();
       case 'settings':
         return const SettingView();
-      case 'my beats':
-        return const MyBeatsView();
       case 'led-player-demo':
         return const LedPlayerDemoPage();
       default:

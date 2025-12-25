@@ -1,11 +1,186 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:drumly/models/song_model_v2.dart';
-import 'package:drumly/models/score_v2_model.dart';
 import 'package:drumly/constants.dart';
-import 'package:drumly/widgets/song_led_player.dart'; // Import helper functions
+
+class DrumlySongV1 {
+
+  DrumlySongV1({
+    required this.v,
+    required this.title,
+    required this.artist,
+    required this.bpm,
+    required this.ts,
+    required this.durationMs,
+    required this.syncMs,
+    required this.lookaheadMs,
+    required this.hitMs,
+    required this.calibrateSpeed,
+    required this.dt,
+    required this.m,
+  });
+
+  factory DrumlySongV1.fromJson(Map<String, dynamic> json) => DrumlySongV1(
+      v: json['v'] as int,
+      title: json['title'] as String,
+      artist: json['artist'] as String,
+      bpm: json['bpm'] as int,
+      ts: json['ts'] as String,
+      durationMs: json['duration_ms'] as int,
+      syncMs: json['sync_ms'] as int,
+      lookaheadMs: json['lookahead_ms'] as int,
+      hitMs: json['hit_ms'] as int,
+      calibrateSpeed: (json['calibrate_speed'] as num).toDouble(),
+      dt: (json['dt'] as List).cast<int>(),
+      m: (json['m'] as List).cast<int>(),
+    );
+  final int v;
+  final String title;
+  final String artist;
+  final int bpm;
+  final String ts;
+  final int durationMs;
+  final int syncMs;
+  final int lookaheadMs;
+  final int hitMs;
+  final double calibrateSpeed;
+
+  final List<int> dt; // delta ms
+  final List<int> m; // bitmask (8-bit)
+
+  // Optional: cache abs times
+  List<int>? _absT;
+
+  /// Build absolute times (ms) once
+  List<int> get absT {
+    final cached = _absT;
+    if (cached != null) return cached;
+
+    final out = List<int>.filled(dt.length, 0);
+    var t = 0;
+    for (var i = 0; i < dt.length; i++) {
+      t += dt[i];
+      out[i] = t;
+    }
+    _absT = out;
+    return out;
+  }
+
+  /// Find first index with absT[idx] >= target
+  int lowerBoundAbsT(int targetMs) {
+    final a = absT;
+    var lo = 0, hi = a.length;
+    while (lo < hi) {
+      final mid = (lo + hi) >> 1;
+      if (a[mid] < targetMs) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo;
+  }
+}
+
+class FallingNote {
+
+  FallingNote({
+    required this.lane,
+    required this.xPct,
+    required this.y,
+    required this.opacity,
+    required this.isHit,
+  });
+  final int lane; // 0..7
+  final double xPct; // 0..100
+  final double y; // px
+  final double opacity;
+  final bool isHit;
+}
+
+/// lane bitmask -> lanes
+List<int> lanesFromMask(int mask) {
+  final out = <int>[];
+  for (var i = 0; i < 8; i++) {
+    if ((mask & (1 << i)) != 0) out.add(i);
+  }
+  return out;
+}
+
+double clamp(double v, double a, double b) => math.max(a, math.min(b, v));
+
+List<FallingNote> buildVisibleNotes({
+  required DrumlySongV1 song,
+  required int songMs, // "tab ms" (playerMs - syncMs)
+  int pastMs = 160,
+  double stageH = 420,
+  double padAreaH = 190,
+  double spawnY = 24,
+}) {
+  final lookahead = song.lookaheadMs;
+  final start = songMs - pastMs;
+  final end = songMs + lookahead;
+
+  final absT = song.absT;
+  final n = absT.length;
+  if (n == 0) return const [];
+
+  var idx = song.lowerBoundAbsT(start);
+  // biraz geri sar — ekran "hit" efektini kaçırmasın
+  idx = math.max(0, idx - 16);
+
+  final notes = <FallingNote>[];
+
+  final padRowH = padAreaH / 2.0;
+  final padTop = stageH - padAreaH;
+
+  for (var i = idx; i < n; i++) {
+    final t = absT[i];
+    if (t > end) break;
+
+    final alphaRaw = (t - songMs) / lookahead; // 0: hit, 1: spawn
+    final alpha = clamp(alphaRaw, -pastMs / lookahead, 1.1);
+
+    final isHit = (t - songMs).abs() <= 18; // daha sıkı hissiyat
+
+    // y interpolate
+    // targetY: lane row'a göre (üst 4 lane row0, alt 4 lane row1 gibi)
+    final mask = song.m[i];
+    final lanes = lanesFromMask(mask);
+
+    for (final lane in lanes) {
+      final col = lane % 4;
+      final row = lane < 4 ? 0 : 1;
+
+      final targetY = padTop + row * padRowH + padRowH / 2.0;
+      final y = targetY + (spawnY - targetY) * alpha;
+
+      final xPct = (100.0 / 4.0) * (col + 0.5);
+
+      var opacity = 1.0;
+      if (alphaRaw < 0) {
+        opacity = clamp(1 + alphaRaw * 6, 0, 1);
+      } else {
+        opacity = clamp(1 - (alphaRaw - 0.85) * 3, 0.2, 1);
+      }
+
+      if (y < -40 || y > stageH + 60 || opacity <= 0.02) continue;
+
+      notes.add(FallingNote(
+        lane: lane,
+        xPct: xPct,
+        y: y,
+        opacity: opacity,
+        isHit: isHit,
+      ),);
+    }
+  }
+
+  return notes;
+}
 
 /// Demo sayfası - song_notes.json dosyasını kullanarak LED player'ı test eder
 class LedPlayerDemoPage extends StatefulWidget {
@@ -21,18 +196,17 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
   double _speed = 1.0;
   bool _showControls = false;
   bool _showSpeedControl = false;
-  SongModelV2? _songModel;
+  DrumlySongV1? _song;
   Timer? _speedControlTimer;
 
   late Ticker _ticker;
   Duration? _lastElapsed;
-  double _posMs = 0.0;
-  ScoreV2? _score; // Parsed score for notes
-  final double _audioOffsetMs = 0;
+  double _playerMs = 0.0; // Player time in ms
 
   // Helper to get LED color from constants
   Color _getLedColor(int index) {
-    final drumPartKey = (index + 1).toString(); // index 0-7 -> drumParts '1'-'8'
+    final drumPartKey =
+        (index + 1).toString(); // index 0-7 -> drumParts '1'-'8'
     final rgb = DrumParts.drumParts[drumPartKey]?['rgb'] as List<dynamic>?;
     if (rgb != null && rgb.length == 3) {
       return Color.fromRGBO(rgb[0] as int, rgb[1] as int, rgb[2] as int, 1);
@@ -55,7 +229,7 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
   }
 
   void _onTick(Duration elapsed) {
-    if (!_isPlaying || _score == null) return;
+    if (!_isPlaying || _song == null) return;
 
     final last = _lastElapsed;
     _lastElapsed = elapsed;
@@ -65,12 +239,10 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
     final dtMs = (elapsed - last).inMicroseconds / 1000.0;
 
     setState(() {
-      // _posMs represents actual elapsed time (not speed-adjusted)
-      // The speed adjustment happens in tickToMs/msToTick conversions
-      _posMs += dtMs * _speed;
-      final dur = _getDurationMs();
-      if (dur > 0 && _posMs >= dur) {
-        _posMs = dur;
+      _playerMs += dtMs * _speed;
+      final dur = _song!.durationMs;
+      if (_playerMs >= dur) {
+        _playerMs = dur.toDouble();
         _isPlaying = false;
         _lastElapsed = null;
         _ticker.stop();
@@ -78,20 +250,13 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
     });
   }
 
-  double _getDurationMs() {
-    if (_score == null) return 0;
-    final lt = lastTickOf(_score!);
-    // Get duration at current speed - faster speed = shorter duration
-    return tickToMs(lt, _score!, speed: _speed, audioOffsetMs: _audioOffsetMs);
-  }
-
   void _togglePlay() {
-    if (_score == null) return;
+    if (_song == null) return;
 
     setState(() {
       // If at end, restart from beginning
-      if (_posMs >= _getDurationMs()) {
-        _posMs = 0.0;
+      if (_playerMs >= _song!.durationMs) {
+        _playerMs = 0.0;
       }
       _isPlaying = !_isPlaying;
     });
@@ -126,18 +291,8 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
   }
 
   void _onSpeedChanged(double value) {
-    // When speed changes, we need to recalculate _posMs to maintain sync
-    // First get current tick position (using old speed)
-    final currentTick = _score != null 
-        ? msToTick(_posMs, _score!, speed: _speed, audioOffsetMs: _audioOffsetMs)
-        : 0;
-    
     setState(() {
       _speed = value;
-      // Recalculate _posMs with new speed to maintain same tick position
-      if (_score != null) {
-        _posMs = tickToMs(currentTick, _score!, speed: _speed, audioOffsetMs: _audioOffsetMs);
-      }
     });
 
     // Reset timer when speed changes
@@ -154,38 +309,14 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
   Future<void> _loadScore() async {
     try {
       final jsonString = await rootBundle.loadString('assets/song_notes.json');
-      final scoreV2Model = ScoreV2Model.fromJsonString(jsonString);
-
-      // Parse to ScoreV2 for falling notes
-      final scoreV2Widget = ScoreV2(
-        ppq: scoreV2Model.ppq,
-        tempoMap: scoreV2Model.tempoMap
-            .map((t) => TempoChange(
-                  tick: t.tick,
-                  bpm: t.bpm.toDouble(),
-                ))
-            .toList(),
-        events: scoreV2Model.events
-            .map((e) => ScoreEvent(
-                  t0: e.t0,
-                  dt: e.dt,
-                  m: e.m,
-                ))
-            .toList(),
-      );
+      final jsonData = json.decode(jsonString) as Map<String, dynamic>;
+      final song = DrumlySongV1.fromJson(jsonData);
 
       setState(() {
-        _songModel = SongModelV2(
-          name: 'Demo Song',
-          scoreV2: scoreV2Model,
-          bpm: scoreV2Model.tempoMap.isNotEmpty
-              ? scoreV2Model.tempoMap.first.bpm
-              : null,
-        );
-        _score = scoreV2Widget;
+        _song = song;
       });
     } catch (e) {
-      debugPrint('Failed to load score: $e');
+      debugPrint('Failed to load song: $e');
     }
   }
 
@@ -206,13 +337,13 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _songModel == null
+      body: _song == null
           ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
                 // Main content - 8 vertical lanes
                 _buildLanesView(
-                    hitZoneHeight, drumNameFontSize, screenHeight, screenWidth),
+                    hitZoneHeight, drumNameFontSize, screenHeight, screenWidth,),
 
                 // Top gradient overlay
                 Positioned(
@@ -258,12 +389,12 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: Colors.white.withOpacity(0.3),
-                            width: 1,
                           ),
                         ),
                         child: _showSpeedControl
                             ? Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     flex: 0,
@@ -281,7 +412,8 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                                       data: SliderTheme.of(context).copyWith(
                                         trackHeight: 3,
                                         thumbShape: const RoundSliderThumbShape(
-                                            enabledThumbRadius: 8,),
+                                          enabledThumbRadius: 8,
+                                        ),
                                       ),
                                       child: Slider(
                                         value: _speed,
@@ -324,14 +456,16 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                 // Controls overlay
                 if (_showControls)
                   _buildControlsOverlay(controlsPadding, controlsTitleSize,
-                      controlsTextSize, infoTextSize),
+                      controlsTextSize, infoTextSize,),
 
                 // Play/Pause button - Center with dynamic opacity
                 Center(
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 300),
                     opacity:
-                        (_isPlaying && _posMs < _getDurationMs()) ? 0.3 : 0.8,
+                        (_isPlaying && _playerMs < (_song?.durationMs ?? 0))
+                            ? 0.3
+                            : 0.8,
                     child: FloatingActionButton.large(
                       backgroundColor: _isPlaying ? Colors.red : Colors.green,
                       onPressed: _togglePlay,
@@ -348,18 +482,30 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
   }
 
   Widget _buildLanesView(double hitZoneHeight, double drumNameFontSize,
-      double screenHeight, double screenWidth) {
-    // Calculate current active mask
-    final curTick = _score != null
-        ? msToTick(_posMs, _score!,
-            speed: _speed, audioOffsetMs: _audioOffsetMs)
-        : 0;
-    final activeMask = _score != null ? maskAtTick(_score!, curTick) : 0;
+      double screenHeight, double screenWidth,) {
+    // Calculate song time (playerMs - syncMs)
+    final songMs = (_playerMs - (_song?.syncMs ?? 0)).round();
 
-    // Calculate falling notes with corrected 8-lane logic
-    final notes = _score != null
-        ? _buildFallingNotes8Lanes(screenHeight, screenWidth, hitZoneHeight)
-        : <_FallingNote8Lane>[];
+    // Calculate current active mask
+    int activeMask = 0;
+    if (_song != null) {
+      final absT = _song!.absT;
+      for (var i = 0; i < absT.length; i++) {
+        if ((absT[i] - songMs).abs() <= (_song!.hitMs / 2)) {
+          activeMask |= _song!.m[i];
+        }
+      }
+    }
+
+    // Calculate falling notes
+    final notes = _song != null
+        ? buildVisibleNotes(
+            song: _song!,
+            songMs: songMs,
+            stageH: screenHeight,
+            padAreaH: hitZoneHeight * 2,
+          )
+        : <FallingNote>[];
 
     return Stack(
       children: [
@@ -373,7 +519,6 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                         border: Border(
                           right: BorderSide(
                             color: Colors.white.withOpacity(0.1),
-                            width: 1,
                           ),
                         ),
                         gradient: LinearGradient(
@@ -410,7 +555,7 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                                               .withOpacity(0.6),
                                           blurRadius: 20,
                                           spreadRadius: 5,
-                                        )
+                                        ),
                                       ]
                                     : null,
                               ),
@@ -430,7 +575,7 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                         ],
                       ),
                     ),
-                  )),
+                  ),),
         ),
 
         // Falling notes overlay
@@ -456,7 +601,7 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                         ? const [Color(0xFF10B981), Color(0xFF059669)]
                         : [
                             _getLedColor(n.lane).withOpacity(0.8),
-                            _getLedColor(n.lane)
+                            _getLedColor(n.lane),
                           ],
                   ),
                   boxShadow: [
@@ -464,7 +609,7 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                       color: _getLedColor(n.lane).withOpacity(0.5),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                   border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
@@ -543,23 +688,44 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
                     SizedBox(height: padding * 0.67),
 
                     // Info
-                    if (_songModel?.scoreV2 != null) ...[
+                    if (_song != null) ...[
                       Text(
-                        'PPQ: ${_songModel!.scoreV2!.ppq}',
+                        'Title: ${_song!.title}',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: infoSize,
                         ),
                       ),
                       Text(
-                        'Events: ${_songModel!.scoreV2!.events.length}',
+                        'Artist: ${_song!.artist}',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: infoSize,
                         ),
                       ),
                       Text(
-                        'Tempo Changes: ${_songModel!.scoreV2!.tempoMap.length}',
+                        'BPM: ${_song!.bpm}',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: infoSize,
+                        ),
+                      ),
+                      Text(
+                        'Time Signature: ${_song!.ts}',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: infoSize,
+                        ),
+                      ),
+                      Text(
+                        'Duration: ${(_song!.durationMs / 1000).toStringAsFixed(1)}s',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: infoSize,
+                        ),
+                      ),
+                      Text(
+                        'Notes: ${_song!.dt.length}',
                         style: TextStyle(
                           color: Colors.grey,
                           fontSize: infoSize,
@@ -596,88 +762,4 @@ class _LedPlayerDemoPageState extends State<LedPlayerDemoPage>
         return '';
     }
   }
-
-  // Custom falling notes calculation for 8 vertical lanes
-  List<_FallingNote8Lane> _buildFallingNotes8Lanes(
-    double screenHeight,
-    double screenWidth,
-    double hitZoneHeight,
-  ) {
-    if (_score == null) return [];
-
-    // Adjust lookAhead and past windows based on speed for smoother experience at all speeds
-    final speedFactor = 1.0 / _speed.clamp(0.5, 2.0);
-    final lookAheadMs = 2200.0 * speedFactor;
-    final pastMs = 200.0 * speedFactor;
-
-    final events = _score!.events;
-    if (events.isEmpty) return [];
-
-    final startMs = _posMs - pastMs;
-    final endMs = _posMs + lookAheadMs;
-
-    final startTick = msToTick(startMs, _score!,
-        speed: _speed, audioOffsetMs: _audioOffsetMs);
-    final endTick =
-        msToTick(endMs, _score!, speed: _speed, audioOffsetMs: _audioOffsetMs) +
-            1;
-
-    final notes = <_FallingNote8Lane>[];
-    final spawnY = 0.0; // Start from top
-    final targetY = screenHeight - hitZoneHeight / 2; // Center of hit zone
-
-    for (final e in events) {
-      if (e.t0 > endTick) break;
-      if (e.t0 < startTick) continue;
-
-      final eventMs =
-          tickToMs(e.t0, _score!, speed: _speed, audioOffsetMs: _audioOffsetMs);
-      final alphaRaw = (eventMs - _posMs) / lookAheadMs; // 0 at hit, 1 at spawn
-
-      if (alphaRaw < -pastMs / lookAheadMs || alphaRaw > 1.15) continue;
-
-      // Calculate Y position (linear interpolation from spawn to target)
-      final y = targetY + (spawnY - targetY) * alphaRaw;
-
-      // Calculate opacity with smoother falloff
-      double opacity;
-      if (alphaRaw < 0) {
-        // Past notes fade out
-        opacity = (1 + alphaRaw * 5).clamp(0.0, 1.0);
-      } else {
-        // Future notes fade in at spawn
-        opacity = (1 - (alphaRaw - 0.85) * 2.5).clamp(0.3, 1.0);
-      }
-
-      // Wider hit window for slow speeds
-      final hitWindowMs = 80.0 * speedFactor;
-
-      // Check each lane (0-7)
-      for (var lane = 0; lane < 8; lane++) {
-        if ((e.m & (1 << lane)) != 0) {
-          notes.add(_FallingNote8Lane(
-            lane: lane,
-            y: y,
-            opacity: opacity,
-            isHit: (eventMs - _posMs).abs() <= hitWindowMs,
-          ));
-        }
-      }
-    }
-
-    return notes;
-  }
-}
-
-class _FallingNote8Lane {
-  _FallingNote8Lane({
-    required this.lane,
-    required this.y,
-    required this.opacity,
-    required this.isHit,
-  });
-  final int lane;
-  final double y;
-  final double opacity;
-  final bool isHit;
 }

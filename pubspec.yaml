@@ -32,12 +32,10 @@ dependencies:
   package_info_plus: ^9.0.0
   intl: ^0.20.2
   easy_localization: ^3.0.7+1
-  audioplayers: ^6.4.0 #bunu beat maker için ekledim
   firebase_messaging: ^16.0.4
   flutter_local_notifications: ^19.5.0
   lottie: ^3.2.0
   confetti: ^0.8.0
-  flutter_soloud: ^3.3.8
 
   flutter_localizations:
     sdk: flutter
