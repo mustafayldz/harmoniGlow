@@ -2,8 +2,8 @@ import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/screens/home/components/card_data.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
+import 'package:drumly/screens/songs/songv2_view.dart';
 import 'package:drumly/screens/training/traning_view.dart';
-import 'package:drumly/screens/player/led_player_demo.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -125,10 +125,10 @@ class ModernCard extends StatelessWidget {
         return const TrainingView();
       case 'songs':
         return const SongView();
+      case 'songsv2':
+        return const SongV2View();
       case 'settings':
         return const SettingView();
-      case 'led-player-demo':
-        return const LedPlayerDemoPage();
       default:
         return const SizedBox.shrink();
     }

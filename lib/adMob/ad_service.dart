@@ -71,8 +71,8 @@ class AdService {
         ),
       );
 
-      // Timeout ekle (30 saniye sonra otomatik olarak izin ver)
-      Timer(const Duration(seconds: 30), () {
+      // Timeout ekle (10 saniye sonra otomatik olarak izin ver)
+      Timer(const Duration(seconds: 10), () {
         if (!completer.isCompleted) {
           debugPrint('Ad timeout - allowing navigation');
           _isLoading = false;

@@ -98,16 +98,22 @@ class RequestHelper {
       debugPrint('📊 Response status: ${response.statusCode}');
       debugPrint('📦 Response body: $result');
 
+      // API dökümanına göre: 200-201 success, 400-404 client errors, 500+ server errors
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint('✅ Request successful');
+        appProvider.setLoading(false);
+        return result;
+      }
+
       switch (response.statusCode) {
-        case 200:
-        case 201:
-          debugPrint('✅ Request successful');
-          break;
         case 401:
           debugPrint('🔒 Unauthorized - Token may be invalid');
           break;
         case 400:
           debugPrint('⚠️ Bad Request');
+          break;
+        case 403:
+          debugPrint('🚫 Forbidden - Insufficient permissions');
           break;
         case 404:
           debugPrint('🔍 Not Found');
@@ -123,11 +129,11 @@ class RequestHelper {
           break;
         default:
           debugPrint('❓ Unexpected status code: ${response.statusCode}');
-          debugPrint('Response: $result');
-          return null;
       }
+      
+      debugPrint('Response details: $result');
       appProvider.setLoading(false);
-      return result;
+      return null;
     } on FormatException catch (e) {
       appProvider.setLoading(false);
       debugPrint('FormatException: $e');
