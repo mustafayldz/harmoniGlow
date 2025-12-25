@@ -68,7 +68,7 @@ class HomeViewModel extends ChangeNotifier {
       return;
     }
 
-    await Future.delayed(const Duration(seconds: 30));
+    await Future.delayed(const Duration(seconds: 10));
 
     // Flag'i işaretle ki bir daha gösterilmesin
     userProvider.markInitialAdAsShown();
