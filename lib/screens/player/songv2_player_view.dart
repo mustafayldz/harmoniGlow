@@ -855,7 +855,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
                 Center(
                   child: Opacity(
-                    opacity: _isPlaying ? 0.18 : 0.85,
+                    opacity: _isPlaying ? 0.10 : 0.85,
                     child: FloatingActionButton.large(
                       backgroundColor: _isPlaying ? Colors.red : Colors.green,
                       onPressed: _togglePlay,

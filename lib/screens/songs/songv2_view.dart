@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/player/songv2_player_view.dart';
@@ -21,6 +22,7 @@ class _SongV2ViewState extends State<SongV2View> {
   late final SongV2ViewModel vm;
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final ConfettiController _confettiController;
   String _lastSearch = '';
   bool _isGridView = false;
   late final UserProvider userProvider;
@@ -34,6 +36,8 @@ class _SongV2ViewState extends State<SongV2View> {
     vm = SongV2ViewModel();
     vm.init(context);
     _initPrefs();
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 1));
 
     vm.addListener(() {
       if (vm.songs.isNotEmpty && _prefs != null) {
@@ -52,6 +56,7 @@ class _SongV2ViewState extends State<SongV2View> {
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -126,6 +131,10 @@ class _SongV2ViewState extends State<SongV2View> {
 
     if (success) {
       await _saveUnlockTime(song.songv2Id);
+      
+      // Confetti efekti başlat
+      _confettiController.play();
+      
       if (mounted) setState(() {});
     }
   }
@@ -155,19 +164,45 @@ class _SongV2ViewState extends State<SongV2View> {
       value: vm,
       child: Consumer<SongV2ViewModel>(
         builder: (context, vm, _) => Scaffold(
-            body: DecoratedBox(
-              decoration: AppDecorations.backgroundDecoration(isDarkMode),
-              child: SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    _buildModernHeader(context, isDarkMode),
-                    Expanded(
-                      child: _buildMainContent(vm, isConnected, bluetoothBloc, isDarkMode),
+            body: Stack(
+              children: [
+                DecoratedBox(
+                  decoration: AppDecorations.backgroundDecoration(isDarkMode),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      children: [
+                        _buildModernHeader(context, isDarkMode),
+                        Expanded(
+                          child: _buildMainContent(vm, isConnected, bluetoothBloc, isDarkMode),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                // Confetti Widget
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: _confettiController,
+                    blastDirection: 1.57, // radians - downwards
+                    blastDirectionality: BlastDirectionality.explosive,
+                    emissionFrequency: 0.05,
+                    numberOfParticles: 50,
+                    maxBlastForce: 100,
+                    minBlastForce: 80,
+                    gravity: 0.3,
+                    colors: const [
+                      Colors.green,
+                      Colors.blue,
+                      Colors.pink,
+                      Colors.orange,
+                      Colors.purple,
+                      Colors.yellow,
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
       ),
