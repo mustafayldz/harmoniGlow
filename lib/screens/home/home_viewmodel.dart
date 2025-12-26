@@ -94,6 +94,7 @@ class HomeViewModel extends ChangeNotifier {
           end: Alignment.bottomRight,
         ),
       ),
+
       CardData(
         key: 'songs',
         title: 'songs'.tr(),
@@ -107,18 +108,6 @@ class HomeViewModel extends ChangeNotifier {
         ),
       ),
 
-      CardData(
-        key: 'songsv2',
-        title: 'Songs V2',
-        subtitle: 'New song system from backend',
-        color: const Color(0xFF8B5CF6),
-        icon: Icons.library_music_outlined,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
       if (isBluetoothConnected)
         CardData(
           key: 'mydrum',

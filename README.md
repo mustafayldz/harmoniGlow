@@ -132,9 +132,28 @@ Endpoints:
 
 ## 👥 İletişim
 
-- **Güvenlik Sorunları:** security@drumly.com
-- **Destek:** support@drumly.com
 
----
 
 **Not:** Bu proje profesyonel güvenlik standartları ile geliştirilmiştir. API keys ve hassas bilgiler asla kaynak kodda saklanmaz.
+
+# 🧩 Kilit Fonksiyonlar ve Sınıflar
+
+Proje içindeki ana fonksiyonlar ve önemli sınıflar:
+
+| Sınıf/Fonksiyon                | Açıklama                                 | Dosya/Yol                           |
+|--------------------------------|------------------------------------------|-------------------------------------|
+| `AppProvider`                  | Uygulama genel state yönetimi            | lib/provider/app_provider.dart      |
+| `SongService`                  | Şarkı API işlemleri                      | lib/services/song_service.dart      |
+| `SongV2Service`                | Yeni nesil şarkı API işlemleri           | lib/services/songv2_service.dart    |
+| `UserService`                  | Kullanıcı işlemleri                      | lib/services/user_service.dart      |
+| `FirebaseNotificationService`  | Push notification yönetimi               | lib/services/firebase_notification_service.dart |
+| `SongViewModel`                | Şarkı ekranı state yönetimi              | lib/screens/songs/songs_viewmodel.dart |
+| `SongV2ViewModel`              | SongsV2 ekranı state yönetimi            | lib/screens/songs/songv2_viewmodel.dart |
+| `SongLedPlayer`                | LED'li şarkı oynatıcı widget'ı           | lib/widgets/song_led_player.dart    |
+| `AdService`                    | AdMob reklam yönetimi                    | lib/adMob/ad_service.dart           |
+| `StorageService`               | Local storage işlemleri                  | lib/services/local_service.dart     |
+| `NotificationHandler`          | Bildirim routing ve yönetimi             | lib/services/notification_handler.dart |
+| `VersionControlService`        | Sürüm kontrol ve güncelleme              | lib/services/version_control_service.dart |
+| `DrumPainter`                  | Davul görsel çizimi                      | lib/screens/my_drum/drum_painter.dart |
+
+Tüm fonksiyonlar ve class'lar için ilgili dosyaları inceleyebilirsiniz. Daha fazla detay için kodun ilgili kısmına bakınız.
