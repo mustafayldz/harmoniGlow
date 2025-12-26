@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:drumly/constants.dart';
 import 'package:provider/provider.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 
 class HomeViewModel extends ChangeNotifier {
   HomeViewModel({required TickerProvider vsync}) {
@@ -52,7 +53,9 @@ class HomeViewModel extends ChangeNotifier {
 
   void initialize(BuildContext context) {
     _checkLocalStorage();
-    _initCards();
+    final bluetoothBloc = Provider.of<BluetoothBloc>(context, listen: false);
+    final isConnected = bluetoothBloc.state.isConnected;
+    _initCards(isConnected);
     _animationController.forward();
 
     // 🎯 Ana sayfa açıldıktan 30 saniye sonra reklam göster
@@ -77,7 +80,7 @@ class HomeViewModel extends ChangeNotifier {
     AdService.instance.showInterstitialAd();
   }
 
-  void _initCards() {
+  void _initCards(bool isBluetoothConnected) {
     _cards = [
       CardData(
         key: 'training',
@@ -116,6 +119,19 @@ class HomeViewModel extends ChangeNotifier {
           end: Alignment.bottomRight,
         ),
       ),
+      if (isBluetoothConnected)
+        CardData(
+          key: 'mydrum',
+          title: 'My Drum',
+          subtitle: 'Customize your drum kit',
+          color: AppColors.drumBlue,
+          icon: Icons.settings_input_component_outlined,
+          gradient: const LinearGradient(
+            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
       CardData(
         key: 'settings',
         title: 'settings'.tr(),
@@ -130,6 +146,11 @@ class HomeViewModel extends ChangeNotifier {
       ),
     ];
     notifyListeners();
+  }
+
+  /// Update cards when Bluetooth connection state changes
+  void updateCards(bool isBluetoothConnected) {
+    _initCards(isBluetoothConnected);
   }
 
   Future<void> _checkLocalStorage() async {

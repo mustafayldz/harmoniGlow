@@ -1,5 +1,6 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/screens/home/components/card_data.dart';
+import 'package:drumly/screens/my_drum/drum_adjustment.dart';
 import 'package:drumly/screens/settings/setting_view.dart';
 import 'package:drumly/screens/songs/song_view.dart';
 import 'package:drumly/screens/songs/songv2_view.dart';
@@ -127,6 +128,8 @@ class ModernCard extends StatelessWidget {
         return const SongView();
       case 'songsv2':
         return const SongV2View();
+      case 'mydrum':
+        return const DrumAdjustment();
       case 'settings':
         return const SettingView();
       default:

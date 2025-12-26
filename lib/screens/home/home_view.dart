@@ -1,3 +1,5 @@
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/blocs/bluetooth/bluetooth_state.dart';
 import 'package:drumly/screens/home/components/home_cards_grid.dart';
 import 'package:drumly/screens/home/components/modern_app_bar.dart';
 import 'package:drumly/screens/home/components/promotion_card.dart';
@@ -5,6 +7,7 @@ import 'package:drumly/screens/home/home_viewmodel.dart';
 import 'package:drumly/widgets/version_update_dialog.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
 
@@ -59,12 +62,18 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return ChangeNotifierProvider<HomeViewModel>.value(
-      value: _viewModel,
-      child: Scaffold(
-        body: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
+    return BlocListener<BluetoothBloc, BluetoothStateC>(
+      listener: (context, state) {
+        // Bluetooth bağlantı durumu değiştiğinde kartları yeniden oluştur
+        final isConnected = state.isConnected;
+        _viewModel.updateCards(isConnected);
+      },
+      child: ChangeNotifierProvider<HomeViewModel>.value(
+        value: _viewModel,
+        child: Scaffold(
+          body: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
               colors: isDarkMode
                   ? const [
                       Color(0xFF0F172A),
@@ -109,6 +118,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
           ),
         ),
       ),
+    ),
     );
   }
 }

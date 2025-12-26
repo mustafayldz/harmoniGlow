@@ -1,11 +1,16 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/app_gradients.dart';
+import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:provider/provider.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'package:drumly/constants.dart';
@@ -481,6 +486,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   bool _isPlaying = false;
   double _speed = 1.0;
   bool _showSpeedSlider = false;
+  Timer? _speedSliderTimer;
 
   SongV2Model? _song;
   bool _isLoading = true;
@@ -514,9 +520,15 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   final SongV2Service _service = SongV2Service();
 
+  // Bluetooth signal tracking
+  final Set<int> _sentNoteIndices = {};
+  final List<int> _currentBluetoothData = [];
+  BluetoothBloc? _bluetoothBloc;
+
   @override
   void initState() {
     super.initState();
+    _bluetoothBloc = context.read<BluetoothBloc>();
     _ticker = createTicker(_onTick);
     _laneColors = List<Color>.generate(8, (i) => _getLedColor(i));
     _loadAll();
@@ -524,6 +536,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   @override
   void dispose() {
+    _speedSliderTimer?.cancel();
     _ticker.dispose();
     _ytController?.dispose();
     _flashCtrl.dispose();
@@ -644,6 +657,32 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _songMsN.value = songMs;
   }
 
+  /// Send Bluetooth signals for notes being hit
+  Future<void> _sendBluetoothSignals(int noteIndex, int laneMask) async {
+    if (_bluetoothBloc == null) return;
+    if (_sentNoteIndices.contains(noteIndex)) return;
+
+    _sentNoteIndices.add(noteIndex);
+    _currentBluetoothData.clear();
+
+    // Extract lanes from mask (bit positions 0-7)
+    for (int lane = 0; lane < 8; lane++) {
+      if ((laneMask & (1 << lane)) != 0) {
+        // Lane is active, send signal for this drum part
+        final drumPart = (lane + 1).toString(); // 1-8
+        final drum = await StorageService.getDrumPart(drumPart);
+        if (drum != null && drum.led != null && drum.rgb != null) {
+          _currentBluetoothData.add(drum.led!);
+          _currentBluetoothData.addAll(drum.rgb!);
+        }
+      }
+    }
+
+    if (_currentBluetoothData.isNotEmpty) {
+      await SendData().sendHexData(_bluetoothBloc!, _currentBluetoothData);
+    }
+  }
+
   void _updateLaneHitsCursor(int songMs) {
     final s = _song!;
     final absT = s.absT;
@@ -659,6 +698,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     for (int i = _hitCursor; i < n && absT[i] <= songMs + hitWindow; i++) {
       if ((absT[i] - songMs).abs() <= hitWindow) {
         final mask = s.m[i];
+        
+        // Send Bluetooth signals for this note (fire and forget)
+        _sendBluetoothSignals(i, mask);
+        
         for (int lane = 0; lane < 8; lane++) {
           if ((mask & (1 << lane)) != 0) {
             _flashCtrl.flashLane(lane, _flashDurationMs.toDouble());
@@ -701,6 +744,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     final isNormalSpeed = rate == 1.0;
     
     setState(() => _speed = rate);
+    
+    // Auto-hide speed slider after 3 seconds
+    _speedSliderTimer?.cancel();
+    _speedSliderTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showSpeedSlider = false);
+    });
     
     if (_ytController != null && _ytReady) {
       if (isNormalSpeed) {
@@ -822,7 +871,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                   right: 0,
                   child: Center(
                     child: GestureDetector(
-                      onTap: () => setState(() => _showSpeedSlider = !_showSpeedSlider),
+                      onTap: () {
+                        _speedSliderTimer?.cancel();
+                        setState(() => _showSpeedSlider = !_showSpeedSlider);
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
