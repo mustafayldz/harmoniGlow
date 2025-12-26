@@ -4,9 +4,11 @@ import 'package:drumly/screens/player/songv2_player_view.dart';
 import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/screens/songs/songv2_viewmodel.dart';
 import 'package:drumly/shared/app_gradients.dart';
+import 'package:drumly/shared/common_functions.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SongV2View extends StatefulWidget {
   const SongV2View({super.key});
@@ -22,6 +24,8 @@ class _SongV2ViewState extends State<SongV2View> {
   String _lastSearch = '';
   bool _isGridView = false;
   late final UserProvider userProvider;
+  SharedPreferences? _prefs;
+  final Map<String, bool> _unlockCache = {};
 
   @override
   void initState() {
@@ -29,6 +33,13 @@ class _SongV2ViewState extends State<SongV2View> {
     userProvider = Provider.of<UserProvider>(context, listen: false);
     vm = SongV2ViewModel();
     vm.init(context);
+    _initPrefs();
+
+    vm.addListener(() {
+      if (vm.songs.isNotEmpty && _prefs != null) {
+        _preloadUnlockStates(vm.songs);
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       vm.fetchInitialSongs();
@@ -50,6 +61,72 @@ class _SongV2ViewState extends State<SongV2View> {
         vm.hasMore &&
         !vm.isLoading) {
       vm.fetchMoreSongs();
+    }
+  }
+
+  /// � Initialize SharedPreferences
+  void _initPrefs() async {
+    _prefs = await SharedPreferences.getInstance();
+  }
+
+  /// �🔐 Lock check - synchronous with cache
+  bool _isSongLockedSync(SongV2Model song, bool isBluetoothConnected) {
+    if (!song.isLocked || isBluetoothConnected) {
+      return false;
+    }
+
+    final assignedSongs = userProvider.userModel?.assignedSongIds ?? [];
+    if (assignedSongs.contains(song.songv2Id)) {
+      return false;
+    }
+
+    if (_unlockCache.containsKey(song.songv2Id)) {
+      return !(_unlockCache[song.songv2Id] ?? false);
+    }
+
+    return true;
+  }
+
+  void _preloadUnlockStates(List<SongV2Model> songs) {
+    if (_prefs == null) return;
+
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    const twoHoursInMs = 2 * 60 * 60 * 1000;
+
+    for (final song in songs) {
+      if (_unlockCache.containsKey(song.songv2Id)) continue;
+
+      final unlockTimeKey = 'unlock_time_${song.songv2Id}';
+      final unlockTime = _prefs!.getInt(unlockTimeKey);
+
+      if (unlockTime != null) {
+        final timeElapsed = currentTime - unlockTime;
+        _unlockCache[song.songv2Id] = timeElapsed <= twoHoursInMs;
+
+        if (timeElapsed > twoHoursInMs) {
+          _prefs!.remove(unlockTimeKey);
+        }
+      } else {
+        _unlockCache[song.songv2Id] = false;
+      }
+    }
+  }
+
+  Future<void> _saveUnlockTime(String songv2Id) async {
+    _prefs ??= await SharedPreferences.getInstance();
+    final unlockTimeKey = 'unlock_time_$songv2Id';
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+
+    await _prefs!.setInt(unlockTimeKey, currentTime);
+    _unlockCache[songv2Id] = true;
+  }
+
+  void _onUnlockTap(SongV2Model song) async {
+    final success = await showAdConsentSnackBar(context, song.songv2Id);
+
+    if (success) {
+      await _saveUnlockTime(song.songv2Id);
+      if (mounted) setState(() {});
     }
   }
 
@@ -327,12 +404,14 @@ class _SongV2ViewState extends State<SongV2View> {
         itemCount: songs.length,
         itemBuilder: (context, index) {
           final song = songs[index];
+          final isLocked = _isSongLockedSync(song, isConnected);
           return _buildModernSongCard(
             context,
             song,
             isConnected,
             bluetoothBloc,
             vm,
+            isLocked,
             isDarkMode,
           );
         },
@@ -357,12 +436,14 @@ class _SongV2ViewState extends State<SongV2View> {
         itemCount: songs.length,
         itemBuilder: (context, index) {
           final song = songs[index];
+          final isLocked = _isSongLockedSync(song, isConnected);
           return _buildGridSongCard(
             context,
             song,
             isConnected,
             bluetoothBloc,
             vm,
+            isLocked,
             isDarkMode,
           );
         },
@@ -374,10 +455,11 @@ class _SongV2ViewState extends State<SongV2View> {
     bool isConnected,
     BluetoothBloc bluetoothBloc,
     SongV2ViewModel vm,
+    bool isLocked,
     bool isDarkMode,
   ) =>
       GestureDetector(
-        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm),
+        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -427,7 +509,7 @@ class _SongV2ViewState extends State<SongV2View> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
-                        Icons.play_arrow_rounded,
+                        isLocked ? Icons.lock_rounded : Icons.play_arrow_rounded,
                         color: isDarkMode ? Colors.white : Colors.black,
                         size: 24,
                       ),
@@ -478,10 +560,11 @@ class _SongV2ViewState extends State<SongV2View> {
     bool isConnected,
     BluetoothBloc bluetoothBloc,
     SongV2ViewModel vm,
+    bool isLocked,
     bool isDarkMode,
   ) =>
       GestureDetector(
-        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm),
+        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
         child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -507,27 +590,50 @@ class _SongV2ViewState extends State<SongV2View> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Image section with lock overlay  
               Expanded(
                 flex: 3,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    gradient: LinearGradient(
-                      colors: isDarkMode
-                          ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
-                          : [const Color(0xFF4F46E5), const Color(0xFF7C3AED)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        gradient: LinearGradient(
+                          colors: isDarkMode
+                              ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
+                              : [const Color(0xFF4F46E5), const Color(0xFF7C3AED)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.music_note_rounded,
+                          size: 48,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.music_note_rounded,
-                      size: 48,
-                      color: Colors.white,
-                    ),
-                  ),
+                    if (isLocked)
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(20),
+                            ),
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.lock_rounded,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               Expanded(
@@ -660,12 +766,17 @@ class _SongV2ViewState extends State<SongV2View> {
     bool isConnected,
     BluetoothBloc bluetoothBloc,
     SongV2ViewModel vm,
+    bool isLocked,
   ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => SongV2PlayerView(songv2Id: song.songv2Id),
-      ),
-    );
+    if (isLocked) {
+      _onUnlockTap(song);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SongV2PlayerView(songv2Id: song.songv2Id),
+        ),
+      );
+    }
   }
 }
