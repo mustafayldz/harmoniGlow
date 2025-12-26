@@ -104,13 +104,14 @@ class _SongViewState extends State<SongView> {
     
     for (final song in songs) {
       final songId = song.songId;
-      if (songId == null || _unlockCache.containsKey(songId)) continue;
+      if (songId == null) continue;
       
       final unlockTimeKey = 'unlock_time_$songId';
       final unlockTime = _prefs!.getInt(unlockTimeKey);
       
       if (unlockTime != null) {
         final timeElapsed = currentTime - unlockTime;
+        // ✅ Her seferinde zamana göre kontrol et - 2 saat sonra tekrar kilitlensin
         _unlockCache[songId] = timeElapsed <= twoHoursInMs;
         
         // Clean up expired unlocks

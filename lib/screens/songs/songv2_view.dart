@@ -99,15 +99,15 @@ class _SongV2ViewState extends State<SongV2View> {
     const twoHoursInMs = 2 * 60 * 60 * 1000;
 
     for (final song in songs) {
-      if (_unlockCache.containsKey(song.songv2Id)) continue;
-
       final unlockTimeKey = 'unlock_time_${song.songv2Id}';
       final unlockTime = _prefs!.getInt(unlockTimeKey);
 
       if (unlockTime != null) {
         final timeElapsed = currentTime - unlockTime;
+        // ✅ Her seferinde zamana göre kontrol et - 2 saat sonra tekrar kilitlensin
         _unlockCache[song.songv2Id] = timeElapsed <= twoHoursInMs;
 
+        // Clean up expired unlocks
         if (timeElapsed > twoHoursInMs) {
           _prefs!.remove(unlockTimeKey);
         }
