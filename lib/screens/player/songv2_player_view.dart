@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
@@ -133,13 +132,21 @@ class _NotesAndGlowPainter extends CustomPainter {
 
   static List<TextPainter>? _labelPainters;
   static double _lastDstRectWidth = 0.0;
-  static bool _lastDark = true;
+  static bool? _lastDark;
 
   static int _packColor(Color c, double opacity) {
-    final oa = (opacity * 255).round().clamp(0, 255);
-    final na = (c.alpha * oa) ~/ 255;
-    return (na << 24) | (c.red << 16) | (c.green << 8) | c.blue;
-  }
+  final oa = (opacity * 255.0).round().clamp(0, 255);
+
+  final ca = (c.a * 255.0).round() & 0xff;
+  final cr = (c.r * 255.0).round() & 0xff;
+  final cg = (c.g * 255.0).round() & 0xff;
+  final cb = (c.b * 255.0).round() & 0xff;
+
+  // Final alpha = colorAlpha * opacityAlpha / 255
+  final na = (ca * oa) ~/ 255;
+
+  return (na << 24) | (cr << 16) | (cg << 8) | cb;
+}
 
   Offset _anchorToScreen(int lane) {
     final a = DrumKitLayout.anchor[lane]!;
@@ -187,12 +194,12 @@ class _NotesAndGlowPainter extends CustomPainter {
         final label = DrumKitLayout.labels[lane] ?? '';
 
         final textColor = isDarkMode
-            ? Colors.white.withOpacity(0.92)
-            : Colors.black.withOpacity(0.92);
+            ? Colors.white.withValues(alpha: 0.92)
+            : Colors.black.withValues(alpha: 0.92);
 
         final shadowColor = isDarkMode
-            ? Colors.black.withOpacity(0.85)
-            : Colors.white.withOpacity(0.75);
+            ? Colors.black.withValues(alpha: 0.85)
+            : Colors.white.withValues(alpha: 0.75);
 
         final tp = TextPainter(
           text: TextSpan(
@@ -223,7 +230,7 @@ class _NotesAndGlowPainter extends CustomPainter {
       final r = _anchorRadiusPx(lane);
 
       // ✅ Kontrast outline (arka plan açıkken de koyu görünür, koyuyken de)
-      final outlineColor = isDarkMode ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.75);
+      final outlineColor = isDarkMode ? Colors.black.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.75);
       canvas.drawCircle(
         center,
         r,
@@ -237,10 +244,10 @@ class _NotesAndGlowPainter extends CustomPainter {
       final baseRing = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.0
-        ..color = c.withOpacity(isDarkMode ? 0.70 : 0.85);
+        ..color = c.withValues(alpha: isDarkMode ? 0.70 : 0.85);
       canvas.drawCircle(center, r, baseRing);
 
-      final baseFill = Paint()..color = c.withOpacity(isDarkMode ? 0.18 : 0.26);
+      final baseFill = Paint()..color = c.withValues(alpha: isDarkMode ? 0.18 : 0.26);
       canvas.drawCircle(center, r, baseFill);
 
       // ✅ Label
@@ -263,9 +270,9 @@ class _NotesAndGlowPainter extends CustomPainter {
             center,
             r * (1.25 + 0.40 * intensity),
             [
-              c.withOpacity(0.0),
-              c.withOpacity(glowStrength * intensity),
-              c.withOpacity(0.0),
+              c.withValues(alpha: 0.0),
+              c.withValues(alpha: glowStrength * intensity),
+              c.withValues(alpha: 0.0),
             ],
             const [0.0, 0.55, 1.0],
           );
@@ -282,7 +289,7 @@ class _NotesAndGlowPainter extends CustomPainter {
           Paint()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2.4
-            ..color = c.withOpacity((isDarkMode ? 0.85 : 1.0) * intensity),
+            ..color = c.withValues(alpha: (isDarkMode ? 0.85 : 1.0) * intensity),
         );
       }
     }
@@ -441,7 +448,7 @@ class _NotesAndGlowPainter extends CustomPainter {
         canvas.drawCircle(
           Offset(x, y),
           noteR,
-          Paint()..color = c.withOpacity(opacity),
+          Paint()..color = c.withValues(alpha: opacity),
         );
       }
     }
@@ -881,7 +888,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                         width: _showSpeedSlider ? math.min(280, size.width * 0.75) : 90,
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.55),
+                          color: Colors.black.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(color: Colors.white24),
                         ),
@@ -957,7 +964,7 @@ class _PillIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Her zeminde kontrast: koyu modda daha açık pill, açık modda daha koyu pill
-    final bg = darkMode ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.55);
+    final bg = darkMode ? Colors.black.withValues(alpha:0.35) : Colors.black.withValues(alpha: 0.55);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -973,8 +980,8 @@ class _PillIconButton extends StatelessWidget {
               BoxShadow(
                 blurRadius: 10,
                 offset: const Offset(0, 4),
-                color: Colors.black.withOpacity(0.25),
-              )
+                color: Colors.black.withValues(alpha: 0.25),
+              ),
             ],
           ),
           child: const Icon(Icons.arrow_back, color: Colors.white),

@@ -33,7 +33,6 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
   }
 
   void checkSavedRgbValues() async {
-    isClassic = appProvider.isClassic;
     await StorageService.getDrumPartsBulk().then(
       (List<DrumModel>? drumParts) {
         if (drumParts != null) {
@@ -58,9 +57,7 @@ class DrumAdjustmentState extends State<DrumAdjustment> {
   @override
   Widget build(BuildContext context) {
     final bluetoothBloc = context.read<BluetoothBloc>();
-    final imagePath = appProvider.isClassic
-        ? 'assets/images/cdrum.png'
-        : 'assets/images/edrum.png';
+    final imagePath = 'assets/images/edrum.png';
 
     return Scaffold(
       appBar: AppBar(

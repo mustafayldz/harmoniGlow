@@ -1,4 +1,3 @@
-import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/screens/home/home_view.dart';
 import 'package:drumly/screens/settings/settings_viewmodel.dart';
@@ -54,7 +53,6 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
   Widget build(BuildContext context) {
     final vm = Provider.of<SettingViewModel>(context);
     final appProvider = vm.appProvider;
-    final bluetoothState = context.watch<BluetoothBloc>().state;
 
     return Scaffold(
       body: DecoratedBox(
@@ -111,22 +109,6 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Drum Type Toggle (only if connected)
-                          if (bluetoothState.isConnected) ...[
-                            _SettingCard(
-                              isDarkMode: _isDarkMode,
-                              icon: Icons.music_note_outlined,
-                              title: 'drumType'.tr(),
-                              child: _DrumTypeSelector(
-                                isDarkMode: _isDarkMode,
-                                isClassic: appProvider.isClassic,
-                                onElectronic: () => vm.setDrumStyle(false),
-                                onClassic: () => vm.setDrumStyle(true),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
                           // Language Selector
                           _SettingCard(
                             isDarkMode: _isDarkMode,
@@ -149,21 +131,6 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Logout Button
-                          _SettingCard(
-                            isDarkMode: _isDarkMode,
-                            icon: Icons.logout_rounded,
-                            title: 'logout'.tr(),
-                            isButton: true,
-                            onTap: () => vm.logout(context),
-                            child: const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              size: 16,
-                              color: Colors.red,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
                           // Delete Account Button
                           _SettingCard(
                             isDarkMode: _isDarkMode,
@@ -171,6 +138,17 @@ class _SettingViewBodyState extends State<_SettingViewBody> {
                             title: 'deleteAccount'.tr(),
                             isButton: true,
                             onTap: () => vm.deleteAccount(context),
+                            child: const SizedBox(),
+                          ),
+                          const SizedBox(height: 16),
+
+                             // Logout Button
+                          _SettingCard(
+                            isDarkMode: _isDarkMode,
+                            icon: Icons.logout_rounded,
+                            title: 'logout'.tr(),
+                            isButton: true,
+                            onTap: () => vm.logout(context),
                             child: const Icon(
                               Icons.arrow_forward_ios_rounded,
                               size: 16,
@@ -573,65 +551,6 @@ class _CountdownControl extends StatelessWidget {
         icon: const Icon(Icons.add_rounded),
         onPressed: onIncrease,
         color: AppColors.textColor(isDarkMode),
-      ),
-    ],
-  );
-}
-
-/// 🎵 Drum Type Selector Widget
-class _DrumTypeSelector extends StatelessWidget {
-  const _DrumTypeSelector({
-    required this.isDarkMode,
-    required this.isClassic,
-    required this.onElectronic,
-    required this.onClassic,
-  });
-  
-  final bool isDarkMode;
-  final bool isClassic;
-  final VoidCallback onElectronic;
-  final VoidCallback onClassic;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: !isClassic
-              ? AppGradients.primaryAccent
-              : AppColors.overlayColor(isDarkMode),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: TextButton(
-          onPressed: onElectronic,
-          child: Text(
-            'electronic'.tr(),
-            style: TextStyle(
-              color: !isClassic ? Colors.white : AppColors.textColor(isDarkMode),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-      const SizedBox(width: 8),
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: isClassic
-              ? AppGradients.primaryAccent
-              : AppColors.overlayColor(isDarkMode),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: TextButton(
-          onPressed: onClassic,
-          child: Text(
-            'classic'.tr(),
-            style: TextStyle(
-              color: isClassic ? Colors.white : AppColors.textColor(isDarkMode),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
       ),
     ],
   );

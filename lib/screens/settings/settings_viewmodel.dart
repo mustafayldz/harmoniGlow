@@ -55,11 +55,6 @@ class SettingViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setDrumStyle(bool isClassic) {
-    appProvider.setIsClassic(isClassic);
-    notifyListeners();
-  }
-
   Future<void> logout(BuildContext context) async {
     await storageService.clearSavedDeviceId();
     await storageService.clearFirebaseToken();

@@ -15,7 +15,6 @@ class AppProvider with ChangeNotifier {
   bool _loading = false;
   int? _countdownValue;
   bool isDarkMode = true; // Başlangıçta dark mode
-  bool _isClassic = false;
 
   // 🎵 Şarkı cache'i
   List<SongModel> _cachedSongs = [];
@@ -26,7 +25,6 @@ class AppProvider with ChangeNotifier {
   // Getter for app data
   int get countdownValue => _countdownValue ?? 3;
   bool get loading => _loading;
-  bool get isClassic => _isClassic;
 
   List<SongModel> get cachedSongs => _cachedSongs;
 
@@ -92,13 +90,6 @@ class AppProvider with ChangeNotifier {
     StorageService.saveThemeMode(isDarkMode).catchError((e) {
       debugPrint('⚠️ Theme save error: $e');
     });
-  }
-
-  void setIsClassic(bool isClassic) {
-    if (_isClassic != isClassic) {
-      _isClassic = isClassic;
-      _safeNotifyListeners();
-    }
   }
 
   void cacheSongs(List<SongModel> songs) {
