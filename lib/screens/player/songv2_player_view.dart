@@ -613,7 +613,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _maxNotesPerFrame = math.min(_maxNotesPerFrame + 40, 900);
     }
 
-    if (_ytController != null && _ytReady) {
+    // Only sync with YouTube when speed is 1.0
+    if (_ytController != null && _ytReady && _speed == 1.0) {
       _ytPollAccumMs += dtMs;
       if (_ytPollAccumMs >= 350.0) {
         final posMs = _ytController!.value.position.inMilliseconds.toDouble();
@@ -624,6 +625,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _playerMs += dtMs * _speed;
       }
     } else {
+      // No YouTube sync (speed != 1.0 or YouTube not ready)
       _playerMs += dtMs * _speed;
     }
 
@@ -682,7 +684,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     if (_isPlaying) {
       _lastElapsed = Duration.zero;
       _ticker.start();
-      if (_ytController != null && _ytReady) {
+      // Only play YouTube when speed is 1.0
+      if (_ytController != null && _ytReady && _speed == 1.0) {
         _ytController!.seekTo(Duration(milliseconds: _playerMs.toInt()));
         _ytController!.play();
       }
@@ -695,8 +698,23 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   void _onSpeedChanged(double v) {
     final rate = _nearestPlaybackRate(v);
+    final isNormalSpeed = rate == 1.0;
+    
     setState(() => _speed = rate);
-    if (_ytController != null && _ytReady) _ytController!.setPlaybackRate(rate);
+    
+    if (_ytController != null && _ytReady) {
+      if (isNormalSpeed) {
+        // Speed is 1.0, sync YouTube to current position
+        _ytController!.seekTo(Duration(milliseconds: _playerMs.round()));
+        _ytController!.setPlaybackRate(1.0);
+        if (_isPlaying) {
+          _ytController!.play();
+        }
+      } else {
+        // Speed is not 1.0, pause YouTube
+        _ytController!.pause();
+      }
+    }
   }
 
   double _nearestPlaybackRate(double v) {
