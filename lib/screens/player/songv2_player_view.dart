@@ -1,27 +1,26 @@
-import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:drumly/shared/app_gradients.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import 'package:drumly/constants.dart';
 import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/services/songv2_service.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 /// ---------------------------------------------------------------------------
-/// 1) Drum kit layout (normalized coords inside the IMAGE rect)
+/// 1) Drum kit layout (normalized coords inside the DRUM RECT)
 /// ---------------------------------------------------------------------------
 
 class DrumAnchor {
   const DrumAnchor(this.x, this.y, this.r);
   final double x; // 0..1
   final double y; // 0..1
-  final double r; // relative to image width
+  final double r; // relative to rect width
 }
 
 class DrumKitLayout {
@@ -35,7 +34,7 @@ class DrumKitLayout {
     6: DrumAnchor(0.750, 0.517, 0.090), // Floor Tom
     7: DrumAnchor(0.550, 0.705, 0.120), // Kick
   };
-  
+
   static const Map<int, String> labels = {
     0: 'Hi-Hat',
     1: 'Crash',
@@ -86,41 +85,7 @@ class LaneFlashController extends ChangeNotifier {
 }
 
 /// ---------------------------------------------------------------------------
-/// 3) Background painter (drum image)
-/// ---------------------------------------------------------------------------
-
-class _DrumBackgroundPainter extends CustomPainter {
-  _DrumBackgroundPainter({
-    required this.image,
-    required this.dstRect,
-  });
-
-  final ui.Image image;
-  final Rect dstRect;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Clear screen
-    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.black);
-
-    final src = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
-    canvas.drawImageRect(
-      image,
-      src,
-      dstRect,
-      Paint()..filterQuality = FilterQuality.low,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _DrumBackgroundPainter old) => old.image != image || old.dstRect != dstRect;
-}
-
-/// ---------------------------------------------------------------------------
-/// 4) Notes + part glow painter
-///    IMPORTANT:
-///    - First CLEAR this layer to avoid trails/ghosting.
-///    - Notes spawn from SCREEN TOP and fall to each anchor (different heights).
+/// 3) Notes + part glow painter
 /// ---------------------------------------------------------------------------
 
 class _NotesAndGlowPainter extends CustomPainter {
@@ -135,13 +100,14 @@ class _NotesAndGlowPainter extends CustomPainter {
     required this.enableGlow,
     required this.maxNotesPerFrame,
     required this.dynamicLookahead,
+    required this.isDarkMode, // ✅
   }) : super(repaint: Listenable.merge([songMs, flashCtrl]));
 
   final SongV2Model song;
   final ValueListenable<int> songMs;
 
-  final Rect dstRect; // where image is drawn (bottom-aligned)
-  final EdgeInsets safe; // safe area for spawn calculation
+  final Rect dstRect;
+  final EdgeInsets safe;
   final List<Color> laneColors;
   final LaneFlashController flashCtrl;
   final ui.Image? noteSprite;
@@ -150,18 +116,19 @@ class _NotesAndGlowPainter extends CustomPainter {
   final int maxNotesPerFrame;
   final int dynamicLookahead;
 
+  final bool isDarkMode; // ✅
+
   static const int pastMs = 160;
   static const int hitTightMs = 18;
 
-  // preallocated buffers (reused)
   static Float32List? _rst;
   static Float32List? _rects;
   static Int32List? _colors;
   static int _cap = 0;
-  
-  // ✅ Label cache (avoid creating TextPainters every frame)
+
   static List<TextPainter>? _labelPainters;
   static double _lastDstRectWidth = 0.0;
+  static bool _lastDark = true;
 
   static int _packColor(Color c, double opacity) {
     final oa = (opacity * 255).round().clamp(0, 255);
@@ -184,11 +151,8 @@ class _NotesAndGlowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // ✅ CRITICAL: clear THIS layer every frame (prevents trails)
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..blendMode = BlendMode.clear,
-    );
+    // ✅ Artık "BlendMode.clear" YOK.
+    // Arka plan (DecoratedBox) aynen kalır.
 
     final tNow = songMs.value;
     final lookahead = dynamicLookahead;
@@ -203,22 +167,38 @@ class _NotesAndGlowPainter extends CustomPainter {
   }
 
   void _paintPartGlows(Canvas canvas) {
-    // ✅ Initialize/update label cache only when dstRect changes
-    if (_labelPainters == null || (_lastDstRectWidth - dstRect.width).abs() > 0.1) {
+    // ✅ Label cache: dstRect veya tema değişince yeniden oluştur
+    final needRebuild =
+        _labelPainters == null ||
+        (_lastDstRectWidth - dstRect.width).abs() > 0.1 ||
+        _lastDark != isDarkMode;
+
+    if (needRebuild) {
       _lastDstRectWidth = dstRect.width;
+      _lastDark = isDarkMode;
+
       _labelPainters = List.generate(8, (lane) {
         final r = _anchorRadiusPx(lane);
         final label = DrumKitLayout.labels[lane] ?? '';
+
+        final textColor = isDarkMode
+            ? Colors.white.withOpacity(0.92)
+            : Colors.black.withOpacity(0.92);
+
+        final shadowColor = isDarkMode
+            ? Colors.black.withOpacity(0.85)
+            : Colors.white.withOpacity(0.75);
+
         final tp = TextPainter(
           text: TextSpan(
             text: label,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.85),
-              fontSize: r * 0.35,
-              fontWeight: FontWeight.bold,
+              color: textColor,
+              fontSize: r * 0.38, // ✅ biraz büyüttük
+              fontWeight: FontWeight.w800,
               shadows: [
                 Shadow(
-                  color: Colors.black.withOpacity(0.8),
+                  color: shadowColor,
                   offset: const Offset(0, 1),
                   blurRadius: 3,
                 ),
@@ -237,61 +217,67 @@ class _NotesAndGlowPainter extends CustomPainter {
       final center = _anchorToScreen(lane);
       final r = _anchorRadiusPx(lane);
 
-      // ✅ Always draw base ring (visible even without hits)
+      // ✅ Kontrast outline (arka plan açıkken de koyu görünür, koyuyken de)
+      final outlineColor = isDarkMode ? Colors.black.withOpacity(0.65) : Colors.white.withOpacity(0.75);
+      canvas.drawCircle(
+        center,
+        r,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 5.0
+          ..color = outlineColor,
+      );
+
+      // ✅ Renkleri daha “dolu” göstermek için opaklıkları artırdık
       final baseRing = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..color = c.withOpacity(0.4);
+        ..strokeWidth = 3.0
+        ..color = c.withOpacity(isDarkMode ? 0.70 : 0.85);
       canvas.drawCircle(center, r, baseRing);
 
-      // Fill with subtle base color
-      final baseFill = Paint()..color = c.withOpacity(0.12);
+      final baseFill = Paint()..color = c.withOpacity(isDarkMode ? 0.18 : 0.26);
       canvas.drawCircle(center, r, baseFill);
 
-      // ✅ Draw cached label above drum part
+      // ✅ Label
       final textPainter = _labelPainters![lane];
       textPainter.paint(
         canvas,
         Offset(
           center.dx - textPainter.width / 2,
-          center.dy - r - textPainter.height - 4,
+          center.dy - r - textPainter.height - 6,
         ),
       );
 
-      // Add glow on hit
+      // ✅ Hit glow
       final intensity = (flashCtrl.v[lane] / 180.0).clamp(0.0, 1.0);
       if (intensity > 0.01) {
-        // Fast radial glow
+        final glowStrength = isDarkMode ? 0.55 : 0.85;
+
         final glowPaint = Paint()
           ..shader = ui.Gradient.radial(
             center,
-            r * (1.2 + 0.35 * intensity),
+            r * (1.25 + 0.40 * intensity),
             [
               c.withOpacity(0.0),
-              c.withOpacity(0.30 * intensity),
+              c.withOpacity(glowStrength * intensity),
               c.withOpacity(0.0),
             ],
             const [0.0, 0.55, 1.0],
           );
-        canvas.drawCircle(center, r * (1.2 + 0.35 * intensity), glowPaint);
+        canvas.drawCircle(center, r * (1.25 + 0.40 * intensity), glowPaint);
 
-        // Highlight oval (cheap tint feel)
         final oval = Rect.fromCenter(
           center: center,
-          width: r * 2.2,
-          height: r * 1.7,
+          width: r * 2.25,
+          height: r * 1.75,
         );
-
-        canvas.saveLayer(oval, Paint());
-        canvas.drawOval(oval, Paint()..color = c.withOpacity(0.10 + 0.20 * intensity));
-        canvas.restore();
 
         canvas.drawOval(
           oval,
           Paint()
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 2
-            ..color = c.withOpacity(0.55 * intensity),
+            ..strokeWidth = 2.4
+            ..color = c.withOpacity((isDarkMode ? 0.85 : 1.0) * intensity),
         );
       }
     }
@@ -314,10 +300,9 @@ class _NotesAndGlowPainter extends CustomPainter {
     final spriteW = noteSprite!.width.toDouble();
     final spriteH = noteSprite!.height.toDouble();
 
-    final noteR = dstRect.width * 0.018;
+    final noteR = dstRect.width * 0.020; // ✅ biraz büyüttük (soluk hissini azaltır)
     final scale = noteR / 16.0;
 
-    // ✅ Spawn from screen top (safe area + small margin)
     final spawnY = safe.top + 8.0;
 
     int w = 0;
@@ -326,18 +311,12 @@ class _NotesAndGlowPainter extends CustomPainter {
       final t = song.absT[i];
       if (t > end) break;
 
-      // ✅ Time-based logic (ms, not normalized)
-      final timeToHit = t - tNow;      // >0 approaching, <0 passed
-      final timeSinceHit = tNow - t;   // >0 passed
-      
-      // Cull notes that passed pastMs window
+      final timeToHit = t - tNow;
+      final timeSinceHit = tNow - t;
       if (timeSinceHit > pastMs) continue;
-      
-      // Calculate alpha for position (0..1, spawn to hit)
+
       final alphaRaw = (t - tNow) / lookahead;
       final alpha = alphaRaw.clamp(-pastMs / lookahead, 1.1);
-      
-      // ✅ Linear progress for constant fall speed (no easing)
       final progress = (1.0 - alpha).clamp(0.0, 1.0);
 
       final mask = song.m[i];
@@ -348,17 +327,13 @@ class _NotesAndGlowPainter extends CustomPainter {
 
         final target = _anchorToScreen(lane);
 
-        // ✅ Constant speed fall (linear interpolation)
         final x = target.dx;
         final y = spawnY + progress * (target.dy - spawnY);
 
-        // ✅ Time-based opacity (not lookahead-dependent)
         double opacity;
         if (timeToHit >= 0) {
-          // Approaching: full opacity
           opacity = 1.0;
         } else {
-          // After hit: fade out in pastMs window
           opacity = (1.0 - (timeSinceHit / pastMs)).clamp(0.0, 1.0);
         }
 
@@ -366,16 +341,12 @@ class _NotesAndGlowPainter extends CustomPainter {
         final c = isHit ? const Color(0xFF10B981) : laneColors[lane];
 
         final b = w * 4;
-        
-        // ✅ Anchor offset for sprite center (48x48 sprite, center at 24)
         const spriteCenter = 24.0;
 
-        // RSTransform: scos=scale*cos(0)=scale, ssin=scale*sin(0)=0
-        // tx/ty adjusted for sprite center anchor
-        _rst![b + 0] = scale;                      // scos
-        _rst![b + 1] = 0.0;                         // ssin
-        _rst![b + 2] = x - spriteCenter * scale;   // tx (anchor corrected)
-        _rst![b + 3] = y - spriteCenter * scale;   // ty (anchor corrected)
+        _rst![b + 0] = scale;
+        _rst![b + 1] = 0.0;
+        _rst![b + 2] = x - spriteCenter * scale;
+        _rst![b + 3] = y - spriteCenter * scale;
 
         _rects![b + 0] = 0;
         _rects![b + 1] = 0;
@@ -387,13 +358,12 @@ class _NotesAndGlowPainter extends CustomPainter {
       }
     }
 
-    // ✅ CRITICAL: Zero out unused buffer slots (prevents ghost notes)
     for (int j = w; j < _cap; j++) {
-      _colors![j] = 0; // alpha=0 -> invisible
+      _colors![j] = 0;
       final b = j * 4;
-      _rst![b + 0] = 0.0;      // scale=0
+      _rst![b + 0] = 0.0;
       _rst![b + 1] = 0.0;
-      _rst![b + 2] = -999999.0; // offscreen
+      _rst![b + 2] = -999999.0;
       _rst![b + 3] = -999999.0;
       _rects![b + 0] = 0.0;
       _rects![b + 1] = 0.0;
@@ -403,22 +373,24 @@ class _NotesAndGlowPainter extends CustomPainter {
 
     if (w == 0) return;
 
-  final rstView   = Float32List.sublistView(_rst!, 0, w * 4);
-  final rectsView = Float32List.sublistView(_rects!, 0, w * 4);
-  final colorsView = Int32List.sublistView(_colors!, 0, w);
+    final rstView = Float32List.sublistView(_rst!, 0, w * 4);
+    final rectsView = Float32List.sublistView(_rects!, 0, w * 4);
+    final colorsView = Int32List.sublistView(_colors!, 0, w);
 
-  canvas.drawRawAtlas(
-    noteSprite!,
-    rstView,
-    rectsView,
-    colorsView,
-    BlendMode.modulate,
-    null,
-    Paint()
-    ..filterQuality = FilterQuality.none
-    ..isAntiAlias = false,
-  );
-}
+    // ✅ Renkleri daha “tok” yapmak için modulate yerine srcIn
+    // sprite beyaz mask -> renkler daha güçlü görünür
+    canvas.drawRawAtlas(
+      noteSprite!,
+      rstView,
+      rectsView,
+      colorsView,
+      BlendMode.modulate,
+      null,
+      Paint()
+        ..filterQuality = FilterQuality.none
+        ..isAntiAlias = true,
+    );
+  }
 
   void _drawNotesFallback(Canvas canvas, Size size, int tNow, int lookahead) {
     final start = tNow - pastMs;
@@ -427,7 +399,7 @@ class _NotesAndGlowPainter extends CustomPainter {
     int idx = _lowerBoundAbsT(song.absT, start);
     idx = math.max(0, idx - 16);
 
-    final noteR = dstRect.width * 0.018;
+    final noteR = dstRect.width * 0.020;
     final spawnY = safe.top + 8.0;
 
     for (int i = idx; i < song.absT.length; i++) {
@@ -436,12 +408,10 @@ class _NotesAndGlowPainter extends CustomPainter {
 
       final timeToHit = t - tNow;
       final timeSinceHit = tNow - t;
-      
       if (timeSinceHit > pastMs) continue;
-      
+
       final alphaRaw = (t - tNow) / lookahead;
       final alpha = alphaRaw.clamp(-pastMs / lookahead, 1.1);
-      
       final progress = (1.0 - alpha).clamp(0.0, 1.0);
 
       final mask = song.m[i];
@@ -491,7 +461,7 @@ int _lowerBoundAbsT(List<int> absT, int targetMs) {
 }
 
 /// ---------------------------------------------------------------------------
-/// 5) Main View
+/// 4) Main View
 /// ---------------------------------------------------------------------------
 
 class SongV2PlayerView extends StatefulWidget {
@@ -530,12 +500,13 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   static const int _flashDurationMs = 180;
   late final List<Color> _laneColors;
 
+  // ✅ drum_kit.jpg yok ama aynı anchor düzenini korumak için aspect sabit
+  static const double kDrumAspect = 1.7777777778;
+
   int _hitCursor = 0;
 
-  ui.Image? _drumImage;
   ui.Image? _noteSprite;
 
-  // LOD
   int _dynamicLookahead = 2000;
   bool _enableGlow = true;
   int _maxNotesPerFrame = 900;
@@ -557,7 +528,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _ytController?.dispose();
     _flashCtrl.dispose();
     _songMsN.dispose();
-    _drumImage?.dispose();
     _noteSprite?.dispose();
     super.dispose();
   }
@@ -589,7 +559,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _song = s;
       _dynamicLookahead = s.lookaheadMs;
 
-      _drumImage = await _loadUiImage('assets/images/drum_kit.jpg');
+      // ✅ NOTE sprite'ı unutma (yoksa raw atlas çalışmaz)
       _noteSprite = await _createNoteSprite();
 
       if (s.source.type.toLowerCase() == 'youtube') {
@@ -626,7 +596,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     final dtMs = (elapsed - last).inMicroseconds / 1000.0;
 
-    // LOD
     const frameBudget = 16.7;
     if (dtMs > frameBudget * 1.25) {
       _overBudget++;
@@ -644,13 +613,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _maxNotesPerFrame = math.min(_maxNotesPerFrame + 40, 900);
     }
 
-    // time source
     if (_ytController != null && _ytReady) {
       _ytPollAccumMs += dtMs;
       if (_ytPollAccumMs >= 350.0) {
         final posMs = _ytController!.value.position.inMilliseconds.toDouble();
         final diff = posMs - _playerMs;
-        _playerMs += diff * 0.08; // smooth correction
+        _playerMs += diff * 0.08;
         _ytPollAccumMs = 0.0;
       } else {
         _playerMs += dtMs * _speed;
@@ -747,45 +715,44 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   @override
   Widget build(BuildContext context) {
-  final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     if (_isLoading) {
-      return const Scaffold(backgroundColor: Colors.black, body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
     if (_error != null) {
-      return Scaffold(backgroundColor: Colors.black, body: Center(child: Text(_error!, style: const TextStyle(color: Colors.white))));
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text(_error!, style: const TextStyle(color: Colors.white)),
+        ),
+      );
     }
-    if (_song == null || _drumImage == null) {
+    if (_song == null) {
       return const Scaffold(backgroundColor: Colors.black);
     }
 
     return Scaffold(
-      
-      backgroundColor: Colors.black,
-      body:  DecoratedBox(
-              decoration: AppDecorations.backgroundDecoration(isDarkMode),
+      // ✅ gradient görünmesi için transparent
+      backgroundColor: Colors.transparent,
+      body: DecoratedBox(
+        decoration: AppDecorations.backgroundDecoration(isDarkMode),
         child: LayoutBuilder(
           builder: (context, c) {
             final size = Size(c.maxWidth, c.maxHeight);
             final safe = MediaQuery.of(context).padding;
-        
-            // ✅ Robust drum rect calculation
+
             final dstRect = computeDrumRect(
               screen: size,
               safe: safe,
-              imgW: _drumImage!.width.toDouble(),
-              imgH: _drumImage!.height.toDouble(),
+              aspect: kDrumAspect,
             );
-        
+
             return Stack(
               children: [
-                RepaintBoundary(
-                  child: CustomPaint(
-                    painter: _DrumBackgroundPainter(image: _drumImage!, dstRect: dstRect),
-                    child: const SizedBox.expand(),
-                  ),
-                ),
-        
                 RepaintBoundary(
                   child: CustomPaint(
                     painter: _NotesAndGlowPainter(
@@ -799,13 +766,14 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                       enableGlow: _enableGlow,
                       maxNotesPerFrame: _maxNotesPerFrame,
                       dynamicLookahead: _dynamicLookahead,
+                      isDarkMode: isDarkMode, // ✅
                     ),
                     isComplex: true,
                     willChange: true,
                     child: const SizedBox.expand(),
                   ),
                 ),
-        
+
                 if (_ytController != null)
                   Positioned(
                     top: -1000,
@@ -818,27 +786,25 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                       ),
                     ),
                   ),
-        
+
+                // ✅ Back button: her zeminde görünür "pill"
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 10,
+                  top: safe.top + 10,
                   left: 12,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => Navigator.pop(context),
+                  child: _PillIconButton(
+                    icon: Icons.arrow_back,
+                    onTap: () => Navigator.pop(context),
+                    darkMode: isDarkMode,
                   ),
                 ),
-        
+
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 12,
+                  top: safe.top + 12,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _showSpeedSlider = !_showSpeedSlider;
-                        });
-                      },
+                      onTap: () => setState(() => _showSpeedSlider = !_showSpeedSlider),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
@@ -871,21 +837,25 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                                       ),
                                     ),
                                   ),
-                                  Text('${_speed.toStringAsFixed(2)}x',
-                                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),),
+                                  Text(
+                                    '${_speed.toStringAsFixed(2)}x',
+                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                  ),
                                 ],
                               )
-                            : Text('${_speed.toStringAsFixed(2)}x',
+                            : Text(
+                                '${_speed.toStringAsFixed(2)}x',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),),
+                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                   ),
                 ),
-        
+
                 Center(
                   child: Opacity(
-                    opacity: _isPlaying ? 0.35 : 0.85,
+                    opacity: _isPlaying ? 0.18 : 0.85,
                     child: FloatingActionButton.large(
                       backgroundColor: _isPlaying ? Colors.red : Colors.green,
                       onPressed: _togglePlay,
@@ -902,46 +872,71 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   }
 }
 
+/// ✅ Back button widget (zeminden bağımsız görünür)
+class _PillIconButton extends StatelessWidget {
+  const _PillIconButton({
+    required this.icon,
+    required this.onTap,
+    required this.darkMode,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool darkMode;
+
+  @override
+  Widget build(BuildContext context) {
+    // Her zeminde kontrast: koyu modda daha açık pill, açık modda daha koyu pill
+    final bg = darkMode ? Colors.black.withOpacity(0.35) : Colors.black.withOpacity(0.55);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white24),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.25),
+              )
+            ],
+          ),
+          child: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
 /// ---------------------------------------------------------------------------
 /// Helpers
 /// ---------------------------------------------------------------------------
 
-/// Compute drum image rect: fitWidth first, fallback to fitHeight if too tall,
-/// then bottomCenter align within safe area.
 Rect computeDrumRect({
   required Size screen,
   required EdgeInsets safe,
-  required double imgW,
-  required double imgH,
+  required double aspect,
 }) {
   final availW = screen.width;
   final availH = screen.height - safe.top - safe.bottom;
-  final aspect = imgW / imgH;
 
-  // 1) Try fitWidth
   double drawW = availW;
   double drawH = drawW / aspect;
 
-  // 2) If too tall, use fitHeight
   if (drawH > availH) {
     drawH = availH;
     drawW = drawH * aspect;
   }
 
-  // 3) BottomCenter align
   final left = (availW - drawW) / 2.0;
   final top = safe.top + (availH - drawH);
   return Rect.fromLTWH(left, top, drawW, drawH);
-}
-
-/// Easing function for smooth note falling (starts fast, ends slow)
-double easeOutCubic(double t) => 1.0 - math.pow(1.0 - t, 3).toDouble();
-
-Future<ui.Image> _loadUiImage(String assetPath) async {
-  final data = await rootBundle.load(assetPath);
-  final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
-  final frame = await codec.getNextFrame();
-  return frame.image;
 }
 
 Future<ui.Image> _createNoteSprite() async {
@@ -957,11 +952,12 @@ Future<ui.Image> _createNoteSprite() async {
     ..cubicTo(s * 0.08, s * 0.50, s * 0.18, s * 0.22, s * 0.5, s * 0.06)
     ..close();
 
+  // ✅ Beyaz mask: drawRawAtlas + BlendMode.srcIn ile çok iyi tint olur
   canvas.drawPath(
     path,
     Paint()
       ..isAntiAlias = true
-      ..color = const Color(0xFFFFFFFF), // mask
+      ..color = const Color(0xFFFFFFFF),
   );
 
   final pic = recorder.endRecording();
@@ -969,4 +965,3 @@ Future<ui.Image> _createNoteSprite() async {
   pic.dispose();
   return img;
 }
-
