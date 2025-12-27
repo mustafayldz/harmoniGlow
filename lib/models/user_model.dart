@@ -13,6 +13,8 @@ class UserModel {
     this.id,
     this.firebaseToken,
     this.fcmToken,
+    this.language = 'english',
+    this.score = 0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -24,7 +26,7 @@ class UserModel {
       email: json['email'] ?? '',
       name: json['name'] ?? '',
       firebaseToken: json['firebase_token'],
-      fcmToken: json['fcm_token'], // JSON'dan FCM token'ı al
+      fcmToken: json['fcm_token'],
       createdAt: json['created_at'] ?? '',
       lastLogin: json['last_login'] ?? '',
       assignedSongIds: List<String>.from(json['assigned_song_ids'] ?? []),
@@ -32,6 +34,8 @@ class UserModel {
               ?.map((device) => DeviceModel.fromJson(device))
               .toList() ??
           [],
+      language: json['language'] ?? 'english',
+      score: json['score'] ?? 0,
     );
   }
   final String? id;
@@ -39,11 +43,13 @@ class UserModel {
   final String email;
   final String name;
   final String? firebaseToken;
-  final String? fcmToken; // FCM Token field'ı ekle
+  final String? fcmToken;
   final String createdAt;
   final String lastLogin;
   final List<String> assignedSongIds;
   final List<DeviceModel> devices;
+  final String language;
+  final int score;
 
   Map<String, dynamic> toJson() => {
         if (id != null) '_id': id,
@@ -51,10 +57,12 @@ class UserModel {
         'email': email,
         'name': name,
         if (firebaseToken != null) 'firebase_token': firebaseToken,
-        if (fcmToken != null) 'fcm_token': fcmToken, // JSON'a FCM token'ı ekle
+        if (fcmToken != null) 'fcm_token': fcmToken,
         'created_at': createdAt,
         'last_login': lastLogin,
         'assigned_song_ids': assignedSongIds,
         'devices': devices.map((device) => device.toJson()).toList(),
+        'language': language,
+        'score': score,
       };
 }

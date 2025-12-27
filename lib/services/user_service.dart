@@ -4,8 +4,27 @@ import 'package:drumly/models/user_model.dart';
 import 'package:drumly/shared/enums.dart';
 import 'package:drumly/shared/request_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class UserService {
+  // Locale kodunu tam metin isme çevirir
+  String _getLanguageFull(String code) {
+    switch (code) {
+      case 'tr':
+        return 'turkish';
+      case 'en':
+        return 'english';
+      case 'es':
+        return 'spanish';
+      case 'fr':
+        return 'french';
+      case 'ru':
+        return 'russian';
+      default:
+        return 'english';
+    }
+  }
+
   String getBaseUrlUser() => ApiServiceUrl.user;
 
   /*----------------------------------------------------------------------
@@ -50,11 +69,15 @@ class UserService {
     final String url = '${ApiServiceUrl.baseUrl}users/me';
 
     try {
+      // Uygulama dili tam metin olarak
+      final String languageFull = _getLanguageFull(EasyLocalization.of(context)?.locale.languageCode ?? 'en');
       final Map<String, dynamic> userData = {
         'firebase_token': firebaseToken,
         if (name != null && name.isNotEmpty) 'name': name,
         if (email != null && email.isNotEmpty) 'email': email,
         if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
+        'language': languageFull,
+        'score': 0,
       };
 
       // PUT method kullan (users/me endpoint'i için)

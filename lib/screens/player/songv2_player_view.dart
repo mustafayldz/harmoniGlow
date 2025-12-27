@@ -89,7 +89,7 @@ class LaneFlashController extends ChangeNotifier {
 }
 
 /// ---------------------------------------------------------------------------
-/// 3) Notes + part glow painter
+/// 3) Notes + part glow painter (OPTIMIZED)
 /// ---------------------------------------------------------------------------
 
 class _NotesAndGlowPainter extends CustomPainter {
@@ -104,8 +104,12 @@ class _NotesAndGlowPainter extends CustomPainter {
     required this.enableGlow,
     required this.maxNotesPerFrame,
     required this.dynamicLookahead,
-    required this.isDarkMode, // ✅
-  }) : super(repaint: Listenable.merge([songMs, flashCtrl]));
+    required this.isDarkMode,
+  }) : super(repaint: Listenable.merge([songMs, flashCtrl])) {
+    _atlasPaint
+      ..filterQuality = FilterQuality.none
+      ..isAntiAlias = true;
+  }
 
   final SongV2Model song;
   final ValueListenable<int> songMs;
@@ -116,37 +120,56 @@ class _NotesAndGlowPainter extends CustomPainter {
   final LaneFlashController flashCtrl;
   final ui.Image? noteSprite;
 
-  final bool enableGlow;
+  final bool enableGlow; // hit glow overlay only
   final int maxNotesPerFrame;
   final int dynamicLookahead;
 
-  final bool isDarkMode; // ✅
+  final bool isDarkMode;
 
   static const int pastMs = 160;
   static const int hitTightMs = 18;
 
+  // -------------------------
+  // RawAtlas buffers (static)
+  // -------------------------
   static Float32List? _rst;
   static Float32List? _rects;
   static Int32List? _colors;
   static int _cap = 0;
+  static double _lastSpriteW = 0.0;
+  static double _lastSpriteH = 0.0;
 
+  // -------------------------
+  // Base kit picture cache
+  // -------------------------
+  static ui.Picture? _baseKitPicture;
+  static double _baseW = 0.0;
+  static double _baseH = 0.0;
+  static double _baseL = 0.0;
+  static double _baseT = 0.0;
+  static bool? _baseDark;
+  static int _baseColorHash = 0;
+
+  // Label painters cache
   static List<TextPainter>? _labelPainters;
-  static double _lastDstRectWidth = 0.0;
+  static double _lastDstW = 0.0;
   static bool? _lastDark;
+
+  // Reusable paints
+  final Paint _atlasPaint = Paint();
+  final Paint _outlinePaint = Paint()..style = PaintingStyle.stroke;
+  final Paint _ringPaint = Paint()..style = PaintingStyle.stroke;
+  final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _hitOvalPaint = Paint()..style = PaintingStyle.stroke;
 
   static int _packColor(Color c, double opacity) {
   final oa = (opacity * 255.0).round().clamp(0, 255);
-
-  final ca = (c.a * 255.0).round() & 0xff;
-  final cr = (c.r * 255.0).round() & 0xff;
-  final cg = (c.g * 255.0).round() & 0xff;
-  final cb = (c.b * 255.0).round() & 0xff;
-
-  // Final alpha = colorAlpha * opacityAlpha / 255
+  final argb = c.toARGB32();
+  final ca = (argb >> 24) & 0xff;
   final na = (ca * oa) ~/ 255;
-
-  return (na << 24) | (cr << 16) | (cg << 8) | cb;
+  return (argb & 0x00FFFFFF) | (na << 24);
 }
+
 
   Offset _anchorToScreen(int lane) {
     final a = DrumKitLayout.anchor[lane]!;
@@ -161,147 +184,218 @@ class _NotesAndGlowPainter extends CustomPainter {
     return a.r * dstRect.width;
   }
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    // ✅ Artık "BlendMode.clear" YOK.
-    // Arka plan (DecoratedBox) aynen kalır.
-
-    final tNow = songMs.value;
-    final lookahead = dynamicLookahead;
-
-    if (enableGlow) _paintPartGlows(canvas);
-
-    if (noteSprite != null) {
-      _drawNotesRawAtlas(canvas, size, tNow, lookahead);
-    } else {
-      _drawNotesFallback(canvas, size, tNow, lookahead);
-    }
+  int _laneColorsHash() {
+  int h = 17;
+  for (final c in laneColors) {
+    h = 37 * h + c.toARGB32();
   }
+  return h;
+}
 
-  void _paintPartGlows(Canvas canvas) {
-    // ✅ Label cache: dstRect veya tema değişince yeniden oluştur
-    final needRebuild =
-        _labelPainters == null ||
-        (_lastDstRectWidth - dstRect.width).abs() > 0.1 ||
+  void _ensureLabelCache() {
+    final needRebuild = _labelPainters == null ||
+        (_lastDstW - dstRect.width).abs() > 0.1 ||
         _lastDark != isDarkMode;
 
-    if (needRebuild) {
-      _lastDstRectWidth = dstRect.width;
-      _lastDark = isDarkMode;
+    if (!needRebuild) return;
 
-      _labelPainters = List.generate(8, (lane) {
-        final r = _anchorRadiusPx(lane);
-        final label = DrumKitLayout.labels[lane] ?? '';
+    _lastDstW = dstRect.width;
+    _lastDark = isDarkMode;
 
-        final textColor = isDarkMode
-            ? Colors.white.withValues(alpha: 0.92)
-            : Colors.black.withValues(alpha: 0.92);
+    _labelPainters = List.generate(8, (lane) {
+      final r = _anchorRadiusPx(lane);
+      final label = DrumKitLayout.labels[lane] ?? '';
 
-        final shadowColor = isDarkMode
-            ? Colors.black.withValues(alpha: 0.85)
-            : Colors.white.withValues(alpha: 0.75);
+      final textColor = isDarkMode
+          ? Colors.white.withValues(alpha: 0.92)
+          : Colors.black.withValues(alpha: 0.92);
 
-        final tp = TextPainter(
-          text: TextSpan(
-            text: label,
-            style: TextStyle(
-              color: textColor,
-              fontSize: r * 0.38, // ✅ biraz büyüttük
-              fontWeight: FontWeight.w800,
-              shadows: [
-                Shadow(
-                  color: shadowColor,
-                  offset: const Offset(0, 1),
-                  blurRadius: 3,
-                ),
-              ],
-            ),
+      final shadowColor = isDarkMode
+          ? Colors.black.withValues(alpha: 0.85)
+          : Colors.white.withValues(alpha: 0.75);
+
+      final tp = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            color: textColor,
+            fontSize: r * 0.38,
+            fontWeight: FontWeight.w800,
+            shadows: [
+              Shadow(
+                color: shadowColor,
+                offset: const Offset(0, 1),
+                blurRadius: 3,
+              ),
+            ],
           ),
-          textDirection: TextDirection.ltr,
-        );
-        tp.layout();
-        return tp;
-      });
-    }
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      tp.layout();
+      return tp;
+    });
+  }
 
+  void _ensureBaseKitPicture() {
+    _ensureLabelCache();
+
+    final w = dstRect.width;
+    final h = dstRect.height;
+    final l = dstRect.left;
+    final t = dstRect.top;
+    final colorHash = _laneColorsHash();
+
+    final need = _baseKitPicture == null ||
+        (_baseW - w).abs() > 0.1 ||
+        (_baseH - h).abs() > 0.1 ||
+        (_baseL - l).abs() > 0.1 ||
+        (_baseT - t).abs() > 0.1 ||
+        _baseDark != isDarkMode ||
+        _baseColorHash != colorHash;
+
+    if (!need) return;
+
+    _baseW = w;
+    _baseH = h;
+    _baseL = l;
+    _baseT = t;
+    _baseDark = isDarkMode;
+    _baseColorHash = colorHash;
+
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+
+    // base kit = outline + ring + fill + labels (static)
     for (int lane = 0; lane < 8; lane++) {
       final c = laneColors[lane];
       final center = _anchorToScreen(lane);
       final r = _anchorRadiusPx(lane);
 
-      // ✅ Kontrast outline (arka plan açıkken de koyu görünür, koyuyken de)
-      final outlineColor = isDarkMode ? Colors.black.withValues(alpha: 0.65) : Colors.white.withValues(alpha: 0.75);
-      canvas.drawCircle(
-        center,
-        r,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 5.0
-          ..color = outlineColor,
-      );
+      final outlineColor = isDarkMode
+          ? Colors.black.withValues(alpha: 0.65)
+          : Colors.white.withValues(alpha: 0.75);
 
-      // ✅ Renkleri daha “dolu” göstermek için opaklıkları artırdık
-      final baseRing = Paint()
-        ..style = PaintingStyle.stroke
+      _outlinePaint
+        ..strokeWidth = 5.0
+        ..color = outlineColor;
+
+      canvas.drawCircle(center, r, _outlinePaint);
+
+      _ringPaint
         ..strokeWidth = 3.0
         ..color = c.withValues(alpha: isDarkMode ? 0.70 : 0.85);
-      canvas.drawCircle(center, r, baseRing);
 
-      final baseFill = Paint()..color = c.withValues(alpha: isDarkMode ? 0.18 : 0.26);
-      canvas.drawCircle(center, r, baseFill);
+      canvas.drawCircle(center, r, _ringPaint);
 
-      // ✅ Label
-      final textPainter = _labelPainters![lane];
-      textPainter.paint(
+      _fillPaint.color = c.withValues(alpha: isDarkMode ? 0.18 : 0.26);
+      canvas.drawCircle(center, r, _fillPaint);
+
+      final tp = _labelPainters![lane];
+      tp.paint(
         canvas,
         Offset(
-          center.dx - textPainter.width / 2,
-          center.dy - r - textPainter.height - 6,
+          center.dx - tp.width / 2,
+          center.dy - r - tp.height - 6,
         ),
       );
-
-      // ✅ Hit glow
-      final intensity = (flashCtrl.v[lane] / 180.0).clamp(0.0, 1.0);
-      if (intensity > 0.01) {
-        final glowStrength = isDarkMode ? 0.55 : 0.85;
-
-        final glowPaint = Paint()
-          ..shader = ui.Gradient.radial(
-            center,
-            r * (1.25 + 0.40 * intensity),
-            [
-              c.withValues(alpha: 0.0),
-              c.withValues(alpha: glowStrength * intensity),
-              c.withValues(alpha: 0.0),
-            ],
-            const [0.0, 0.55, 1.0],
-          );
-        canvas.drawCircle(center, r * (1.25 + 0.40 * intensity), glowPaint);
-
-        final oval = Rect.fromCenter(
-          center: center,
-          width: r * 2.25,
-          height: r * 1.75,
-        );
-
-        canvas.drawOval(
-          oval,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.4
-            ..color = c.withValues(alpha: (isDarkMode ? 0.85 : 1.0) * intensity),
-        );
-      }
     }
+
+    _baseKitPicture?.dispose();
+    _baseKitPicture = recorder.endRecording();
   }
 
-  void _drawNotesRawAtlas(Canvas canvas, Size size, int tNow, int lookahead) {
+  void _ensureAtlasBuffers(double spriteW, double spriteH) {
     if (_rst == null || _cap < maxNotesPerFrame) {
       _cap = maxNotesPerFrame;
       _rst = Float32List(_cap * 4);
       _rects = Float32List(_cap * 4);
       _colors = Int32List(_cap);
+
+      _lastSpriteW = 0.0;
+      _lastSpriteH = 0.0;
     }
+
+    // sprite dim değiştiyse rects’i bir kere doldur
+    if (_lastSpriteW != spriteW || _lastSpriteH != spriteH) {
+      _lastSpriteW = spriteW;
+      _lastSpriteH = spriteH;
+
+      for (int i = 0; i < _cap; i++) {
+        final b = i * 4;
+        _rects![b + 0] = 0.0;
+        _rects![b + 1] = 0.0;
+        _rects![b + 2] = spriteW;
+        _rects![b + 3] = spriteH;
+      }
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final tNow = songMs.value;
+    final lookahead = dynamicLookahead;
+
+    // cached base kit
+    _ensureBaseKitPicture();
+    if (_baseKitPicture != null) {
+      canvas.drawPicture(_baseKitPicture!);
+    }
+
+    // notes
+    if (noteSprite != null) {
+      _drawNotesRawAtlas(canvas, tNow, lookahead);
+    } else {
+      _drawNotesFallback(canvas, tNow, lookahead);
+    }
+
+    // hit glow overlay only
+    if (enableGlow) _paintHitGlows(canvas);
+  }
+
+  void _paintHitGlows(Canvas canvas) {
+    for (int lane = 0; lane < 8; lane++) {
+      final intensity = (flashCtrl.v[lane] / 180.0).clamp(0.0, 1.0);
+      if (intensity <= 0.01) continue;
+
+      final c = laneColors[lane];
+      final center = _anchorToScreen(lane);
+      final r = _anchorRadiusPx(lane);
+
+      final glowStrength = isDarkMode ? 0.55 : 0.85;
+
+      final glowPaint = Paint()
+        ..shader = ui.Gradient.radial(
+          center,
+          r * (1.25 + 0.40 * intensity),
+          [
+            c.withValues(alpha: 0.0),
+            c.withValues(alpha: glowStrength * intensity),
+            c.withValues(alpha: 0.0),
+          ],
+          const [0.0, 0.55, 1.0],
+        );
+
+      canvas.drawCircle(center, r * (1.25 + 0.40 * intensity), glowPaint);
+
+      final oval = Rect.fromCenter(
+        center: center,
+        width: r * 2.25,
+        height: r * 1.75,
+      );
+
+      _hitOvalPaint
+        ..strokeWidth = 2.4
+        ..color = c.withValues(alpha: (isDarkMode ? 0.85 : 1.0) * intensity);
+
+      canvas.drawOval(oval, _hitOvalPaint);
+    }
+  }
+
+  void _drawNotesRawAtlas(Canvas canvas, int tNow, int lookahead) {
+    final spriteW = noteSprite!.width.toDouble();
+    final spriteH = noteSprite!.height.toDouble();
+    _ensureAtlasBuffers(spriteW, spriteH);
 
     final start = tNow - pastMs;
     final end = tNow + lookahead;
@@ -309,12 +403,8 @@ class _NotesAndGlowPainter extends CustomPainter {
     int idx = _lowerBoundAbsT(song.absT, start);
     idx = math.max(0, idx - 16);
 
-    final spriteW = noteSprite!.width.toDouble();
-    final spriteH = noteSprite!.height.toDouble();
-
-    final noteR = dstRect.width * 0.020; // ✅ biraz büyüttük (soluk hissini azaltır)
+    final noteR = dstRect.width * 0.020;
     final scale = noteR / 16.0;
-
     final spawnY = safe.top + 8.0;
 
     int w = 0;
@@ -360,16 +450,12 @@ class _NotesAndGlowPainter extends CustomPainter {
         _rst![b + 2] = x - spriteCenter * scale;
         _rst![b + 3] = y - spriteCenter * scale;
 
-        _rects![b + 0] = 0;
-        _rects![b + 1] = 0;
-        _rects![b + 2] = spriteW;
-        _rects![b + 3] = spriteH;
-
         _colors![w] = _packColor(c, opacity);
         w++;
       }
     }
 
+    // remaining slots offscreen + alpha0 (no sublist views)
     for (int j = w; j < _cap; j++) {
       _colors![j] = 0;
       final b = j * 4;
@@ -377,34 +463,24 @@ class _NotesAndGlowPainter extends CustomPainter {
       _rst![b + 1] = 0.0;
       _rst![b + 2] = -999999.0;
       _rst![b + 3] = -999999.0;
-      _rects![b + 0] = 0.0;
-      _rects![b + 1] = 0.0;
-      _rects![b + 2] = 0.0;
-      _rects![b + 3] = 0.0;
+
+      // rects already filled; leave as is
     }
 
     if (w == 0) return;
 
-    final rstView = Float32List.sublistView(_rst!, 0, w * 4);
-    final rectsView = Float32List.sublistView(_rects!, 0, w * 4);
-    final colorsView = Int32List.sublistView(_colors!, 0, w);
-
-    // ✅ Renkleri daha “tok” yapmak için modulate yerine srcIn
-    // sprite beyaz mask -> renkler daha güçlü görünür
     canvas.drawRawAtlas(
       noteSprite!,
-      rstView,
-      rectsView,
-      colorsView,
+      _rst!,
+      _rects!,
+      _colors,
       BlendMode.modulate,
       null,
-      Paint()
-        ..filterQuality = FilterQuality.none
-        ..isAntiAlias = true,
+      _atlasPaint,
     );
   }
 
-  void _drawNotesFallback(Canvas canvas, Size size, int tNow, int lookahead) {
+  void _drawNotesFallback(Canvas canvas, int tNow, int lookahead) {
     final start = tNow - pastMs;
     final end = tNow + lookahead;
 
@@ -413,6 +489,8 @@ class _NotesAndGlowPainter extends CustomPainter {
 
     final noteR = dstRect.width * 0.020;
     final spawnY = safe.top + 8.0;
+
+    final paint = Paint()..isAntiAlias = true;
 
     for (int i = idx; i < song.absT.length; i++) {
       final t = song.absT[i];
@@ -445,17 +523,24 @@ class _NotesAndGlowPainter extends CustomPainter {
         final isHit = (t - tNow).abs() <= hitTightMs;
         final c = isHit ? const Color(0xFF10B981) : laneColors[lane];
 
-        canvas.drawCircle(
-          Offset(x, y),
-          noteR,
-          Paint()..color = c.withValues(alpha: opacity),
-        );
+        paint.color = c.withValues(alpha: opacity);
+        canvas.drawCircle(Offset(x, y), noteR, paint);
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _NotesAndGlowPainter old) => true;
+  bool shouldRepaint(covariant _NotesAndGlowPainter old) => old.song != song ||
+        old.dstRect != dstRect ||
+        old.safe != safe ||
+        old.noteSprite != noteSprite ||
+        old.enableGlow != enableGlow ||
+        old.maxNotesPerFrame != maxNotesPerFrame ||
+        old.dynamicLookahead != dynamicLookahead ||
+        old.isDarkMode != isDarkMode ||
+        !identical(old.laneColors, laneColors) ||
+        old.flashCtrl != flashCtrl ||
+        old.songMs != songMs;
 }
 
 int _lowerBoundAbsT(List<int> absT, int targetMs) {
@@ -488,6 +573,12 @@ class SongV2PlayerView extends StatefulWidget {
   State<SongV2PlayerView> createState() => _SongV2PlayerViewState();
 }
 
+class _DrumSendInfo {
+  const _DrumSendInfo(this.led, this.rgb);
+  final int led;
+  final List<int> rgb; // length 3
+}
+
 class _SongV2PlayerViewState extends State<SongV2PlayerView>
     with SingleTickerProviderStateMixin {
   bool _isPlaying = false;
@@ -513,7 +604,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   static const int _flashDurationMs = 180;
   late final List<Color> _laneColors;
 
-  // ✅ drum_kit.jpg yok ama aynı anchor düzenini korumak için aspect sabit
   static const double kDrumAspect = 1.7777777778;
 
   int _hitCursor = 0;
@@ -527,10 +617,14 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   final SongV2Service _service = SongV2Service();
 
-  // Bluetooth signal tracking
+  // Bluetooth
   final Set<int> _sentNoteIndices = {};
-  final List<int> _currentBluetoothData = [];
   BluetoothBloc? _bluetoothBloc;
+
+  // ✅ drum part cache + serialized send queue
+  final List<_DrumSendInfo?> _drumSendCache =
+      List<_DrumSendInfo?>.filled(8, null);
+  Future<void> _btSendChain = Future.value();
 
   @override
   void initState() {
@@ -538,6 +632,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _bluetoothBloc = context.read<BluetoothBloc>();
     _ticker = createTicker(_onTick);
     _laneColors = List<Color>.generate(8, (i) => _getLedColor(i));
+    _warmupDrumCache(); // ✅ async warmup
     _loadAll();
   }
 
@@ -550,6 +645,22 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _songMsN.dispose();
     _noteSprite?.dispose();
     super.dispose();
+  }
+
+  void _warmupDrumCache() {
+    unawaited(() async {
+      for (int lane = 0; lane < 8; lane++) {
+        final drumPart = (lane + 1).toString();
+        final drum = await StorageService.getDrumPart(drumPart);
+        if (drum != null &&
+            drum.led != null &&
+            drum.rgb != null &&
+            drum.rgb!.length == 3) {
+          _drumSendCache[lane] =
+              _DrumSendInfo(drum.led!, List<int>.from(drum.rgb!));
+        }
+      }
+    }());
   }
 
   Color _getLedColor(int index) {
@@ -576,10 +687,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         });
         return;
       }
+
       _song = s;
       _dynamicLookahead = s.lookaheadMs;
 
-      // ✅ NOTE sprite'ı unutma (yoksa raw atlas çalışmaz)
       _noteSprite = await _createNoteSprite();
 
       if (s.source.type.toLowerCase() == 'youtube') {
@@ -591,8 +702,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
             enableCaption: false,
           ),
         )..addListener(() {
+            // ✅ only set once
             final ready = _ytController?.value.isReady ?? false;
-            if (ready != _ytReady) setState(() => _ytReady = ready);
+            if (ready && !_ytReady) setState(() => _ytReady = true);
           });
 
         _ytController!.setPlaybackRate(_nearestPlaybackRate(_speed));
@@ -628,16 +740,18 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _overBudget = 0;
       if (!_enableGlow && dtMs < frameBudget * 0.85) _enableGlow = true;
       if (_song != null && _dynamicLookahead < _song!.lookaheadMs) {
-        _dynamicLookahead = math.min(_dynamicLookahead + 50, _song!.lookaheadMs);
+        _dynamicLookahead =
+            math.min(_dynamicLookahead + 50, _song!.lookaheadMs);
       }
       _maxNotesPerFrame = math.min(_maxNotesPerFrame + 40, 900);
     }
 
-    // Only sync with YouTube when speed is 1.0
+    // YouTube sync only at 1.0 speed
     if (_ytController != null && _ytReady && _speed == 1.0) {
       _ytPollAccumMs += dtMs;
       if (_ytPollAccumMs >= 350.0) {
-        final posMs = _ytController!.value.position.inMilliseconds.toDouble();
+        final posMs =
+            _ytController!.value.position.inMilliseconds.toDouble();
         final diff = posMs - _playerMs;
         _playerMs += diff * 0.08;
         _ytPollAccumMs = 0.0;
@@ -645,7 +759,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _playerMs += dtMs * _speed;
       }
     } else {
-      // No YouTube sync (speed != 1.0 or YouTube not ready)
       _playerMs += dtMs * _speed;
     }
 
@@ -658,36 +771,43 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _isPlaying = false;
       _lastElapsed = null;
       _ticker.stop();
-      setState(() {});
+      if (mounted) setState(() {});
     }
 
     _songMsN.value = songMs;
   }
 
-  /// Send Bluetooth signals for notes being hit
-  Future<void> _sendBluetoothSignals(int noteIndex, int laneMask) async {
-    if (_bluetoothBloc == null) return;
+  void _queueBluetoothSend(List<int> bytes) {
+    final bloc = _bluetoothBloc;
+    if (bloc == null || bloc.characteristic == null) return;
+
+    _btSendChain = _btSendChain.then((_) async {
+      final b = _bluetoothBloc;
+      if (b == null || b.characteristic == null) return;
+      await SendData().sendHexData(b, bytes);
+    });
+  }
+
+  void _sendBluetoothSignals(int noteIndex, int laneMask) {
+    final bloc = _bluetoothBloc;
+    if (bloc == null || bloc.characteristic == null) return;
     if (_sentNoteIndices.contains(noteIndex)) return;
 
     _sentNoteIndices.add(noteIndex);
-    _currentBluetoothData.clear();
 
-    // Extract lanes from mask (bit positions 0-7)
+    final data = <int>[];
+
     for (int lane = 0; lane < 8; lane++) {
-      if ((laneMask & (1 << lane)) != 0) {
-        // Lane is active, send signal for this drum part
-        final drumPart = (lane + 1).toString(); // 1-8
-        final drum = await StorageService.getDrumPart(drumPart);
-        if (drum != null && drum.led != null && drum.rgb != null) {
-          _currentBluetoothData.add(drum.led!);
-          _currentBluetoothData.addAll(drum.rgb!);
-        }
-      }
+      if ((laneMask & (1 << lane)) == 0) continue;
+
+      final info = _drumSendCache[lane];
+      if (info == null) continue;
+
+      data.add(info.led);
+      data.addAll(info.rgb);
     }
 
-    if (_currentBluetoothData.isNotEmpty) {
-      await SendData().sendHexData(_bluetoothBloc!, _currentBluetoothData);
-    }
+    if (data.isNotEmpty) _queueBluetoothSend(data);
   }
 
   void _updateLaneHitsCursor(int songMs) {
@@ -705,10 +825,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     for (int i = _hitCursor; i < n && absT[i] <= songMs + hitWindow; i++) {
       if ((absT[i] - songMs).abs() <= hitWindow) {
         final mask = s.m[i];
-        
-        // Send Bluetooth signals for this note (fire and forget)
+
         _sendBluetoothSignals(i, mask);
-        
+
         for (int lane = 0; lane < 8; lane++) {
           if ((mask & (1 << lane)) != 0) {
             _flashCtrl.flashLane(lane, _flashDurationMs.toDouble());
@@ -727,6 +846,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _playerMs = 0.0;
         _hitCursor = 0;
         _flashCtrl.reset();
+        _sentNoteIndices.clear(); // ✅ replay fix
       }
       _isPlaying = !_isPlaying;
     });
@@ -734,7 +854,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     if (_isPlaying) {
       _lastElapsed = Duration.zero;
       _ticker.start();
-      // Only play YouTube when speed is 1.0
       if (_ytController != null && _ytReady && _speed == 1.0) {
         _ytController!.seekTo(Duration(milliseconds: _playerMs.toInt()));
         _ytController!.play();
@@ -749,25 +868,20 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   void _onSpeedChanged(double v) {
     final rate = _nearestPlaybackRate(v);
     final isNormalSpeed = rate == 1.0;
-    
+
     setState(() => _speed = rate);
-    
-    // Auto-hide speed slider after 3 seconds
+
     _speedSliderTimer?.cancel();
     _speedSliderTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _showSpeedSlider = false);
     });
-    
+
     if (_ytController != null && _ytReady) {
       if (isNormalSpeed) {
-        // Speed is 1.0, sync YouTube to current position
         _ytController!.seekTo(Duration(milliseconds: _playerMs.round()));
         _ytController!.setPlaybackRate(1.0);
-        if (_isPlaying) {
-          _ytController!.play();
-        }
+        if (_isPlaying) _ytController!.play();
       } else {
-        // Speed is not 1.0, pause YouTube
         _ytController!.pause();
       }
     }
@@ -810,7 +924,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     }
 
     return Scaffold(
-      // ✅ gradient görünmesi için transparent
       backgroundColor: Colors.transparent,
       body: DecoratedBox(
         decoration: AppDecorations.backgroundDecoration(isDarkMode),
@@ -840,7 +953,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                       enableGlow: _enableGlow,
                       maxNotesPerFrame: _maxNotesPerFrame,
                       dynamicLookahead: _dynamicLookahead,
-                      isDarkMode: isDarkMode, // ✅
+                      isDarkMode: isDarkMode,
                     ),
                     isComplex: true,
                     willChange: true,
@@ -856,12 +969,13 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                       height: 1,
                       child: YoutubePlayer(
                         controller: _ytController!,
-                        onReady: () => setState(() => _ytReady = true),
+                        onReady: () {
+                          if (!_ytReady) setState(() => _ytReady = true);
+                        },
                       ),
                     ),
                   ),
 
-                // ✅ Back button: her zeminde görünür "pill"
                 Positioned(
                   top: safe.top + 10,
                   left: 12,
@@ -885,8 +999,11 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        width: _showSpeedSlider ? math.min(280, size.width * 0.75) : 90,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8,),
+                        width: _showSpeedSlider
+                            ? math.min(280, size.width * 0.75)
+                            : 90,
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(18),
@@ -896,13 +1013,19 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                             ? Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Text('Speed', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                                  const Text(
+                                    'Speed',
+                                    style: TextStyle(
+                                        color: Colors.white70, fontSize: 13,),
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: SliderTheme(
                                       data: SliderTheme.of(context).copyWith(
                                         trackHeight: 3,
-                                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                                        thumbShape:
+                                            const RoundSliderThumbShape(
+                                                enabledThumbRadius: 7,),
                                       ),
                                       child: Slider(
                                         value: _speed,
@@ -916,14 +1039,22 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                                   ),
                                   Text(
                                     '${_speed.toStringAsFixed(2)}x',
-                                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ],
                               )
                             : Text(
                                 '${_speed.toStringAsFixed(2)}x',
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                       ),
                     ),
@@ -936,7 +1067,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                     child: FloatingActionButton.large(
                       backgroundColor: _isPlaying ? Colors.red : Colors.green,
                       onPressed: _togglePlay,
-                      child: Icon(_isPlaying ? Icons.pause : Icons.play_arrow, size: 44),
+                      child: Icon(
+                        _isPlaying ? Icons.pause : Icons.play_arrow,
+                        size: 44,
+                      ),
                     ),
                   ),
                 ),
@@ -963,8 +1097,10 @@ class _PillIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Her zeminde kontrast: koyu modda daha açık pill, açık modda daha koyu pill
-    final bg = darkMode ? Colors.black.withValues(alpha:0.35) : Colors.black.withValues(alpha: 0.55);
+    final bg = darkMode
+        ? Colors.black.withValues(alpha: 0.35)
+        : Colors.black.withValues(alpha: 0.55);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -984,7 +1120,7 @@ class _PillIconButton extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(Icons.arrow_back, color: Colors.white),
+          child: Icon(icon, color: Colors.white),
         ),
       ),
     );
@@ -1019,7 +1155,10 @@ Rect computeDrumRect({
 Future<ui.Image> _createNoteSprite() async {
   const size = 48;
   final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()));
+  final canvas = Canvas(
+    recorder,
+    Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+  );
   final s = size.toDouble();
 
   final path = Path()
@@ -1029,7 +1168,6 @@ Future<ui.Image> _createNoteSprite() async {
     ..cubicTo(s * 0.08, s * 0.50, s * 0.18, s * 0.22, s * 0.5, s * 0.06)
     ..close();
 
-  // ✅ Beyaz mask: drawRawAtlas + BlendMode.srcIn ile çok iyi tint olur
   canvas.drawPath(
     path,
     Paint()

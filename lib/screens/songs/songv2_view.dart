@@ -23,8 +23,10 @@ class _SongV2ViewState extends State<SongV2View> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final ConfettiController _confettiController;
+
   String _lastSearch = '';
   bool _isGridView = false;
+
   late final UserProvider userProvider;
   SharedPreferences? _prefs;
   final Map<String, bool> _unlockCache = {};
@@ -33,11 +35,13 @@ class _SongV2ViewState extends State<SongV2View> {
   void initState() {
     super.initState();
     userProvider = Provider.of<UserProvider>(context, listen: false);
+
     vm = SongV2ViewModel();
     vm.init(context);
+
     _initPrefs();
     _confettiController =
-        ConfettiController(duration: const Duration(seconds: 1));
+        ConfettiController(duration: const Duration(milliseconds: 900));
 
     vm.addListener(() {
       if (vm.songs.isNotEmpty && _prefs != null) {
@@ -62,54 +66,45 @@ class _SongV2ViewState extends State<SongV2View> {
 
   void _onScroll() {
     if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
+            _scrollController.position.maxScrollExtent - 320 &&
         vm.hasMore &&
         !vm.isLoading) {
       vm.fetchMoreSongs();
     }
   }
 
-  /// � Initialize SharedPreferences
-  void _initPrefs() async {
+  Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  /// �🔐 Lock check - synchronous with cache
   bool _isSongLockedSync(SongV2Model song, bool isBluetoothConnected) {
-    if (!song.isLocked || isBluetoothConnected) {
-      return false;
-    }
+    if (!song.isLocked || isBluetoothConnected) return false;
 
     final assignedSongs = userProvider.userModel?.assignedSongIds ?? [];
-    if (assignedSongs.contains(song.songv2Id)) {
-      return false;
-    }
+    if (assignedSongs.contains(song.songv2Id)) return false;
 
     if (_unlockCache.containsKey(song.songv2Id)) {
       return !(_unlockCache[song.songv2Id] ?? false);
     }
-
     return true;
   }
 
   void _preloadUnlockStates(List<SongV2Model> songs) {
     if (_prefs == null) return;
 
-    final currentTime = DateTime.now().millisecondsSinceEpoch;
-    const twoHoursInMs = 2 * 60 * 60 * 1000;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    const twoHours = 2 * 60 * 60 * 1000;
 
     for (final song in songs) {
-      final unlockTimeKey = 'unlock_time_${song.songv2Id}';
-      final unlockTime = _prefs!.getInt(unlockTimeKey);
+      final key = 'unlock_time_${song.songv2Id}';
+      final unlockTime = _prefs!.getInt(key);
 
       if (unlockTime != null) {
-        final timeElapsed = currentTime - unlockTime;
-        // ✅ Her seferinde zamana göre kontrol et - 2 saat sonra tekrar kilitlensin
-        _unlockCache[song.songv2Id] = timeElapsed <= twoHoursInMs;
+        final elapsed = now - unlockTime;
+        _unlockCache[song.songv2Id] = elapsed <= twoHours;
 
-        // Clean up expired unlocks
-        if (timeElapsed > twoHoursInMs) {
-          _prefs!.remove(unlockTimeKey);
+        if (elapsed > twoHours) {
+          _prefs!.remove(key);
         }
       } else {
         _unlockCache[song.songv2Id] = false;
@@ -119,38 +114,48 @@ class _SongV2ViewState extends State<SongV2View> {
 
   Future<void> _saveUnlockTime(String songv2Id) async {
     _prefs ??= await SharedPreferences.getInstance();
-    final unlockTimeKey = 'unlock_time_$songv2Id';
-    final currentTime = DateTime.now().millisecondsSinceEpoch;
-
-    await _prefs!.setInt(unlockTimeKey, currentTime);
+    final key = 'unlock_time_$songv2Id';
+    await _prefs!.setInt(key, DateTime.now().millisecondsSinceEpoch);
     _unlockCache[songv2Id] = true;
   }
 
   void _onUnlockTap(SongV2Model song) async {
-    final success = await showAdConsentSnackBar(context, song.songv2Id);
-
-    if (success) {
+    final ok = await showAdConsentSnackBar(context, song.songv2Id);
+    if (ok) {
       await _saveUnlockTime(song.songv2Id);
-      
-      // Confetti efekti başlat
       _confettiController.play();
-      
       if (mounted) setState(() {});
     }
   }
 
   void _onSearchChanged(String query) {
-    setState(() {
-      if (query != _lastSearch) {
-        _lastSearch = query;
-        vm.clearSongs();
-        if (query.isEmpty) {
-          vm.fetchInitialSongs();
-        } else {
-          vm.fetchInitialSongsWithQuery(query: query);
-        }
-      }
-    });
+    if (query == _lastSearch) return;
+
+    setState(() => _lastSearch = query);
+
+    vm.clearSongs();
+    if (query.isEmpty) {
+      vm.fetchInitialSongs();
+    } else {
+      vm.fetchInitialSongsWithQuery(query: query);
+    }
+  }
+
+  String _durationText(int durationMs) {
+    final totalSeconds = (durationMs / 1000).floor();
+    final m = (totalSeconds / 60).floor();
+    final s = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  // ✅ Sade responsive helper
+  double _scale(double w) => (w / 390).clamp(0.85, 1.20);
+
+  double _sz(double base, double sc, {double? min, double? max}) {
+    final v = base * sc;
+    if (min != null && v < min) return min;
+    if (max != null && v > max) return max;
+    return v;
   }
 
   @override
@@ -164,125 +169,238 @@ class _SongV2ViewState extends State<SongV2View> {
       value: vm,
       child: Consumer<SongV2ViewModel>(
         builder: (context, vm, _) => Scaffold(
-            body: Stack(
-              children: [
-                DecoratedBox(
-                  decoration: AppDecorations.backgroundDecoration(isDarkMode),
-                  child: SafeArea(
-                    bottom: false,
-                    child: Column(
-                      children: [
-                        _buildModernHeader(context, isDarkMode),
-                        Expanded(
-                          child: _buildMainContent(vm, isConnected, bluetoothBloc, isDarkMode),
-                        ),
-                      ],
-                    ),
+          body: Stack(
+            children: [
+              DecoratedBox(
+                decoration: AppDecorations.backgroundDecoration(isDarkMode),
+                child: SafeArea(
+                  bottom: false,
+                  child: LayoutBuilder(
+                    builder: (context, c) {
+                      final w = c.maxWidth;
+                      final sc = _scale(w);
+
+                      final hp = _sz(12, sc, min: 10, max: 20);
+                      final gap = _sz(10, sc, min: 8, max: 14);
+
+                      // ✅ grid kolon hesabı (dinamik, ama basit)
+                      final targetTileW = _sz(175, sc, min: 150, max: 230);
+                      final cols = (w / targetTileW).floor().clamp(2, 6);
+
+                      // ✅ overflow-proof: kart yüksekliği sabit (scale’li)
+                      final gridExtent = _sz(142, sc, min: 128, max: 165);
+
+                      final headerTitle = _sz(22, sc, min: 20, max: 28);
+                      final headerIcon = _sz(22, sc, min: 20, max: 26);
+
+                      final searchFont = _sz(14, sc, min: 13, max: 16);
+                      final listTitle = _sz(15, sc, min: 13.5, max: 17);
+
+                      return CustomScrollView(
+                        controller: _scrollController,
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(hp, 6, hp, 0),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode
+                                              ? Colors.white.withValues(alpha: 0.10)
+                                              : Colors.black.withValues(alpha: 0.10),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.arrow_back_ios_rounded,
+                                            color: isDarkMode ? Colors.white : Colors.black,
+                                            size: headerIcon,
+                                          ),
+                                          onPressed: () => Navigator.pop(context),
+                                        ),
+                                      ),
+                                      SizedBox(width: gap),
+                                      Expanded(
+                                        child: Text(
+                                          'songs'.tr(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: headerTitle,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDarkMode ? Colors.white : Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                      DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode
+                                              ? Colors.white.withValues(alpha: 0.10)
+                                              : Colors.black.withValues(alpha: 0.10),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            _isGridView
+                                                ? Icons.view_list_rounded
+                                                : Icons.grid_view_rounded,
+                                            color: isDarkMode ? Colors.white : Colors.black,
+                                            size: headerIcon,
+                                          ),
+                                          onPressed: () => setState(() => _isGridView = !_isGridView),
+                                        ),
+                                      ),
+                                      SizedBox(width: _sz(8, sc, min: 6, max: 12)),
+                                      DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: isDarkMode
+                                              ? const Color(0xFF6366F1).withValues(alpha: 0.20)
+                                              : const Color(0xFF4F46E5).withValues(alpha: 0.10),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.library_music_rounded,
+                                            color: isDarkMode
+                                                ? const Color(0xFF6366F1)
+                                                : const Color(0xFF4F46E5),
+                                            size: headerIcon,
+                                          ),
+                                          onPressed: () => Navigator.pushNamed(context, '/requested-songs'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: _sz(12, sc, min: 8, max: 16)),
+                                  _buildSearchBar(isDarkMode, searchFont),
+                                  SizedBox(height: _sz(10, sc, min: 8, max: 14)),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(hp, 6, hp, 6),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'All Songs',
+                                    style: TextStyle(
+                                      fontSize: _sz(16, sc, min: 14, max: 18),
+                                      fontWeight: FontWeight.bold,
+                                      color: isDarkMode ? Colors.white : Colors.black,
+                                    ),
+                                  ),
+                                  SizedBox(width: _sz(10, sc, min: 8, max: 12)),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: _sz(12, sc, min: 10, max: 14),
+                                      vertical: _sz(6, sc, min: 5, max: 7),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isDarkMode
+                                          ? Colors.white.withValues(alpha: 0.10)
+                                          : Colors.black.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      '${vm.songs.length}',
+                                      style: TextStyle(
+                                        fontSize: _sz(13, sc, min: 12, max: 14),
+                                        fontWeight: FontWeight.bold,
+                                        color: isDarkMode
+                                            ? Colors.white.withValues(alpha: 0.85)
+                                            : Colors.black.withValues(alpha: 0.80),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+
+                          if (vm.songs.isEmpty && !vm.isLoading)
+                            SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(isDarkMode, sc),
+                            )
+                          else ...[
+                            SliverPadding(
+                              padding: EdgeInsets.symmetric(horizontal: hp),
+                              sliver: _isGridView
+                                  ? _buildSongsGrid(
+                                      songs: vm.songs,
+                                      isConnected: isConnected,
+                                      bluetoothBloc: bluetoothBloc,
+                                      isDarkMode: isDarkMode,
+                                      cols: cols,
+                                      spacing: gap,
+                                      mainExtent: gridExtent,
+                                      sc: sc,
+                                    )
+                                  : _buildSongsList(
+                                      songs: vm.songs,
+                                      isConnected: isConnected,
+                                      bluetoothBloc: bluetoothBloc,
+                                      isDarkMode: isDarkMode,
+                                      sc: sc,
+                                      listTitleFont: listTitle,
+                                    ),
+                            ),
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(0, 10, 0, 80),
+                                child: vm.isLoading
+                                    ? const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ),
-                // Confetti Widget
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: ConfettiWidget(
-                    confettiController: _confettiController,
-                    blastDirection: 1.57, // radians - downwards
-                    blastDirectionality: BlastDirectionality.explosive,
-                    emissionFrequency: 0.05,
-                    numberOfParticles: 50,
-                    maxBlastForce: 100,
-                    minBlastForce: 80,
-                    gravity: 0.3,
-                    colors: const [
-                      Colors.green,
-                      Colors.blue,
-                      Colors.pink,
-                      Colors.orange,
-                      Colors.purple,
-                      Colors.yellow,
-                    ],
-                  ),
+              ),
+
+              Align(
+                alignment: Alignment.topCenter,
+                child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirection: 1.57,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  emissionFrequency: 0.06,
+                  numberOfParticles: 40,
+                  maxBlastForce: 90,
+                  minBlastForce: 65,
+                  gravity: 0.25,
+                  colors: const [
+                    Colors.green,
+                    Colors.blue,
+                    Colors.pink,
+                    Colors.orange,
+                    Colors.purple,
+                    Colors.yellow,
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        ),
       ),
     );
   }
 
-  Widget _buildModernHeader(BuildContext context, bool isDarkMode) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back_ios_rounded,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'songs'.tr(),
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      _isGridView ? Icons.view_list_rounded : Icons.grid_view_rounded,
-                      color: isDarkMode ? Colors.white : Colors.black,
-                    ),
-                    onPressed: () => setState(() => _isGridView = !_isGridView),
-                    tooltip: _isGridView ? 'List View' : 'Grid View',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? const Color(0xFF6366F1).withValues(alpha: 0.2)
-                        : const Color(0xFF4F46E5).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.library_music_rounded,
-                      color: isDarkMode ? const Color(0xFF6366F1) : const Color(0xFF4F46E5),
-                    ),
-                    onPressed: () => Navigator.pushNamed(context, '/requested-songs'),
-                    tooltip: 'My Song Requests',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildSearchBar(isDarkMode),
-          ],
-        ),
-      );
-
-  Widget _buildSearchBar(bool isDarkMode) => DecoratedBox(
+  Widget _buildSearchBar(bool isDarkMode, double fontSize) => DecoratedBox(
         decoration: BoxDecoration(
           color: isDarkMode
               ? Colors.white.withValues(alpha: 0.05)
@@ -290,8 +408,8 @@ class _SongV2ViewState extends State<SongV2View> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.1)
-                : Colors.black.withValues(alpha: 0.1),
+                ? Colors.white.withValues(alpha: 0.10)
+                : Colors.black.withValues(alpha: 0.10),
           ),
         ),
         child: TextField(
@@ -299,29 +417,29 @@ class _SongV2ViewState extends State<SongV2View> {
           onChanged: _onSearchChanged,
           style: TextStyle(
             color: isDarkMode ? Colors.white : Colors.black,
-            fontSize: 16,
+            fontSize: fontSize,
           ),
           decoration: InputDecoration(
             hintText: 'search_songs'.tr(),
             hintStyle: TextStyle(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.5)
-                  : Colors.black.withValues(alpha: 0.5),
-              fontSize: 16,
+                  ? Colors.white.withValues(alpha: 0.50)
+                  : Colors.black.withValues(alpha: 0.50),
+              fontSize: fontSize,
             ),
             prefixIcon: Icon(
               Icons.search_rounded,
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.7)
-                  : Colors.black.withValues(alpha: 0.7),
+                  ? Colors.white.withValues(alpha: 0.70)
+                  : Colors.black.withValues(alpha: 0.70),
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
                     icon: Icon(
                       Icons.clear_rounded,
                       color: isDarkMode
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : Colors.black.withValues(alpha: 0.7),
+                          ? Colors.white.withValues(alpha: 0.70)
+                          : Colors.black.withValues(alpha: 0.70),
                     ),
                     onPressed: () {
                       _searchController.clear();
@@ -330,205 +448,124 @@ class _SongV2ViewState extends State<SongV2View> {
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
         ),
       );
 
-  Widget _buildMainContent(
-    SongV2ViewModel vm,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    bool isDarkMode,
-  ) {
-    if (vm.songs.isEmpty && !vm.isLoading) {
-      return _buildEmptyState(isDarkMode);
-    }
-
-    return NotificationListener<ScrollNotification>(
-      onNotification: (scrollInfo) {
-        if (scrollInfo is ScrollEndNotification &&
-            _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-            vm.hasMore &&
-            !vm.isLoading) {
-          vm.fetchMoreSongs();
-        }
-        return false;
-      },
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(
-              'All Songs',
-              isDarkMode,
-              showCount: true,
-              count: vm.songs.length,
-            ),
-            const SizedBox(height: 8),
-            _isGridView
-                ? _buildSongsGrid(vm.songs, isConnected, bluetoothBloc, vm, isDarkMode)
-                : _buildSongsList(vm.songs, isConnected, bluetoothBloc, vm, isDarkMode),
-            if (vm.isLoading)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            const SizedBox(height: 80),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(
-    String title,
-    bool isDarkMode, {
-    bool showCount = false,
-    int count = 0,
+  SliverList _buildSongsList({
+    required List<SongV2Model> songs,
+    required bool isConnected,
+    required BluetoothBloc bluetoothBloc,
+    required bool isDarkMode,
+    required double sc,
+    required double listTitleFont,
   }) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black,
+      SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final song = songs[index];
+            final isLocked = _isSongLockedSync(song, isConnected);
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: _sz(12, sc, min: 10, max: 14)),
+              child: _buildModernSongCard(
+                context: context,
+                song: song,
+                isConnected: isConnected,
+                bluetoothBloc: bluetoothBloc,
+                isLocked: isLocked,
+                isDarkMode: isDarkMode,
+                sc: sc,
+                titleFont: listTitleFont,
               ),
-            ),
-            if (showCount)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode
-                        ? Colors.white.withValues(alpha: 0.8)
-                        : Colors.black.withValues(alpha: 0.8),
-                  ),
-                ),
-              ),
-          ],
+            );
+          },
+          childCount: songs.length,
         ),
       );
 
-  Widget _buildSongsList(
-    List<SongV2Model> songs,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    SongV2ViewModel vm,
-    bool isDarkMode,
-  ) =>
-      ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: songs.length,
-        itemBuilder: (context, index) {
-          final song = songs[index];
-          final isLocked = _isSongLockedSync(song, isConnected);
-          return _buildModernSongCard(
-            context,
-            song,
-            isConnected,
-            bluetoothBloc,
-            vm,
-            isLocked,
-            isDarkMode,
-          );
-        },
-      );
+  SliverGrid _buildSongsGrid({
+    required List<SongV2Model> songs,
+    required bool isConnected,
+    required BluetoothBloc bluetoothBloc,
+    required bool isDarkMode,
+    required int cols,
+    required double spacing,
+    required double mainExtent,
+    required double sc,
+  }) =>
+      SliverGrid(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final song = songs[index];
+            final isLocked = _isSongLockedSync(song, isConnected);
 
-  Widget _buildSongsGrid(
-    List<SongV2Model> songs,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    SongV2ViewModel vm,
-    bool isDarkMode,
-  ) =>
-      GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.75,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+            return _buildGridSongCard(
+              context: context,
+              song: song,
+              isConnected: isConnected,
+              bluetoothBloc: bluetoothBloc,
+              isLocked: isLocked,
+              isDarkMode: isDarkMode,
+              sc: sc,
+            );
+          },
+          childCount: songs.length,
         ),
-        itemCount: songs.length,
-        itemBuilder: (context, index) {
-          final song = songs[index];
-          final isLocked = _isSongLockedSync(song, isConnected);
-          return _buildGridSongCard(
-            context,
-            song,
-            isConnected,
-            bluetoothBloc,
-            vm,
-            isLocked,
-            isDarkMode,
-          );
-        },
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: cols,
+          mainAxisExtent: mainExtent,
+          crossAxisSpacing: spacing,
+          mainAxisSpacing: spacing,
+        ),
       );
 
-  Widget _buildModernSongCard(
-    BuildContext context,
-    SongV2Model song,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    SongV2ViewModel vm,
-    bool isLocked,
-    bool isDarkMode,
-  ) =>
+  Widget _buildModernSongCard({
+    required BuildContext context,
+    required SongV2Model song,
+    required bool isConnected,
+    required BluetoothBloc bluetoothBloc,
+    required bool isLocked,
+    required bool isDarkMode,
+    required double sc,
+    required double titleFont,
+  }) =>
       GestureDetector(
         onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
+        child: DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: isDarkMode
                   ? [
-                      const Color(0xFF1E293B).withValues(alpha: 0.8),
-                      const Color(0xFF334155).withValues(alpha: 0.6),
+                      const Color(0xFF1E293B).withValues(alpha: 0.80),
+                      const Color(0xFF334155).withValues(alpha: 0.60),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.9),
-                      const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                      Colors.white.withValues(alpha: 0.92),
+                      const Color(0xFFF1F5F9).withValues(alpha: 0.84),
                     ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 24)),
             border: Border.all(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.1),
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.black.withValues(alpha: 0.10),
             ),
             boxShadow: [
               BoxShadow(
                 color: isDarkMode
-                    ? Colors.black.withValues(alpha: 0.3)
-                    : Colors.grey.withValues(alpha: 0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                    ? Colors.black.withValues(alpha: 0.25)
+                    : Colors.grey.withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(_sz(16, sc, min: 14, max: 20)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -536,50 +573,49 @@ class _SongV2ViewState extends State<SongV2View> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(_sz(11, sc, min: 10, max: 12)),
                       decoration: BoxDecoration(
                         color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : Colors.black.withValues(alpha: 0.1),
+                            ? Colors.white.withValues(alpha: 0.10)
+                            : Colors.black.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         isLocked ? Icons.lock_rounded : Icons.play_arrow_rounded,
                         color: isDarkMode ? Colors.white : Colors.black,
-                        size: 24,
+                        size: _sz(24, sc, min: 22, max: 26),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: _sz(12, sc, min: 10, max: 14)),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${song.artist} – ${song.title}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: isDarkMode ? Colors.white : Colors.black,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        '${song.artist} – ${song.title}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: titleFont,
+                          fontWeight: FontWeight.bold,
+                          color: isDarkMode ? Colors.white : Colors.black,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: _sz(12, sc, min: 10, max: 14)),
                 Row(
                   children: [
                     _buildInfoChip(
                       icon: Icons.speed_rounded,
                       label: '${song.bpm} BPM',
                       isDarkMode: isDarkMode,
+                      sc: sc,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: _sz(10, sc, min: 8, max: 12)),
                     _buildInfoChip(
                       icon: Icons.timer_outlined,
-                      label: '${(song.durationMs / 1000 / 60).floor()}:${((song.durationMs / 1000) % 60).floor().toString().padLeft(2, '0')}',
+                      label: _durationText(song.durationMs),
                       isDarkMode: isDarkMode,
+                      sc: sc,
                     ),
                   ],
                 ),
@@ -589,15 +625,15 @@ class _SongV2ViewState extends State<SongV2View> {
         ),
       );
 
-  Widget _buildGridSongCard(
-    BuildContext context,
-    SongV2Model song,
-    bool isConnected,
-    BluetoothBloc bluetoothBloc,
-    SongV2ViewModel vm,
-    bool isLocked,
-    bool isDarkMode,
-  ) =>
+  Widget _buildGridSongCard({
+    required BuildContext context,
+    required SongV2Model song,
+    required bool isConnected,
+    required BluetoothBloc bluetoothBloc,
+    required bool isLocked,
+    required bool isDarkMode,
+    required double sc,
+  }) =>
       GestureDetector(
         onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
         child: DecoratedBox(
@@ -605,106 +641,123 @@ class _SongV2ViewState extends State<SongV2View> {
             gradient: LinearGradient(
               colors: isDarkMode
                   ? [
-                      const Color(0xFF1E293B).withValues(alpha: 0.8),
-                      const Color(0xFF334155).withValues(alpha: 0.6),
+                      const Color(0xFF1E293B).withValues(alpha: 0.80),
+                      const Color(0xFF334155).withValues(alpha: 0.60),
                     ]
                   : [
-                      Colors.white.withValues(alpha: 0.9),
-                      const Color(0xFFF1F5F9).withValues(alpha: 0.8),
+                      Colors.white.withValues(alpha: 0.92),
+                      const Color(0xFFF1F5F9).withValues(alpha: 0.84),
                     ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 24)),
             border: Border.all(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : Colors.black.withValues(alpha: 0.1),
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.black.withValues(alpha: 0.10),
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image section with lock overlay  
-              Expanded(
-                flex: 3,
-                child: Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                        gradient: LinearGradient(
-                          colors: isDarkMode
-                              ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
-                              : [const Color(0xFF4F46E5), const Color(0xFF7C3AED)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.music_note_rounded,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    if (isLocked)
-                      Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.lock_rounded,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 24)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: _sz(56, sc, min: 50, max: 62),
+                  child: Stack(
                     children: [
-                      Text(
-                        song.title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black,
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDarkMode
+                                ? const [Color(0xFF6366F1), Color(0xFF8B5CF6)]
+                                : const [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        song.artist,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.7)
-                              : Colors.black.withValues(alpha: 0.7),
+                        child: Center(
+                          child: Icon(
+                            Icons.music_note_rounded,
+                            size: _sz(28, sc, min: 24, max: 34),
+                            color: Colors.white,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (isLocked)
+                        Positioned.fill(
+                          child: ColoredBox(
+                            color: Colors.black.withValues(alpha: 0.55),
+                            child: Center(
+                              child: Icon(
+                                Icons.lock_rounded,
+                                color: Colors.white,
+                                size: _sz(24, sc, min: 20, max: 30),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.all(_sz(8, sc, min: 6, max: 12)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          song.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: _sz(12, sc, min: 11, max: 14),
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.black,
+                            height: 1.05,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          song.artist,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: _sz(11, sc, min: 10, max: 13),
+                            color: isDarkMode
+                                ? Colors.white.withValues(alpha: 0.70)
+                                : Colors.black.withValues(alpha: 0.70),
+                            height: 1.05,
+                          ),
+                        ),
+                        const Spacer(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildInfoChip(
+                                icon: Icons.speed_rounded,
+                                label: '${song.bpm} BPM',
+                                isDarkMode: isDarkMode,
+                                sc: sc,
+                              ),
+                            ),
+                            SizedBox(width: _sz(6, sc, min: 6, max: 10)),
+                            _buildInfoChip(
+                              icon: Icons.timer_outlined,
+                              label: _durationText(song.durationMs),
+                              isDarkMode: isDarkMode,
+                              sc: sc,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -713,12 +766,16 @@ class _SongV2ViewState extends State<SongV2View> {
     required IconData icon,
     required String label,
     required bool isDarkMode,
+    required double sc,
   }) =>
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: _sz(6, sc, min: 5, max: 8),
+          vertical: _sz(3, sc, min: 2, max: 4),
+        ),
         decoration: BoxDecoration(
           color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.1)
+              ? Colors.white.withValues(alpha: 0.10)
               : Colors.black.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -727,68 +784,75 @@ class _SongV2ViewState extends State<SongV2View> {
           children: [
             Icon(
               icon,
-              size: 12,
+              size: _sz(11.5, sc, min: 10, max: 13),
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.6)
-                  : Colors.black.withValues(alpha: 0.6),
+                  ? Colors.white.withValues(alpha: 0.60)
+                  : Colors.black.withValues(alpha: 0.60),
             ),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : Colors.black.withValues(alpha: 0.6),
+            SizedBox(width: _sz(3, sc, min: 2, max: 5)),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: _sz(11, sc, min: 10, max: 12.5),
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.65)
+                      : Colors.black.withValues(alpha: 0.65),
+                  height: 1.0,
+                ),
               ),
             ),
           ],
         ),
       );
 
-  Widget _buildEmptyState(bool isDarkMode) => Container(
-        padding: const EdgeInsets.all(40),
+  Widget _buildEmptyState(bool isDarkMode, double sc) => Container(
+        padding: EdgeInsets.all(_sz(32, sc, min: 24, max: 44)),
+        alignment: Alignment.center,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(32),
+              padding: EdgeInsets.all(_sz(26, sc, min: 20, max: 34)),
               decoration: BoxDecoration(
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Colors.black.withValues(alpha: 0.1),
+                    ? Colors.white.withValues(alpha: 0.10)
+                    : Colors.black.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Icon(
                 Icons.music_note_rounded,
-                size: 64,
+                size: _sz(60, sc, min: 50, max: 72),
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.6)
-                    : Colors.black.withValues(alpha: 0.6),
+                    ? Colors.white.withValues(alpha: 0.60)
+                    : Colors.black.withValues(alpha: 0.60),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: _sz(18, sc, min: 14, max: 22)),
             Text(
               _lastSearch.isNotEmpty ? 'no_songs_found'.tr() : 'empty'.tr(),
               style: TextStyle(
-                fontSize: 24,
+                fontSize: _sz(22, sc, min: 18, max: 26),
                 fontWeight: FontWeight.bold,
                 color: isDarkMode ? Colors.white : Colors.black,
               ),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: _sz(10, sc, min: 8, max: 14)),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: EdgeInsets.symmetric(horizontal: _sz(40, sc, min: 24, max: 56)),
               child: Text(
                 _lastSearch.isNotEmpty
                     ? 'search_not_found_desc'.tr()
                     : 'Explore amazing songs and beats',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: _sz(15, sc, min: 13, max: 17),
                   color: isDarkMode
-                      ? Colors.white.withValues(alpha: 0.7)
-                      : Colors.black.withValues(alpha: 0.7),
+                      ? Colors.white.withValues(alpha: 0.70)
+                      : Colors.black.withValues(alpha: 0.70),
                 ),
               ),
             ),

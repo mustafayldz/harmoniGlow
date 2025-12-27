@@ -7,7 +7,7 @@ class SongV2ViewModel extends ChangeNotifier {
   late BuildContext context;
 
   List<SongV2Model> _songs = [];
-  int limit = 100;
+  int limit = 25;
   int _offset = 0;
   int? _total;
   bool _hasMore = true;
