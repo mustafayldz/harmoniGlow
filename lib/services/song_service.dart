@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:drumly/constants.dart';
-import 'package:drumly/models/song_types_model.dart';
 import 'package:drumly/models/songs_model.dart';
 import 'package:drumly/screens/training/trraning_model.dart';
 import 'package:drumly/shared/enums.dart';
@@ -112,32 +111,6 @@ class SongService {
         }
       }
       return songs;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /*----------------------------------------------------------------------
-                  Get Songs Types
-----------------------------------------------------------------------*/
-
-  Future<List<SongTypeModel>?> getSongTypes(BuildContext context) async {
-    final String url = getBaseUrlSongTypes();
-
-    final List<SongTypeModel> songTypes = <SongTypeModel>[];
-
-    try {
-      final response =
-          await RequestHelper.requestAsync(context, RequestType.get, url);
-
-      if (response == null || response == '' || response.isEmpty) {
-        return null;
-      } else if (response.isNotEmpty && response != '') {
-        json.decode(response).forEach((item) {
-          songTypes.add(SongTypeModel.fromJson(item));
-        });
-      }
-      return songTypes;
     } catch (e) {
       return null;
     }

@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/app_gradients.dart';
+import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -837,7 +838,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     }
   }
 
-  void _togglePlay() {
+  void _togglePlay() async{
     final s = _song;
     if (s == null) return;
 
@@ -852,9 +853,16 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     });
 
     if (_isPlaying) {
+      await showDialog(   
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => const Countdown(),
+                          );
+
       _lastElapsed = Duration.zero;
       _ticker.start();
-      if (_ytController != null && _ytReady && _speed == 1.0) {
+      if (_ytController != null && _ytReady && _speed == 1.0){
+        
         _ytController!.seekTo(Duration(milliseconds: _playerMs.toInt()));
         _ytController!.play();
       }
