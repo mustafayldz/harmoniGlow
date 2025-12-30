@@ -37,9 +37,12 @@ import 'package:drumly/services/songv2_service.dart';
 /// Small extensions
 /// ---------------------------------------------------------------------------
 extension ColorX on Color {
-  int toARGB32() => value;
-  Color withValues({double? alpha}) => alpha == null ? this : withOpacity(alpha);
+  int toIntARGB32() => toARGB32();
+
+  Color withValues({double? alpha}) =>
+      alpha == null ? this : withValues(alpha: alpha);
 }
+
 
 /// ---------------------------------------------------------------------------
 /// 1) Drum kit layout (unchanged)
@@ -113,7 +116,9 @@ class LaneFlashController extends ChangeNotifier {
   }
 
   void reset() {
-    for (var i = 0; i < 8; i++) v[i] = 0.0;
+    for (var i = 0; i < 8; i++) {
+      v[i] = 0.0;
+    }
     notifyListeners();
   }
 }
@@ -216,8 +221,8 @@ class _NeonStagePainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withOpacity(0.18),
-            Colors.black.withOpacity(0.70),
+            Colors.black.withValues(alpha: 0.18),
+            Colors.black.withValues(alpha: 0.70),
           ],
         ).createShader(Rect.fromLTRB(0, roadTopY, size.width, roadBottomY)),
     );
@@ -245,14 +250,14 @@ class _NeonStagePainter extends CustomPainter {
         ..strokeWidth = 14.0
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..color = c.withOpacity(0.07);
+        ..color = c.withValues(alpha: 0.07);
 
       final railGlow = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.6
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..color = c.withOpacity(0.30)
+        ..color = c.withValues(alpha: 0.30)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
 
       final railCore = Paint()
@@ -260,7 +265,7 @@ class _NeonStagePainter extends CustomPainter {
         ..strokeWidth = 1.2
         ..strokeCap = StrokeCap.round
         ..strokeJoin = StrokeJoin.round
-        ..color = c.withOpacity(0.22);
+        ..color = c.withValues(alpha: 0.22);
 
       canvas.drawPath(centerPath, band);
       canvas.drawPath(centerPath, railGlow);
@@ -279,7 +284,7 @@ class _NeonStagePainter extends CustomPainter {
       final y = rnd.nextDouble() * topBand;
       final r = 0.6 + rnd.nextDouble() * 1.8;
       final o = 0.06 + rnd.nextDouble() * 0.18;
-      stars.color = Colors.white.withOpacity(o);
+      stars.color = Colors.white.withValues(alpha: o);
       canvas.drawCircle(Offset(x, y), r, stars);
     }
   }
@@ -287,9 +292,9 @@ class _NeonStagePainter extends CustomPainter {
   void _paintCity(Canvas canvas, Size size) {
     final baseY = dstRect.top * 0.98;
 
-    final leftPaint = Paint()..color = const Color(0xFF0B234F).withOpacity(0.95);
+    final leftPaint = Paint()..color = const Color(0xFF0B234F).withValues(alpha: 0.95);
     final glowL = Paint()
-      ..color = const Color(0xFF00E5FF).withOpacity(0.14)
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.14)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
 
     final left = Path()
@@ -308,9 +313,9 @@ class _NeonStagePainter extends CustomPainter {
     canvas.drawPath(left, leftPaint);
     canvas.drawPath(left, glowL);
 
-    final rightPaint = Paint()..color = const Color(0xFF071A3E).withOpacity(0.95);
+    final rightPaint = Paint()..color = const Color(0xFF071A3E).withValues(alpha: 0.95);
     final glowR = Paint()
-      ..color = const Color(0xFFFF2D55).withOpacity(0.12)
+      ..color = const Color(0xFFFF2D55).withValues(alpha: 0.12)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
 
     final w = size.width;
@@ -336,10 +341,10 @@ class _NeonStagePainter extends CustomPainter {
     final bottomY = bl.dy;
 
     final gridH = Paint()
-      ..color = Colors.white.withOpacity(0.10)
+      ..color = Colors.white.withValues(alpha: 0.10)
       ..strokeWidth = 1.0;
     final gridV = Paint()
-      ..color = Colors.white.withOpacity(0.08)
+      ..color = Colors.white.withValues(alpha: 0.08)
       ..strokeWidth = 1.0;
 
     for (int i = 0; i <= 18; i++) {
@@ -453,7 +458,9 @@ class _NotesAndGlowPainter extends CustomPainter {
 
   int _laneColorsHash() {
     int h = 17;
-    for (final c in laneColors) h = 37 * h + c.toARGB32();
+    for (final c in laneColors) {
+      h = 37 * h + c.toARGB32();
+    }
     return h;
   }
 
@@ -480,12 +487,12 @@ class _NotesAndGlowPainter extends CustomPainter {
         text: TextSpan(
           text: label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.92),
+            color: Colors.white.withValues(alpha: 0.92),
             fontSize: fontSize,
             fontWeight: FontWeight.w900,
             shadows: [
               Shadow(
-                color: Colors.black.withOpacity(0.85),
+                color: Colors.black.withValues(alpha: 0.85),
                 offset: const Offset(0, 1),
                 blurRadius: 3,
               ),
@@ -535,15 +542,15 @@ class _NotesAndGlowPainter extends CustomPainter {
 
       _outlinePaint
         ..strokeWidth = 5.0
-        ..color = Colors.black.withOpacity(0.65);
+        ..color = Colors.black.withValues(alpha: 0.65);
       canvas.drawCircle(center, r, _outlinePaint);
 
       _ringPaint
         ..strokeWidth = 3.0
-        ..color = c.withOpacity(0.78);
+        ..color = c.withValues(alpha: 0.78);
       canvas.drawCircle(center, r, _ringPaint);
 
-      _fillPaint.color = c.withOpacity(0.16);
+      _fillPaint.color = c.withValues(alpha: 0.16);
       canvas.drawCircle(center, r, _fillPaint);
 
       final tp = _labelPainters![kitIndex];
@@ -608,9 +615,9 @@ class _NotesAndGlowPainter extends CustomPainter {
           center,
           r * (1.25 + 0.40 * intensity),
           [
-            c.withOpacity(0.0),
-            c.withOpacity(0.55 * intensity),
-            c.withOpacity(0.0),
+            c.withValues(alpha: 0.0),
+            c.withValues(alpha: 0.55 * intensity),
+            c.withValues(alpha: 0.0),
           ],
           const [0.0, 0.55, 1.0],
         );
@@ -621,7 +628,7 @@ class _NotesAndGlowPainter extends CustomPainter {
           Rect.fromCenter(center: center, width: r * 2.25, height: r * 1.75);
       _hitOvalPaint
         ..strokeWidth = 2.4
-        ..color = c.withOpacity(0.85 * intensity);
+        ..color = c.withValues(alpha: 0.85 * intensity);
 
       canvas.drawOval(oval, _hitOvalPaint);
     }
@@ -756,7 +763,7 @@ class _NotesAndGlowPainter extends CustomPainter {
         final isHit = (t - tNow).abs() <= hitTightMs;
         final c = isHit ? const Color(0xFF10B981) : laneColors[kitIndex];
 
-        paint.color = c.withOpacity(opacity);
+        paint.color = c.withValues(alpha: opacity);
         canvas.drawCircle(p, noteR, paint);
       }
     }
@@ -1314,7 +1321,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
             builder: (_, ms, __) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.40),
+                  color: Colors.black.withValues(alpha: 0.40),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.white24),
                 ),
@@ -1344,9 +1351,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor: Colors.white.withOpacity(0.10),
+                  backgroundColor: Colors.white.withValues(alpha: 0.10),
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    Colors.yellowAccent.withOpacity(0.9),
+                    Colors.yellowAccent.withValues(alpha: 0.9),
                   ),
                 ),
               );
@@ -1371,7 +1378,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 width: _showSpeedSlider ? 320 : 90,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.50),
+                  color: Colors.black.withValues(alpha: 0.50),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: Colors.white24),
                 ),
@@ -1504,14 +1511,14 @@ class _PillIconButton extends StatelessWidget {
             width: 46,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.40),
+              color: Colors.black.withValues(alpha: 0.40),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white24),
               boxShadow: [
                 BoxShadow(
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                  color: Colors.black.withOpacity(0.25),
+                  color: Colors.black.withValues(alpha: 0.25),
                 ),
               ],
             ),
@@ -1587,9 +1594,9 @@ Future<ui.Image> _createNoteSpriteWaterDropTapered() async {
       Offset(cx, tailTopY),
       Offset(cx, tailBottomY),
       [
-        Colors.white.withOpacity(0.00),
-        Colors.white.withOpacity(0.10),
-        Colors.white.withOpacity(0.45),
+        Colors.white.withValues(alpha: 0.00),
+        Colors.white.withValues(alpha: 0.10),
+        Colors.white.withValues(alpha: 0.45),
       ],
       const [0.0, 0.55, 1.0],
     );
@@ -1622,7 +1629,7 @@ Future<ui.Image> _createNoteSpriteWaterDropTapered() async {
     head,
     Paint()
       ..isAntiAlias = true
-      ..color = Colors.white.withOpacity(0.95),
+      ..color = Colors.white.withValues(alpha: 0.95),
   );
 
   // highlight
@@ -1631,7 +1638,7 @@ Future<ui.Image> _createNoteSpriteWaterDropTapered() async {
     3.8,
     Paint()
       ..isAntiAlias = true
-      ..color = Colors.white.withOpacity(0.22),
+      ..color = Colors.white.withValues(alpha: 0.22),
   );
 
   final pic = recorder.endRecording();
