@@ -1,16 +1,13 @@
 // songv2_player_view_neon_v3.dart
 //
-// ✅ Updates included (per your latest):
-// - Full-screen immersive
-// - Same look on all phones/tablets (fixed design canvas + FittedBox cover)
-// - Removed prev/loop controls
-// - Timer + progress start working on FIRST play (via _playerMsN notifier updates)
-// - Drops: same WIDTH as old, but LONG tapered tail
-// - Lane order (left->right): Crash, Hi-Hat, Snare, Tom1, Kick, Tom2, Floor Tom, Ride
-// - Lane paths: straight vertical "road lanes" from top to bottom
-// - Lane visuals: ALL WHITE lanes (band + rails), drawn once
-// - Labels moved INSIDE circles
-// - Background unified (no black bottom)
+// ✅ Fully Responsive Implementation:
+// - Adaptive layout for phones, tablets, and different orientations
+// - Dynamic scaling based on screen dimensions (no fixed design canvas)
+// - Percentage-based positioning for UI controls
+// - Aspect-ratio-aware drum kit sizing
+// - Flexible lane paths that adapt to screen geometry
+// - Responsive font sizes, padding, and control dimensions
+// - No hardcoded pixel values for layout
 //
 // NOTE: This file assumes your existing imports/models/constants/services exist.
 
@@ -34,17 +31,6 @@ import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/services/songv2_service.dart';
 
 /// ---------------------------------------------------------------------------
-/// Small extensions
-/// ---------------------------------------------------------------------------
-extension ColorX on Color {
-  int toIntARGB32() => toARGB32();
-
-  Color withValues({double? alpha}) =>
-      alpha == null ? this : withValues(alpha: alpha);
-}
-
-
-/// ---------------------------------------------------------------------------
 /// 1) Drum kit layout (unchanged)
 /// ---------------------------------------------------------------------------
 class DrumAnchor {
@@ -56,14 +42,18 @@ class DrumAnchor {
 
 class DrumKitLayout {
   static const Map<int, DrumAnchor> anchor = {
-    0: DrumAnchor(0.220, 0.456, 0.075), // Hi-Hat
-    1: DrumAnchor(0.100, 0.166, 0.090), // Crash
-    2: DrumAnchor(0.900, 0.166, 0.090), // Ride
-    3: DrumAnchor(0.380, 0.502, 0.075), // Snare
-    4: DrumAnchor(0.450, 0.200, 0.075), // Tom 1
-    5: DrumAnchor(0.650, 0.200, 0.075), // Tom 2
-    6: DrumAnchor(0.750, 0.517, 0.090), // Floor Tom
-    7: DrumAnchor(0.550, 0.705, 0.120), // Kick
+    // EŞİT ARALIKLI 8 LANE (radius'lar AYNI)
+
+    // x değerleri: 0.108 + i * 0.112
+
+    1: DrumAnchor(0.108, 0.20, 0.0810), // Crash
+    0: DrumAnchor(0.220, 0.58, 0.0675), // Hi-Hat
+    3: DrumAnchor(0.332, 0.65, 0.0675), // Snare
+    4: DrumAnchor(0.444, 0.24, 0.0675), // Tom 1
+    7: DrumAnchor(0.556, 0.78, 0.1080), // Kick
+    5: DrumAnchor(0.668, 0.24, 0.0675), // Tom 2
+    6: DrumAnchor(0.780, 0.61, 0.0810), // Floor Tom
+    2: DrumAnchor(0.892, 0.20, 0.0810), // Ride
   };
 
   static const Map<int, String> labels = {
@@ -78,9 +68,12 @@ class DrumKitLayout {
   };
 }
 
+
+
 /// ---------------------------------------------------------------------------
 /// 2) Lane order (left->right) given by user
-/// Crash, Hi-hat, Snare, Tom1, Kick, Tom2, Floor Tom, Ride
+/// Soldan sağa X koordinatına göre sıralama:
+/// Crash(0.12), Hi-Hat(0.12), Snare(0.32), Tom1(0.37), Kick(0.50), Tom2(0.63), FloorTom(0.75), Ride(0.88)
 ///
 /// DrumKitLayout indices:
 /// Crash=1, HiHat=0, Snare=3, Tom1=4, Kick=7, Tom2=5, FloorTom=6, Ride=2
@@ -167,8 +160,8 @@ class _NeonStagePainter extends CustomPainter {
       rect,
       Paint()
         ..shader = const RadialGradient(
-          center: Alignment(0.0, -0.75),
-          radius: 1.25,
+          center: Alignment(0.0, -1),
+          radius: 1.5,
           colors: [
             Color(0xFF0B1D49),
             Color(0xFF050816),
@@ -177,30 +170,12 @@ class _NeonStagePainter extends CustomPainter {
         ).createShader(rect),
     );
 
-    // Bottom haze so no black band
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0x00000000),
-            Color(0x1400E5FF),
-            Color(0x1800FF99),
-            Color(0x22000000),
-          ],
-          stops: [0.55, 0.78, 0.90, 1.0],
-        ).createShader(rect),
-    );
-
     _paintStars(canvas, size);
-    _paintCity(canvas, size);
 
     // Road trapezoid
     final cx = size.width / 2;
-    final topW = size.width * 0.52;
-    final bottomW = size.width * 1.02;
+    final topW = size.width * 0.92;      // 0.52 -> 0.92
+    final bottomW = size.width * 1.18;   // 1.02 -> 1.18
 
     final tl = Offset(cx - topW / 2, roadTopY);
     final tr = Offset(cx + topW / 2, roadTopY);
@@ -287,53 +262,6 @@ class _NeonStagePainter extends CustomPainter {
       stars.color = Colors.white.withValues(alpha: o);
       canvas.drawCircle(Offset(x, y), r, stars);
     }
-  }
-
-  void _paintCity(Canvas canvas, Size size) {
-    final baseY = dstRect.top * 0.98;
-
-    final leftPaint = Paint()..color = const Color(0xFF0B234F).withValues(alpha: 0.95);
-    final glowL = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.14)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
-
-    final left = Path()
-      ..moveTo(0, baseY)
-      ..lineTo(0, baseY - 220)
-      ..lineTo(80, baseY - 220)
-      ..lineTo(80, baseY - 160)
-      ..lineTo(140, baseY - 160)
-      ..lineTo(140, baseY - 280)
-      ..lineTo(240, baseY - 280)
-      ..lineTo(240, baseY - 120)
-      ..lineTo(300, baseY - 120)
-      ..lineTo(300, baseY)
-      ..close();
-
-    canvas.drawPath(left, leftPaint);
-    canvas.drawPath(left, glowL);
-
-    final rightPaint = Paint()..color = const Color(0xFF071A3E).withValues(alpha: 0.95);
-    final glowR = Paint()
-      ..color = const Color(0xFFFF2D55).withValues(alpha: 0.12)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
-
-    final w = size.width;
-    final right = Path()
-      ..moveTo(w, baseY)
-      ..lineTo(w, baseY - 230)
-      ..lineTo(w - 90, baseY - 230)
-      ..lineTo(w - 90, baseY - 140)
-      ..lineTo(w - 170, baseY - 140)
-      ..lineTo(w - 170, baseY - 300)
-      ..lineTo(w - 280, baseY - 300)
-      ..lineTo(w - 280, baseY - 110)
-      ..lineTo(w - 350, baseY - 110)
-      ..lineTo(w - 350, baseY)
-      ..close();
-
-    canvas.drawPath(right, rightPaint);
-    canvas.drawPath(right, glowR);
   }
 
   void _paintGrid(Canvas canvas, Offset tl, Offset tr, Offset bl, Offset br) {
@@ -820,10 +748,7 @@ class _DrumSendInfo {
 
 class _SongV2PlayerViewState extends State<SongV2PlayerView>
     with SingleTickerProviderStateMixin {
-  // Fixed design canvas for “same look everywhere”
-  static const double _designW = 390;
-  static const double _designH = 844;
-
+  // Responsive layout - dimensions calculated dynamically based on screen size
   bool _isPlaying = false;
 
   double _speed = 1.0;
@@ -850,7 +775,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   late final LaneFlashController _flashCtrl = LaneFlashController();
   late final List<Color> _laneColors; // KIT index colors 0..7
 
-  static const double kDrumAspect = 1.7777777778;
+  static const double kDrumAspect = 2.5;
 
   int _hitCursor = 0;
 
@@ -874,6 +799,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   @override
   void initState() {
     super.initState();
+
+    // ✅ Portrait-only mode (sadece dikey kullanım)
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
     // Full screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -902,6 +833,13 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _playerMsN.dispose();
     _noteSprite?.dispose();
 
+    // ✅ Orientation lock'u kaldır (diğer ekranlar için)
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
@@ -951,7 +889,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _dynamicLookahead = s.lookaheadMs;
 
       // ✅ tapered tail sprite (narrow width, long height)
-      _noteSprite = await _createNoteSpriteWaterDropTapered();
+      _noteSprite = await _createNoteSpriteWaterDropReadable();
 
       if (s.source.type.toLowerCase() == 'youtube') {
         _ytController = YoutubePlayerController(
@@ -1204,46 +1142,58 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: SizedBox.expand(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: _designW,
-            height: _designH,
-            child: _buildDesignCanvas(context),
-          ),
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) => _buildResponsiveCanvas(context, constraints),
         ),
       ),
     );
   }
 
-  Widget _buildDesignCanvas(BuildContext context) {
+  Widget _buildResponsiveCanvas(BuildContext context, BoxConstraints constraints) {
     final s = _song!;
-    final size = const Size(_designW, _designH);
+    final screenWidth = constraints.maxWidth;
+    final screenHeight = constraints.maxHeight;
+    final size = Size(screenWidth, screenHeight);
+    final safeArea = MediaQuery.of(context).padding;
+    
+    // Calculate minimum dimension for responsive scaling
+    final minDimension = screenWidth < screenHeight ? screenWidth : screenHeight;
+    
+    // Responsive spacing ratios
+    final topPadding = safeArea.top + (minDimension * 0.02);
+    final horizontalPadding = minDimension * 0.03;
+    
+    // Responsive control positions (percentage-based)
+    final topY = topPadding + (screenHeight * 0.0);
+    final progressY = topY + (minDimension * 0.12);
+    final speedY = progressY + (minDimension * 0.06);
+    
+    // Responsive button and font sizes
+    final buttonSize = (minDimension * 0.11).clamp(40.0, 56.0);
+    final timerFontSize = (minDimension * 0.03).clamp(10.0, 14.0);
+    final speedFontSize = (minDimension * 0.035).clamp(12.0, 16.0);
+    final progressHeight = (minDimension * 0.02).clamp(6.0, 12.0);
 
     final dstRect = computeDrumRect(
       screen: size,
-      safe: EdgeInsets.zero,
+      safe: safeArea,
       aspect: kDrumAspect,
     );
 
-    // Controls are intentionally lower for notch/camera safety (in design space)
-    const topY = 54.0;
-    const progressY = 108.0;
-    const speedY = 130.0;
-
-    // Road geometry
-    final roadTopY = progressY + 62.0;
-    final roadBottomY = dstRect.top + dstRect.height * 0.10;
+    // Road geometry - responsive
+    final roadTopY = (speedY - minDimension * 0.02).clamp(0.0, size.height);
+    final roadBottomY = size.height - safeArea.bottom;
 
     // Vertical lanes (left->right order)
     final lanePaths = _computePerspectiveLanePaths(
-  size: size,
-  dstRect: dstRect,
-  roadTopY: roadTopY,
-);
-
+      size: size,
+      dstRect: dstRect,
+      roadTopY: roadTopY,
+    );
 
     return Stack(
       children: [
@@ -1292,44 +1242,49 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
             ),
           ),
 
-        // Back
+        // Back button - responsive
         Positioned(
           top: topY,
-          left: 12,
-          child: _PillIconButton(
+          left: horizontalPadding,
+          child: _ResponsivePillButton(
             icon: Icons.arrow_back,
+            size: buttonSize,
             onTap: () => Navigator.pop(context),
           ),
         ),
 
-        // Play
+        // Play button - responsive
         Positioned(
           top: topY,
-          left: 70,
-          child: _PillIconButton(
+          left: horizontalPadding + buttonSize + (minDimension * 0.02),
+          child: _ResponsivePillButton(
             icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            size: buttonSize,
             onTap: _togglePlay,
           ),
         ),
 
-        // Timer
+        // Timer - responsive
         Positioned(
-          top: topY,
-          right: 12,
+          top: topY + (minDimension * 0.01),
+          right: horizontalPadding,
           child: ValueListenableBuilder<int>(
             valueListenable: _playerMsN,
             builder: (_, ms, __) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: EdgeInsets.symmetric(
+                  horizontal: minDimension * 0.025,
+                  vertical: minDimension * 0.02,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.40),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(minDimension * 0.035),
                   border: Border.all(color: Colors.white24),
                 ),
                 child: Text(
                   '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 12.5,
+                    fontSize: timerFontSize,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1337,20 +1292,20 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
           ),
         ),
 
-        // Progress
+        // Progress bar - responsive
         Positioned(
-          top: progressY,
-          left: 12,
-          right: 12,
+          top: progressY + (minDimension * 0.02),
+          left: horizontalPadding,
+          right: horizontalPadding,
           child: ValueListenableBuilder<int>(
             valueListenable: _playerMsN,
             builder: (_, ms, __) {
               final progress = (ms / s.durationMs).clamp(0.0, 1.0).toDouble();
               return ClipRRect(
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(progressHeight),
                 child: LinearProgressIndicator(
                   value: progress,
-                  minHeight: 8,
+                  minHeight: progressHeight,
                   backgroundColor: Colors.white.withValues(alpha: 0.10),
                   valueColor: AlwaysStoppedAnimation<Color>(
                     Colors.yellowAccent.withValues(alpha: 0.9),
@@ -1361,9 +1316,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
           ),
         ),
 
-        // Speed chip/slider
+        // Speed chip/slider - responsive
         Positioned(
-          top: speedY,
+          top: topY + (minDimension * 0.01),
           left: 0,
           right: 0,
           child: Center(
@@ -1375,31 +1330,36 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                width: _showSpeedSlider ? 320 : 90,
+                padding: EdgeInsets.symmetric(
+                  horizontal: minDimension * 0.035,
+                  vertical: minDimension * 0.02,
+                ),
+                width: _showSpeedSlider 
+                    ? (screenWidth * 0.82).clamp(200.0, 380.0) 
+                    : (minDimension * 0.23).clamp(70.0, 100.0),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.50),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(minDimension * 0.045),
                   border: Border.all(color: Colors.white24),
                 ),
                 child: _showSpeedSlider
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Speed',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 13,
+                              fontSize: speedFontSize * 0.85,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: minDimension * 0.02),
                           Expanded(
                             child: SliderTheme(
                               data: SliderTheme.of(context).copyWith(
-                                trackHeight: 3,
-                                thumbShape: const RoundSliderThumbShape(
-                                  enabledThumbRadius: 7,
+                                trackHeight: (minDimension * 0.008).clamp(2.0, 4.0),
+                                thumbShape: RoundSliderThumbShape(
+                                  enabledThumbRadius: (minDimension * 0.018).clamp(5.0, 9.0),
                                 ),
                               ),
                               child: Slider(
@@ -1414,9 +1374,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                           ),
                           Text(
                             '${_speed.toStringAsFixed(2)}x',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 13,
+                              fontSize: speedFontSize * 0.85,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1425,9 +1385,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                     : Text(
                         '${_speed.toStringAsFixed(2)}x',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 15,
+                          fontSize: speedFontSize,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -1440,13 +1400,13 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   }
 
   /// ✅ Vertical lanes from top to bottom, left->right order fixed.
-  List<LanePath> _computePerspectiveLanePaths({
+  /// Responsive: adapts to any screen size and aspect ratio
+  
+     List<LanePath> _computePerspectiveLanePaths({
   required Size size,
   required Rect dstRect,
   required double roadTopY,
 }) {
-  double lerp(double a, double b, double t) => a + (b - a) * t;
-
   Offset anchorOfKit(int kitIndex) {
     final a = DrumKitLayout.anchor[kitIndex]!;
     return Offset(
@@ -1455,33 +1415,22 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     );
   }
 
-  // ✅ Yukarıda dar bir spawn band
-  final topY = roadTopY + 8.0;
-  final cx = size.width * 0.5;
-  final topW = size.width * 0.36; // dar alan (görseldeki gibi)
-  final topLeft = cx - topW / 2;
-  final topRight = cx + topW / 2;
-
-  final paths = <LanePath>[];
-
-  // lanePos: 0..7 soldan sağa
-  for (int lanePos = 0; lanePos < 8; lanePos++) {
+  // Lane hedefleri: drum circle merkezleri (p2)
+  final targets = List<Offset>.generate(8, (lanePos) {
     final kitIndex = kLaneOrderToKitIndex[lanePos];
-    final t = lanePos / 7.0;
+    return anchorOfKit(kitIndex);
+  });
 
-    // üstte dar band içinden çıkış
-    final x0 = lerp(topLeft, topRight, t);
+  // ✅ Dikey çizgiler: Yukarıdan çemberin tam ortasına düz iniyor
+  final paths = <LanePath>[];
+  for (int lanePos = 0; lanePos < 8; lanePos++) {
+    final p2 = targets[lanePos]; // çemberin TAM merkezi
 
-    // altta hedef = drum merkezleri
-    final hit = anchorOfKit(kitIndex);
+    // p0: Ekranın en üstünde, X = çemberin merkez X'i (dikey hizalı)
+    final p0 = Offset(p2.dx, 0.0);
 
-    final p0 = Offset(x0, topY);
-    final p2 = Offset(hit.dx, hit.dy); // ✅ circle center (burada yok olacak)
-
-    // hafif perspektif eğrisi
-    final midY = lerp(p0.dy, p2.dy, 0.55);
-    final midX = lerp(x0, p2.dx, 0.70);
-    final p1 = Offset(midX, midY);
+    // p1: Orta nokta - aynı X'te (düz dikey çizgi için)
+    final p1 = Offset(p2.dx, p2.dy * 0.5);
 
     paths.add(LanePath(p0, p1, p2));
   }
@@ -1489,87 +1438,114 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   return paths;
 }
 
+
 }
 
-/// Button
-class _PillIconButton extends StatelessWidget {
-  const _PillIconButton({
+/// Responsive Button that adapts to screen size
+class _ResponsivePillButton extends StatelessWidget {
+  const _ResponsivePillButton({
     required this.icon,
     required this.onTap,
+    required this.size,
   });
 
   final IconData icon;
   final VoidCallback onTap;
+  final double size;
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Container(
-            width: 46,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.40),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white24),
-              boxShadow: [
-                BoxShadow(
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                  color: Colors.black.withValues(alpha: 0.25),
-                ),
-              ],
-            ),
-            child: Icon(icon, color: Colors.white),
+  Widget build(BuildContext context) {
+    final borderRadius = size * 0.35;
+    final iconSize = size * 0.55;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(borderRadius),
+        onTap: onTap,
+        child: Container(
+          width: size * 1.15,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.40),
+            borderRadius: BorderRadius.circular(borderRadius),
+            border: Border.all(color: Colors.white24),
+            boxShadow: [
+              BoxShadow(
+                blurRadius: size * 0.22,
+                offset: Offset(0, size * 0.09),
+                color: Colors.black.withValues(alpha: 0.25),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: iconSize,
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
-/// Helpers
+/// Computes the drum kit rectangle with responsive safe area handling
 Rect computeDrumRect({
   required Size screen,
   required EdgeInsets safe,
   required double aspect,
 }) {
-  final availW = screen.width;
+  // Account for safe areas on all sides
+  final availW = screen.width - safe.left - safe.right;
   final availH = screen.height - safe.top - safe.bottom;
 
+  // Calculate optimal size maintaining aspect ratio
   double drawW = availW;
   double drawH = drawW / aspect;
 
-  if (drawH > availH) {
-    drawH = availH;
+  // If too tall, constrain by height
+  if (drawH > availH * 0.65) {
+    drawH = availH * 0.65;
     drawW = drawH * aspect;
   }
 
-  final left = (availW - drawW) / 2.0;
-  final top = safe.top + (availH - drawH);
+  // Ensure minimum size for very small screens
+  final minDimension = screen.width < screen.height ? screen.width : screen.height;
+  final minWidth = minDimension * 0.8;
+  final minHeight = minWidth / aspect;
+  
+  if (drawW < minWidth) {
+    drawW = minWidth;
+    drawH = minHeight;
+  }
+
+  // Center horizontally, position at bottom with some margin
+  final left = safe.left + (availW - drawW) / 2.0;
+  final bottomMargin = availH * 0.02; // Small margin from bottom
+  final top = screen.height - safe.bottom - drawH - bottomMargin;
+  
   return Rect.fromLTWH(left, top, drawW, drawH);
 }
 
 /// ✅ Narrow width, LONG tapered tail
-Future<ui.Image> _createNoteSpriteWaterDropTapered() async {
+/// ✅ More readable note sprite: thicker head + outline + glow + core tail
+Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
   const w = 48;
   const h = 160;
 
   final recorder = ui.PictureRecorder();
-  final canvas = Canvas(
-    recorder,
-    Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()),
-  );
+  final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()));
 
   final cx = w * 0.5;
   final headCy = h * 0.84;
 
-  // Tail: very thin at top, thicker near head
-  final tailTopY = 6.0;
-  final tailBottomY = headCy - 18.0;
+  // Tail geometry
+  final tailTopY = 8.0;
+  final tailBottomY = headCy - 16.0;
 
-  const topHalf = 1.8;
-  const bottomHalf = 7.5;
+  // Slightly wider tail than before (still tapered)
+  const topHalf = 2.6;
+  const bottomHalf = 8.8;
 
   final tail = Path()
     ..moveTo(cx - topHalf, tailTopY)
@@ -1588,7 +1564,8 @@ Future<ui.Image> _createNoteSpriteWaterDropTapered() async {
     )
     ..close();
 
-  final tailPaint = Paint()
+  // 1) Soft haze tail (wider, lower alpha, gives presence)
+  final tailHazePaint = Paint()
     ..isAntiAlias = true
     ..shader = ui.Gradient.linear(
       Offset(cx, tailTopY),
@@ -1596,49 +1573,107 @@ Future<ui.Image> _createNoteSpriteWaterDropTapered() async {
       [
         Colors.white.withValues(alpha: 0.00),
         Colors.white.withValues(alpha: 0.10),
-        Colors.white.withValues(alpha: 0.45),
+        Colors.white.withValues(alpha: 0.30),
+        Colors.white.withValues(alpha: 0.40),
       ],
-      const [0.0, 0.55, 1.0],
+      const [0.0, 0.35, 0.75, 1.0],
     );
 
-  canvas.drawPath(tail, tailPaint);
+  // Slight blur to make it continuous but still visible
+  tailHazePaint.maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 2.2);
+  canvas.drawPath(tail, tailHazePaint);
 
-  // Head (drop)
-  final s = 16.0;
+  // 2) Core tail line (this is what makes tracking easy)
+  final coreTop = Offset(cx, tailTopY + 6.0);
+  final coreBottom = Offset(cx, tailBottomY);
+
+  final tailCorePaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.stroke
+    ..strokeCap = StrokeCap.round
+    ..strokeWidth = 2.2
+    ..shader = ui.Gradient.linear(
+      coreTop,
+      coreBottom,
+      [
+        Colors.white.withValues(alpha: 0.00),
+        Colors.white.withValues(alpha: 0.22),
+        Colors.white.withValues(alpha: 0.55),
+      ],
+      const [0.0, 0.45, 1.0],
+    );
+
+  canvas.drawLine(coreTop, coreBottom, tailCorePaint);
+
+  // Head (drop) — slightly bigger than before
+  final s = 18.5;
+
   final head = Path()
-    ..moveTo(cx, headCy - s * 1.05)
+    ..moveTo(cx, headCy - s * 1.08)
     ..cubicTo(
-      cx + s * 1.10,
-      headCy - s * 0.65,
-      cx + s * 1.20,
+      cx + s * 1.15,
+      headCy - s * 0.70,
+      cx + s * 1.30,
       headCy + s * 0.20,
       cx,
-      headCy + s * 1.10,
+      headCy + s * 1.15,
     )
     ..cubicTo(
-      cx - s * 1.20,
+      cx - s * 1.30,
       headCy + s * 0.20,
-      cx - s * 1.10,
-      headCy - s * 0.65,
+      cx - s * 1.15,
+      headCy - s * 0.70,
       cx,
-      headCy - s * 1.05,
+      headCy - s * 1.08,
     )
     ..close();
 
-  canvas.drawPath(
-    head,
+  // 3) Outer glow behind head
+  final headGlowPaint = Paint()
+    ..isAntiAlias = true
+    ..color = Colors.white.withValues(alpha: 0.35)
+    ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 6.0);
+  canvas.drawPath(head, headGlowPaint);
+
+  // 4) Solid head fill
+  final headFillPaint = Paint()
+    ..isAntiAlias = true
+    ..shader = ui.Gradient.radial(
+      Offset(cx - 4.0, headCy - 6.0),
+      s * 1.4,
+      [
+        Colors.white.withValues(alpha: 0.98),
+        Colors.white.withValues(alpha: 0.88),
+        Colors.white.withValues(alpha: 0.80),
+      ],
+      const [0.0, 0.55, 1.0],
+    );
+  canvas.drawPath(head, headFillPaint);
+
+  // 5) Crisp outline (the big readability win)
+  final headStrokePaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0
+    ..color = Colors.white.withValues(alpha: 0.55);
+  canvas.drawPath(head, headStrokePaint);
+
+  // 6) Highlight (small glossy dot)
+  canvas.drawCircle(
+    Offset(cx - 5.0, headCy - 7.0),
+    4.1,
     Paint()
       ..isAntiAlias = true
-      ..color = Colors.white.withValues(alpha: 0.95),
+      ..color = Colors.white.withValues(alpha: 0.24),
   );
 
-  // highlight
+  // 7) Tiny bright spec (helps at small scale)
   canvas.drawCircle(
-    Offset(cx - 4.5, headCy - 6.0),
-    3.8,
+    Offset(cx - 2.5, headCy - 3.0),
+    1.6,
     Paint()
       ..isAntiAlias = true
-      ..color = Colors.white.withValues(alpha: 0.22),
+      ..color = Colors.white.withValues(alpha: 0.35),
   );
 
   final pic = recorder.endRecording();

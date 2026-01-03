@@ -54,96 +54,118 @@ class DrumOverlayView extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    return Center(
-      child: SizedBox(
-        height:
-            screenHeight * 0.5, // iPhone 13 Pro için yaklaşık 1519px × 830px
-        child: Column(
+  Widget build(BuildContext context) => LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final availableHeight = constraints.maxHeight;
+        final minDimension = availableWidth < availableHeight 
+            ? availableWidth 
+            : availableHeight;
+        
+        // Responsive badge sizing
+        final badgePadding = (minDimension * 0.02).clamp(4.0, 12.0);
+        final badgeFontSize = (minDimension * 0.035).clamp(10.0, 16.0);
+        final badgeBorderRadius = (minDimension * 0.03).clamp(8.0, 16.0);
+        final badgeSpacing = (minDimension * 0.02).clamp(4.0, 12.0);
+        
+        // Calculate drum kit section height ratio
+        final badgeSectionRatio = selectedParts.isNotEmpty ? 0.18 : 0.15;
+        
+        return Column(
           children: [
-            selectedParts.isNotEmpty
-                ? SizedBox(
-                    height: screenHeight * 0.1,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: selectedParts
-                          .map(
-                            (part) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: highlightColor.withAlpha(51),
-                                border:
-                                    Border.all(color: highlightColor, width: 2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                part,
-                                style: TextStyle(
-                                  color: highlightColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  )
-                : SizedBox(
-                    height: screenHeight * 0.1,
-                  ),
+            // Badges section - responsive
             SizedBox(
-              height: screenHeight *
-                  0.4, // iPhone 13 Pro için yaklaşık 1519px × 830px
-              child: AspectRatio(
-                aspectRatio: 1024 / 559,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth;
-                    final height = constraints.maxHeight;
-
-                    return Stack(
-                      children: _partData.entries.map((entry) {
-                        final isSelected = selectedParts.contains(entry.key);
-                        final data = entry.value;
-
-                        final left = data.offset.dx * width;
-                        final top = data.offset.dy * height;
-                        final w = data.sizeRatio.width * width;
-                        final h = data.sizeRatio.height * height;
-
-                        return Positioned(
-                          left: left,
-                          top: top,
-                          width: w,
-                          height: h,
-                          child: Image.asset(
-                            data.assetPath,
-                            fit: BoxFit.contain,
-                            color: isSelected
-                                ? highlightColor.withAlpha(175)
-                                : null,
-                            colorBlendMode:
-                                isSelected ? BlendMode.srcATop : null,
+              height: availableHeight * badgeSectionRatio,
+              child: selectedParts.isNotEmpty
+                  ? Center(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: badgeSpacing),
+                          child: Wrap(
+                            spacing: badgeSpacing,
+                            runSpacing: badgeSpacing * 0.5,
+                            alignment: WrapAlignment.center,
+                            runAlignment: WrapAlignment.center,
+                            children: selectedParts
+                                .map(
+                                  (part) => Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: badgePadding,
+                                      vertical: badgePadding * 0.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: highlightColor.withAlpha(51),
+                                      border: Border.all(
+                                        color: highlightColor,
+                                        width: (minDimension * 0.005).clamp(1.0, 3.0),
+                                      ),
+                                      borderRadius: BorderRadius.circular(badgeBorderRadius),
+                                    ),
+                                    child: Text(
+                                      part,
+                                      style: TextStyle(
+                                        color: highlightColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: badgeFontSize,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
-                        );
-                      }).toList(),
-                    );
-                  },
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+            
+            // Drum kit visualization - responsive
+            Expanded(
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: 1024 / 559,
+                  child: LayoutBuilder(
+                    builder: (context, drumConstraints) {
+                      final drumWidth = drumConstraints.maxWidth;
+                      final drumHeight = drumConstraints.maxHeight;
+
+                      return Stack(
+                        children: _partData.entries.map((entry) {
+                          final isSelected = selectedParts.contains(entry.key);
+                          final data = entry.value;
+
+                          final left = data.offset.dx * drumWidth;
+                          final top = data.offset.dy * drumHeight;
+                          final w = data.sizeRatio.width * drumWidth;
+                          final h = data.sizeRatio.height * drumHeight;
+
+                          return Positioned(
+                            left: left,
+                            top: top,
+                            width: w,
+                            height: h,
+                            child: Image.asset(
+                              data.assetPath,
+                              fit: BoxFit.contain,
+                              color: isSelected
+                                  ? highlightColor.withAlpha(175)
+                                  : null,
+                              colorBlendMode:
+                                  isSelected ? BlendMode.srcATop : null,
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
-  }
 }
 
 class _PartPosition {

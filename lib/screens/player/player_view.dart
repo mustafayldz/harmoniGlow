@@ -203,117 +203,220 @@ class _PlayerViewState extends State<PlayerView> {
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
     final bluetoothBloc = context.read<BluetoothBloc>();
+    final mediaQuery = MediaQuery.of(context);
+    final screenSize = mediaQuery.size;
+    final safeArea = mediaQuery.padding;
+    
+    // Calculate responsive dimensions
+    final availableHeight = screenSize.height - safeArea.top - safeArea.bottom;
+    final availableWidth = screenSize.width - safeArea.left - safeArea.right;
+    final minDimension = availableWidth < availableHeight 
+        ? availableWidth 
+        : availableHeight;
+    
+    // Responsive spacing ratios
+    final topSpacing = availableHeight * 0.02;
+    final bottomSpacing = availableHeight * 0.03;
+    final horizontalPadding = availableWidth * 0.05;
+    final titleFontSize = (minDimension * 0.055).clamp(18.0, 28.0);
+    final timeFontSize = (minDimension * 0.035).clamp(12.0, 18.0);
 
     return Scaffold(
-      body: Stack(
-        alignment: Alignment.bottomCenter,
-        children: [
-          Column(
-            children: [
-              SizedBox(
-                height: screenSize.height * 0.05,
-              ),
-              sentDrumParts.isNotEmpty || _player.playing
-                  ? DrumOverlayView(
-                      selectedParts: sentDrumParts,
-                      highlightColor: rondomColor,
-                    )
-                  : Lottie.asset(
-                      'assets/animation/drummer.json',
-                      fit: BoxFit.fitWidth,
-                    ),
-              const Spacer(),
-              Text(
-                widget.songModel.title ?? 'Unknown Title',
-                style:
-                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              if (!widget.hideTimeControls) // Süre kontrollerini gizle
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      Slider(
-                        max: _duration.inSeconds.toDouble(),
-                        value: _position.inSeconds
-                            .clamp(0, _duration.inSeconds)
-                            .toDouble(),
-                        onChanged: (value) =>
-                            _player.seek(Duration(seconds: value.toInt())),
-                        allowedInteraction: SliderInteraction.tapAndSlide,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(_formatDuration(_position)),
-                          Text(_formatDuration(_duration)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              SizedBox(
-                height: screenSize.height * 0.05,
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final contentHeight = constraints.maxHeight;
+            final contentWidth = constraints.maxWidth;
+            
+            // Calculate proportional sizes for each section
+            final visualizerHeight = contentHeight * 0.5;
+            
+            return Stack(
+              alignment: Alignment.bottomCenter,
+              children: [
+                Column(
                   children: [
-                    controlButton(
-                      imagePath: 'assets/images/icons/turtle.png',
-                      onPressed: () => _onTurtlePressed(bluetoothBloc),
-                      backgroundColor: turtleColor,
+                    // Top spacer
+                    SizedBox(height: topSpacing),
+                    
+                    // Drum visualizer area - flexible
+                    Expanded(
+                      flex: 5,
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: contentWidth * 0.95,
+                            maxHeight: visualizerHeight,
+                          ),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 10,
+                            child: sentDrumParts.isNotEmpty || _player.playing
+                                ? DrumOverlayView(
+                                    selectedParts: sentDrumParts,
+                                    highlightColor: rondomColor,
+                                  )
+                                : Lottie.asset(
+                                    'assets/animation/drummer.json',
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                        ),
+                      ),
                     ),
-                    controlButton(
-                      icon: _player.playing ? Icons.pause : Icons.play_arrow,
-                      onPressed: () async {
-                        if (_player.playing) {
-                          await _player.pause();
-                          await SendData().sendHexData(bluetoothBloc, [0]);
-                        } else {
-                          await showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (_) => const Countdown(),
-                          );
-                          if (mounted) await _player.play();
-                        }
-                      },
-                      iconSize: 52,
+                    
+                    // Title area - flexible
+                    Expanded(
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              widget.songModel.title ?? 'Unknown Title',
+                              style: TextStyle(
+                                fontSize: titleFontSize,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    controlButton(
-                      imagePath: 'assets/images/icons/rabbit.png',
-                      onPressed: () => _onRabbitPressed(bluetoothBloc),
-                      backgroundColor: rabbitColor,
+                    
+                    // Progress slider area - flexible
+                    if (!widget.hideTimeControls)
+                      Expanded(
+                        flex: 2,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  trackHeight: (minDimension * 0.008).clamp(3.0, 6.0),
+                                  thumbShape: RoundSliderThumbShape(
+                                    enabledThumbRadius: (minDimension * 0.02).clamp(8.0, 14.0),
+                                  ),
+                                ),
+                                child: Slider(
+                                  max: _duration.inSeconds.toDouble(),
+                                  value: _position.inSeconds
+                                      .clamp(0, _duration.inSeconds)
+                                      .toDouble(),
+                                  onChanged: (value) =>
+                                      _player.seek(Duration(seconds: value.toInt())),
+                                  allowedInteraction: SliderInteraction.tapAndSlide,
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: horizontalPadding * 0.3,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _formatDuration(_position),
+                                      style: TextStyle(fontSize: timeFontSize),
+                                    ),
+                                    Text(
+                                      _formatDuration(_duration),
+                                      style: TextStyle(fontSize: timeFontSize),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    
+                    // Control buttons area - flexible
+                    Expanded(
+                      flex: 2,
+                      child: Center(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: horizontalPadding,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                controlButton(
+                                  imagePath: 'assets/images/icons/turtle.png',
+                                  onPressed: () => _onTurtlePressed(bluetoothBloc),
+                                  backgroundColor: turtleColor,
+                                ),
+                                controlButton(
+                                  icon: _player.playing ? Icons.pause : Icons.play_arrow,
+                                  onPressed: () async {
+                                    if (_player.playing) {
+                                      await _player.pause();
+                                      await SendData().sendHexData(bluetoothBloc, [0]);
+                                    } else {
+                                      await showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (_) => const Countdown(),
+                                      );
+                                      if (mounted) await _player.play();
+                                    }
+                                  },
+                                  iconSize: 52,
+                                ),
+                                controlButton(
+                                  imagePath: 'assets/images/icons/rabbit.png',
+                                  onPressed: () => _onRabbitPressed(bluetoothBloc),
+                                  backgroundColor: rabbitColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
+                    
+                    // Bottom spacer
+                    SizedBox(height: bottomSpacing),
                   ],
                 ),
-              ),
-              SizedBox(
-                height: screenSize.height * 0.05,
-              ),
-            ],
-          ),
-          if (showSpeedText)
-            Positioned(
-              bottom: 140,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Speed: ${playerSpeed.toStringAsFixed(2)}x',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-        ],
+                
+                // Speed indicator overlay
+                if (showSpeedText)
+                  Positioned(
+                    bottom: contentHeight * 0.18,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: minDimension * 0.04,
+                        vertical: minDimension * 0.015,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(minDimension * 0.05),
+                      ),
+                      child: Text(
+                        'Speed: ${playerSpeed.toStringAsFixed(2)}x',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: timeFontSize,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
