@@ -11,6 +11,7 @@ import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -54,6 +55,7 @@ class _PlayerViewState extends State<PlayerView> {
   @override
   void initState() {
     super.initState();
+    
     appProvider = Provider.of<AppProvider>(context, listen: false);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -148,6 +150,7 @@ class _PlayerViewState extends State<PlayerView> {
     _player.stop();
     _player.dispose();
     _speedTextTimer?.cancel();
+    
     super.dispose();
   }
 

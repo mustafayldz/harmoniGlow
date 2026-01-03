@@ -800,12 +800,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   void initState() {
     super.initState();
 
-    // ✅ Portrait-only mode (sadece dikey kullanım)
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-
     // Full screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -833,13 +827,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _playerMsN.dispose();
     _noteSprite?.dispose();
 
-    // ✅ Orientation lock'u kaldır (diğer ekranlar için)
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
