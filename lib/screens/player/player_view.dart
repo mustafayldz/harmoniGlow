@@ -11,6 +11,7 @@ import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
@@ -54,6 +55,12 @@ class _PlayerViewState extends State<PlayerView> {
   @override
   void initState() {
     super.initState();
+    
+    // Lock to portrait mode for player screens
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     
     appProvider = Provider.of<AppProvider>(context, listen: false);
 
@@ -142,6 +149,14 @@ class _PlayerViewState extends State<PlayerView> {
 
   @override
   void dispose() {
+    // Restore all orientations when leaving player
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
     _isDisposed = true;
     _playerStateSub?.cancel();
     _positionSub?.cancel();

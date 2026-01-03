@@ -800,6 +800,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   void initState() {
     super.initState();
 
+    // Lock to portrait mode for player screens
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     // Full screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -819,6 +825,14 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   @override
   void dispose() {
+    // Restore all orientations when leaving player
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    
     _speedSliderTimer?.cancel();
     _ticker.dispose();
     _ytController?.dispose();
