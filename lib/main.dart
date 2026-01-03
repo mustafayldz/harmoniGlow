@@ -117,11 +117,22 @@ Future<void> _runBackgroundTasks() async {
   try {
     // 1. MobileAds - HEMEN başlat, reklam hazır olsun
     try {
-      final initStatus = await MobileAds.instance.initialize();
-      debugPrint('✅ MobileAds initialized: ${initStatus.adapterStatuses}');
-    } catch (e) {
-      debugPrint('❌ MobileAds init error: $e');
-    }
+      final config = RequestConfiguration(
+      maxAdContentRating: MaxAdContentRating.g,
+      tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
+      tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
+    );
+
+    // ⚠️ MUTLAKA await
+    await MobileAds.instance.updateRequestConfiguration(config);
+
+    final initStatus = await MobileAds.instance.initialize();
+    debugPrint(
+      '✅ MobileAds initialized: ${initStatus.adapterStatuses}',
+    );
+  } catch (e) {
+    debugPrint('❌ MobileAds init error: $e');
+  }
 
     // 2. Firebase Notification - 1 saniye sonra
     Future.delayed(const Duration(seconds: 1), () async {

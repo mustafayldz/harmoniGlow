@@ -1,6 +1,6 @@
 name: drumly
 description: "Light Up Your Beat"
-version: 1.1.4+26
+version: 1.1.5+27
 
 environment:
   sdk: ^3.5.4
@@ -24,7 +24,7 @@ dependencies:
   firebase_analytics: ^12.0.4
   firebase_remote_config: ^6.1.2
   flutter_launcher_icons: ^0.14.3
-  google_mobile_ads: ^6.0.0
+  google_mobile_ads: ^7.0.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   path_provider: ^2.1.5
