@@ -1,3 +1,4 @@
+// constants.dart
 import 'dart:ui';
 import 'package:drumly/env.dart';
 
@@ -44,7 +45,6 @@ class ApiServiceUrl {
   static const user = '${baseUrl}users/';
   static const song = '${baseUrl}songs/';
   static const beat = '${baseUrl}beats/';
-  static const songTypes = '${baseUrl}song-types/';
 }
 
 class DrumParts {
@@ -53,41 +53,68 @@ class DrumParts {
       'led': 1,
       'name': 'Hi-Hat',
       'rgb': [220, 0, 0],
-    }, // Yellow
+    },
     '2': {
       'led': 2,
       'name': 'Crash Cymbal',
       'rgb': [208, 151, 154],
-    }, // Orange Red
+    },
     '3': {
       'led': 3,
       'name': 'Ride Cymbal',
       'rgb': [255, 125, 0],
-    }, // Dark Orange
+    },
     '4': {
       'led': 4,
       'name': 'Snare Drum',
       'rgb': [7, 219, 2],
-    }, // Red
+    },
     '5': {
       'led': 5,
       'name': 'Tom 1',
       'rgb': [0, 212, 154],
-    }, // Green
+    },
     '6': {
       'led': 6,
       'name': 'Tom 2',
       'rgb': [21, 25, 207],
-    }, // Light Blue
+    },
     '7': {
       'led': 7,
       'name': 'Tom Floor',
       'rgb': [235, 0, 255],
-    }, // Blue
+    },
     '8': {
       'led': 8,
       'name': 'Kick Drum',
       'rgb': [242, 255, 0],
-    }, // Purple
+    },
   };
+
+  // ✅ kitIndex: 0..7 -> key: '1'..'8'
+  static String _keyOfKit(int kitIndex) => '${kitIndex + 1}';
+
+  static String nameByKitIndex(int kitIndex) {
+    final m = drumParts[_keyOfKit(kitIndex)];
+    return (m?['name'] as String?) ?? '';
+  }
+
+  static int ledByKitIndex(int kitIndex) {
+    final m = drumParts[_keyOfKit(kitIndex)];
+    return (m?['led'] as int?) ?? (kitIndex + 1);
+  }
+
+  static List<int> rgbByKitIndex(int kitIndex) {
+    final m = drumParts[_keyOfKit(kitIndex)];
+    final rgb = m?['rgb'];
+    if (rgb is List && rgb.length == 3) {
+      return [rgb[0] as int, rgb[1] as int, rgb[2] as int];
+    }
+    return const [255, 255, 255];
+  }
+
+  static Color colorByKitIndex(int kitIndex) {
+    final rgb = rgbByKitIndex(kitIndex);
+    return Color.fromARGB(255, rgb[0], rgb[1], rgb[2]);
+  }
 }

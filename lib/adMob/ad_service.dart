@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:drumly/adMob/ad_helper.dart';
 
@@ -9,6 +10,20 @@ class AdService {
 
   bool _isLoading = false;
   InterstitialAd? interstitialAd;
+
+  /// Families Policy uyumlu AdRequest oluştur
+  /// - tagForChildDirectedTreatment: Çocuklara yönelik içerik
+  /// - maxAdContentRating: G = Genel izleyici (en güvenli)
+  static AdRequest get _childSafeAdRequest => const AdRequest(
+        nonPersonalizedAds: true,
+      );
+
+  /// Reklam göstermeden önce immersive mode'u kapat (X butonu görünsün)
+  Future<void> _disableImmersiveForAd() async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Kısa bir bekleme - UI değişikliğinin uygulanması için
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
 
   /// Reklam göster ve tamamlanmasını bekle
   Future<bool> showInterstitialAd() async {
@@ -20,10 +35,14 @@ class AdService {
     _isLoading = true;
     final completer = Completer<bool>();
 
+    // 🔑 Reklam göstermeden önce immersive mode'u kapat
+    // Bu sayede reklamın X (kapat) butonu görünür ve tıklanabilir olur
+    await _disableImmersiveForAd();
+
     try {
       await InterstitialAd.load(
         adUnitId: AdHelper().interstitialAdUnitId,
-        request: const AdRequest(),
+        request: _childSafeAdRequest, // Families Policy uyumlu request
         adLoadCallback: InterstitialAdLoadCallback(
           onAdLoaded: (InterstitialAd ad) {
             debugPrint('Interstitial ad loaded successfully');
@@ -91,51 +110,9 @@ class AdService {
   }
 
   /// Loading indicator ile reklam göster
-  Future<bool> showInterstitialAdWithLoading(BuildContext context) async {
-    bool? result;
-
-    // Loading dialog göster
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) => const PopScope(
-        canPop: false, // Geri butonunu engelle
-        child: AlertDialog(
-          backgroundColor: Colors.white,
-          content: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-              ),
-              SizedBox(width: 20),
-              Expanded(
-                child: Text(
-                  'Reklam yükleniyor...\nLütfen bekleyin',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    try {
-      // Reklam göster ve tamamlanmasını bekle
-      result = await showInterstitialAd();
-    } finally {
-      // Loading dialog'u kapat (context hala geçerliyse)
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-    }
-
-    return result;
-  }
+  /// ⚠️ DİKKAT: Bu fonksiyon artık loading dialog GÖSTERMIYOR
+  /// Loading dialog reklamın X butonunu engelleyebilir (Families Policy ihlali)
+  Future<bool> showInterstitialAdWithLoading(BuildContext context) async => showInterstitialAd();
 
   /// Servisi temizle
   void dispose() {

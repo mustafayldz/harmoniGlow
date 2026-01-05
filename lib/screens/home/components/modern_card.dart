@@ -7,6 +7,8 @@ import 'package:drumly/screens/training/traning_view.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:drumly/game/drum_hero_screen.dart';
+
 
 class ModernCard extends StatelessWidget {
   const ModernCard({required this.card, super.key});
@@ -129,6 +131,8 @@ class ModernCard extends StatelessWidget {
         return const DrumAdjustment();
       case 'settings':
         return const SettingView();
+      case 'retim':
+        return const DrumHeroScreen();
       default:
         return const SizedBox.shrink();
     }

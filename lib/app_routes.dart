@@ -5,6 +5,7 @@ import 'package:drumly/screens/song_request/song_request_page.dart';
 import 'package:drumly/screens/requested_songs/requested_songs_page.dart';
 import 'package:drumly/screens/splash/splash.dart';
 import 'package:drumly/screens/songs/songv2_view.dart';
+import 'package:drumly/game/drum_hero_screen.dart';
 import 'package:flutter/material.dart';
 
 class AppRoute {
@@ -17,6 +18,7 @@ class AppRoute {
         '/song-request': (context) => const SongRequestPage(),
         '/requested-songs': (context) => const RequestedSongsPage(),
         '/songsv2': (context) => const SongV2View(),
+        '/drum-hero': (context) => const DrumHeroScreen(),
       };
 
   static String getInitialRoute() => '/splash';
@@ -40,6 +42,10 @@ class AppRoute {
       case '/songsv2':
         return MaterialPageRoute(
           builder: (context) => const SongV2View(),
+        );
+      case '/drum-hero':
+        return MaterialPageRoute(
+          builder: (context) => const DrumHeroScreen(),
         );
       default:
         return MaterialPageRoute(

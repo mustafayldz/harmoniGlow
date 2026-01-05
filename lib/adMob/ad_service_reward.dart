@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drumly/adMob/ad_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdServiceReward {
@@ -9,13 +10,24 @@ class AdServiceReward {
   bool _isRewardedAdReady = false;
   Completer<void>? _loadCompleter;
 
+  /// Families Policy uyumlu AdRequest
+  static const AdRequest _childSafeAdRequest = AdRequest(
+    nonPersonalizedAds: true,
+  );
+
+  /// Reklam göstermeden önce immersive mode'u kapat (X butonu görünsün)
+  Future<void> _disableImmersiveForAd() async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await Future.delayed(const Duration(milliseconds: 100));
+  }
+
   /// Rewarded ad yükleme fonksiyonu, load tamamlandığında _loadCompleter tamamlanır
   void loadRewardedAd() {
     debugPrint('AdServiceReward: Loading rewarded ad...');
     _loadCompleter = Completer<void>();
     RewardedAd.load(
       adUnitId: AdHelper.rewardedAdUnitId,
-      request: const AdRequest(),
+      request: _childSafeAdRequest, // Families Policy uyumlu
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           debugPrint('AdServiceReward: Rewarded ad loaded successfully.');
@@ -56,27 +68,30 @@ class AdServiceReward {
     final rewardCompleter = Completer<bool>();
     debugPrint('AdServiceReward: Rewarded ad is ready, showing now.');
 
+    // 🔑 Reklam göstermeden önce immersive mode'u kapat
+    // Bu sayede X butonu görünür ve tıklanabilir olur (Families Policy)
+    await _disableImmersiveForAd();
+
     // Reklamın tam ekran içerik callback'leri
-    _rewardedAd!
-      ..fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
-          debugPrint('AdServiceReward: Ad dismissed before earning reward.');
-          ad.dispose();
-          rewardCompleter.complete(false);
-          debugPrint('AdServiceReward: Reloading rewarded ad after dismissal.');
-          loadRewardedAd();
-        },
-        onAdFailedToShowFullScreenContent: (ad, err) {
-          debugPrint('AdServiceReward: Failed to show ad: ${err.message}');
-          ad.dispose();
-          rewardCompleter.complete(false);
-          debugPrint(
-            'AdServiceReward: Reloading rewarded ad after show failure.',
-          );
-          loadRewardedAd();
-        },
-      )
-      ..setImmersiveMode(true);
+    // ⚠️ setImmersiveMode(true) KALDIRILDI - X butonu sorununa neden oluyordu
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        debugPrint('AdServiceReward: Ad dismissed before earning reward.');
+        ad.dispose();
+        rewardCompleter.complete(false);
+        debugPrint('AdServiceReward: Reloading rewarded ad after dismissal.');
+        loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, err) {
+        debugPrint('AdServiceReward: Failed to show ad: ${err.message}');
+        ad.dispose();
+        rewardCompleter.complete(false);
+        debugPrint(
+          'AdServiceReward: Reloading rewarded ad after show failure.',
+        );
+        loadRewardedAd();
+      },
+    );
 
     debugPrint('AdServiceReward: Calling show() on rewarded ad.');
 
@@ -119,27 +134,30 @@ class AdServiceReward {
     final rewardCompleter = Completer<bool>();
     debugPrint('AdServiceReward: Rewarded ad is ready, showing now.');
 
+    // 🔑 Reklam göstermeden önce immersive mode'u kapat
+    // Bu sayede X butonu görünür ve tıklanabilir olur (Families Policy)
+    await _disableImmersiveForAd();
+
     // Reklamın tam ekran içerik callback'leri
-    _rewardedAd!
-      ..fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
-          debugPrint('AdServiceReward: Ad dismissed before earning reward.');
-          ad.dispose();
-          rewardCompleter.complete(false);
-          debugPrint('AdServiceReward: Reloading rewarded ad after dismissal.');
-          loadRewardedAd();
-        },
-        onAdFailedToShowFullScreenContent: (ad, err) {
-          debugPrint('AdServiceReward: Failed to show ad: ${err.message}');
-          ad.dispose();
-          rewardCompleter.complete(false);
-          debugPrint(
-            'AdServiceReward: Reloading rewarded ad after show failure.',
-          );
-          loadRewardedAd();
-        },
-      )
-      ..setImmersiveMode(true);
+    // ⚠️ setImmersiveMode(true) KALDIRILDI - X butonu sorununa neden oluyordu
+    _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdDismissedFullScreenContent: (ad) {
+        debugPrint('AdServiceReward: Ad dismissed before earning reward.');
+        ad.dispose();
+        rewardCompleter.complete(false);
+        debugPrint('AdServiceReward: Reloading rewarded ad after dismissal.');
+        loadRewardedAd();
+      },
+      onAdFailedToShowFullScreenContent: (ad, err) {
+        debugPrint('AdServiceReward: Failed to show ad: ${err.message}');
+        ad.dispose();
+        rewardCompleter.complete(false);
+        debugPrint(
+          'AdServiceReward: Reloading rewarded ad after show failure.',
+        );
+        loadRewardedAd();
+      },
+    );
 
     debugPrint('AdServiceReward: Calling show() on rewarded ad.');
 

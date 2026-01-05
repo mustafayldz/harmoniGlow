@@ -108,6 +108,20 @@ class HomeViewModel extends ChangeNotifier {
         ),
       ),
 
+      // Ritmi Takip Et Oyunu Card
+      CardData(
+        key: 'retim',
+        title: 'Ritmi Takip Et Oyunu',
+        subtitle: 'Ritmi takip ederek puan kazan!',
+        color: Colors.deepPurple,
+        icon: Icons.timeline_outlined,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8A7CFF), Color(0xFF5F5AFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+
       if (isBluetoothConnected)
         CardData(
           key: 'mydrum',
@@ -121,6 +135,7 @@ class HomeViewModel extends ChangeNotifier {
             end: Alignment.bottomRight,
           ),
         ),
+
       CardData(
         key: 'settings',
         title: 'settings'.tr(),

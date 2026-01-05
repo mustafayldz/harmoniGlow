@@ -16,7 +16,6 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
 import 'package:flutter/foundation.dart';
@@ -42,10 +41,6 @@ class DrumAnchor {
 
 class DrumKitLayout {
   static const Map<int, DrumAnchor> anchor = {
-    // EŞİT ARALIKLI 8 LANE (radius'lar AYNI)
-
-    // x değerleri: 0.108 + i * 0.112
-
     1: DrumAnchor(0.108, 0.20, 0.0810), // Crash
     0: DrumAnchor(0.220, 0.58, 0.0675), // Hi-Hat
     3: DrumAnchor(0.332, 0.65, 0.0675), // Snare
@@ -55,28 +50,10 @@ class DrumKitLayout {
     6: DrumAnchor(0.780, 0.61, 0.0810), // Floor Tom
     2: DrumAnchor(0.892, 0.20, 0.0810), // Ride
   };
-
-  static const Map<int, String> labels = {
-    0: 'Hi-Hat',
-    1: 'Crash',
-    2: 'Ride',
-    3: 'Snare',
-    4: 'Tom 1',
-    5: 'Tom 2',
-    6: 'Floor Tom',
-    7: 'Kick',
-  };
 }
 
-
-
 /// ---------------------------------------------------------------------------
-/// 2) Lane order (left->right) given by user
-/// Soldan sağa X koordinatına göre sıralama:
-/// Crash(0.12), Hi-Hat(0.12), Snare(0.32), Tom1(0.37), Kick(0.50), Tom2(0.63), FloorTom(0.75), Ride(0.88)
-///
-/// DrumKitLayout indices:
-/// Crash=1, HiHat=0, Snare=3, Tom1=4, Kick=7, Tom2=5, FloorTom=6, Ride=2
+/// 2) Lane order (left->right)
 /// ---------------------------------------------------------------------------
 const List<int> kLaneOrderToKitIndex = [1, 0, 3, 4, 7, 5, 6, 2];
 
@@ -118,7 +95,6 @@ class LaneFlashController extends ChangeNotifier {
 
 /// ---------------------------------------------------------------------------
 /// Lane Path (Quadratic Bezier helper)
-/// We keep quadratic form but for vertical lanes we set p0,p1,p2 collinear.
 /// ---------------------------------------------------------------------------
 class LanePath {
   const LanePath(this.p0, this.p1, this.p2);
@@ -136,7 +112,7 @@ class LanePath {
 }
 
 /// ---------------------------------------------------------------------------
-/// 4) Background + road + grid + WHITE vertical lane "roads"
+/// 4) Background + road + grid + WHITE vertical lane roads
 /// ---------------------------------------------------------------------------
 class _NeonStagePainter extends CustomPainter {
   _NeonStagePainter({
@@ -144,38 +120,128 @@ class _NeonStagePainter extends CustomPainter {
     required this.roadTopY,
     required this.roadBottomY,
     required this.lanePaths,
-  });
+  }) : _laneHash = _hashLanePaths(lanePaths, roadTopY, roadBottomY);
 
   final Rect dstRect;
   final double roadTopY;
   final double roadBottomY;
   final List<LanePath> lanePaths;
 
-  @override
-  void paint(Canvas canvas, Size size) {
+  // ─────────────────────────────────────────────────────────────
+  // Background cache (sky + stars + vignette)
+  // ─────────────────────────────────────────────────────────────
+  static ui.Picture? _skyPic;
+  static Size _skySize = Size.zero;
+
+  // Road cache (road + grid + lanes)
+  static ui.Picture? _roadPic;
+  static Size _roadSize = Size.zero;
+  static int _roadKey = 0;
+
+  final int _laneHash;
+
+  static int _hashLanePaths(List<LanePath> paths, double top, double bottom) {
+    int h = 17;
+    int q(double v) => (v * 10).round(); // 0.1px quantize
+    h = 37 * h + q(top);
+    h = 37 * h + q(bottom);
+    for (final p in paths) {
+      h = 37 * h + q(p.p0.dx);
+      h = 37 * h + q(p.p0.dy);
+      h = 37 * h + q(p.p1.dx);
+      h = 37 * h + q(p.p1.dy);
+      h = 37 * h + q(p.p2.dx);
+      h = 37 * h + q(p.p2.dy);
+    }
+    return h;
+  }
+
+  // deterministic pseudo-random (fast)
+  static double _rand01(int n) {
+    int x = n * 1103515245 + 12345;
+    x &= 0x7fffffff;
+    return x / 0x7fffffff;
+  }
+
+  void _ensureSky(Size size) {
+    if (_skyPic != null && _skySize == size) return;
+
+    _skySize = size;
+    final rec = ui.PictureRecorder();
+    final c = Canvas(rec);
     final rect = Offset.zero & size;
 
-    // Full-screen sky gradient
-    canvas.drawRect(
+    // Deep sky gradient
+    c.drawRect(
       rect,
       Paint()
         ..shader = const RadialGradient(
-          center: Alignment(0.0, -1),
-          radius: 1.5,
+          center: Alignment(0.0, -0.95),
+          radius: 1.65,
           colors: [
-            Color(0xFF0B1D49),
-            Color(0xFF050816),
+            Color(0xFF0D2A63),
+            Color(0xFF070A1A),
             Color(0xFF02030A),
           ],
         ).createShader(rect),
     );
 
-    _paintStars(canvas, size);
+    // Stars (VERY light) — drawn once into cached picture
+    final starPaint = Paint()..isAntiAlias = false;
+    final count = ((size.width * size.height) / 14000).clamp(90, 220).toInt();
+
+    for (int layer = 0; layer < 2; layer++) {
+      final baseAlpha = layer == 0 ? 0.14 : 0.07;
+      final baseR = layer == 0 ? 1.2 : 2.4;
+
+      for (int i = 0; i < count; i++) {
+        final n = i + layer * 10000 + size.width.toInt() * 31 + size.height.toInt() * 17;
+        final x = _rand01(n) * size.width;
+        final y = _rand01(n + 999) * size.height;
+
+        final yBias = math.pow(1.0 - (y / size.height), 1.6).toDouble();
+        final a = (baseAlpha * (0.55 + 0.45 * yBias)).clamp(0.02, 0.20);
+
+        final r = baseR * (0.7 + 0.6 * _rand01(n + 555));
+        starPaint.color = const Color(0xFFFFFFFF).withValues(alpha: a);
+        c.drawCircle(Offset(x, y), r, starPaint);
+      }
+    }
+
+    // Vignette (cinematic)
+    c.drawRect(
+      rect,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          Offset(size.width * 0.5, size.height * 0.45),
+          size.longestSide * 0.85,
+          [
+            const Color(0xFF000000).withValues(alpha: 0.00),
+            const Color(0xFF000000).withValues(alpha: 0.22),
+            const Color(0xFF000000).withValues(alpha: 0.62),
+          ],
+          const [0.0, 0.62, 1.0],
+        ),
+    );
+
+    _skyPic?.dispose();
+    _skyPic = rec.endRecording();
+  }
+
+  void _ensureRoad(Size size) {
+    final key = _laneHash ^ (size.width.toInt() * 131) ^ (size.height.toInt() * 911);
+    if (_roadPic != null && _roadSize == size && _roadKey == key) return;
+
+    _roadSize = size;
+    _roadKey = key;
+
+    final rec = ui.PictureRecorder();
+    final canvas = Canvas(rec);
 
     // Road trapezoid
     final cx = size.width / 2;
-    final topW = size.width * 0.92;      // 0.52 -> 0.92
-    final bottomW = size.width * 1.18;   // 1.02 -> 1.18
+    final topW = size.width * 0.92;
+    final bottomW = size.width * 1.18;
 
     final tl = Offset(cx - topW / 2, roadTopY);
     final tr = Offset(cx + topW / 2, roadTopY);
@@ -189,124 +255,110 @@ class _NeonStagePainter extends CustomPainter {
       ..lineTo(bl.dx, bl.dy)
       ..close();
 
+    // Road fill (depth)
     canvas.drawPath(
       road,
       Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withValues(alpha: 0.18),
-            Colors.black.withValues(alpha: 0.70),
+        ..shader = ui.Gradient.linear(
+          Offset(0, roadTopY),
+          Offset(0, roadBottomY),
+          [
+            const Color(0x00000000),
+            const Color(0xB3000000),
           ],
-        ).createShader(Rect.fromLTRB(0, roadTopY, size.width, roadBottomY)),
+        ),
     );
 
-    // Grid inside road
+    // Clip inside road for grid + lanes
     canvas.save();
     canvas.clipPath(road);
-    _paintGrid(canvas, tl, tr, bl, br);
 
-    // ✅ WHITE lane "roads" (band + rails)
+    // Perspective grid
+    final gridH = Paint()
+      ..color = const Color(0x1FFFFFFF)
+      ..strokeWidth = 1.0
+      ..isAntiAlias = false;
+
+    final gridV = Paint()
+      ..color = const Color(0x14FFFFFF)
+      ..strokeWidth = 1.0
+      ..isAntiAlias = false;
+
+    final topY = roadTopY;
+    final bottomY = roadBottomY;
+
+    // Horizontal grid lines (ease-in curve)
+    for (int i = 0; i <= 18; i++) {
+      final t = i / 18.0;
+      final y = topY + (bottomY - topY) * math.pow(t, 1.9).toDouble();
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridH);
+    }
+
+    // Vertical grid lines
+    for (int i = 0; i <= 12; i++) {
+      final t = i / 12.0;
+      final x = size.width * t;
+      canvas.drawLine(Offset(x, topY), Offset(x, bottomY), gridV);
+    }
+
+    // ✅ LANE ROADS (neon rails)
+    const laneTint = Color(0xFFEAF2FF); // slightly bluish white = neon look
+
     for (int lane = 0; lane < 8; lane++) {
-      final c = Colors.white;
+      final lp = lanePaths[lane];
 
       final centerPath = Path()
-        ..moveTo(lanePaths[lane].p0.dx, lanePaths[lane].p0.dy)
-        ..quadraticBezierTo(
-          lanePaths[lane].p1.dx,
-          lanePaths[lane].p1.dy,
-          lanePaths[lane].p2.dx,
-          lanePaths[lane].p2.dy,
-        );
+        ..moveTo(lp.p0.dx, lp.p0.dy)
+        ..quadraticBezierTo(lp.p1.dx, lp.p1.dy, lp.p2.dx, lp.p2.dy);
 
-      final band = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 14.0
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..color = c.withValues(alpha: 0.07);
+      // Soft band
+      canvas.drawPath(
+        centerPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 16.0
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..color = laneTint.withValues(alpha: 0.06),
+      );
 
-      final railGlow = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.6
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..color = c.withValues(alpha: 0.30)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-
-      final railCore = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..color = c.withValues(alpha: 0.22);
-
-      canvas.drawPath(centerPath, band);
-      canvas.drawPath(centerPath, railGlow);
-      canvas.drawPath(centerPath, railCore);
+      // Inner core rail
+      canvas.drawPath(
+        centerPath,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..color = laneTint.withValues(alpha: 0.22),
+      );
     }
 
     canvas.restore();
+
+    _roadPic?.dispose();
+    _roadPic = rec.endRecording();
   }
-
-  void _paintStars(Canvas canvas, Size size) {
-    final stars = Paint()..isAntiAlias = true;
-    final rnd = math.Random(7);
-    final topBand = dstRect.top * 0.9;
-    for (int i = 0; i < 120; i++) {
-      final x = rnd.nextDouble() * size.width;
-      final y = rnd.nextDouble() * topBand;
-      final r = 0.6 + rnd.nextDouble() * 1.8;
-      final o = 0.06 + rnd.nextDouble() * 0.18;
-      stars.color = Colors.white.withValues(alpha: o);
-      canvas.drawCircle(Offset(x, y), r, stars);
-    }
-  }
-
-  void _paintGrid(Canvas canvas, Offset tl, Offset tr, Offset bl, Offset br) {
-    final topY = tl.dy;
-    final bottomY = bl.dy;
-
-    final gridH = Paint()
-      ..color = Colors.white.withValues(alpha: 0.10)
-      ..strokeWidth = 1.0;
-    final gridV = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
-      ..strokeWidth = 1.0;
-
-    for (int i = 0; i <= 18; i++) {
-      final t = i / 18.0;
-      final y = topY + (bottomY - topY) * math.pow(t, 1.8).toDouble();
-      final k = (y - topY) / (bottomY - topY);
-      final lx = _lerp(tl.dx, bl.dx, k);
-      final rx = _lerp(tr.dx, br.dx, k);
-      canvas.drawLine(Offset(lx, y), Offset(rx, y), gridH);
-    }
-
-    for (int i = 0; i <= 12; i++) {
-      final t = i / 12.0;
-      final xb = _lerp(bl.dx, br.dx, t);
-      final xt = _lerp(tl.dx, tr.dx, t);
-      canvas.drawLine(Offset(xt, topY), Offset(xb, bottomY), gridV);
-    }
-  }
-
-  double _lerp(double a, double b, double t) => a + (b - a) * t;
 
   @override
-  bool shouldRepaint(covariant _NeonStagePainter old) => old.dstRect != dstRect ||
-        old.roadTopY != roadTopY ||
-        old.roadBottomY != roadBottomY ||
-        old.lanePaths != lanePaths;
+  void paint(Canvas canvas, Size size) {
+    _ensureSky(size);
+    if (_skyPic != null) canvas.drawPicture(_skyPic!);
+
+    _ensureRoad(size);
+    if (_roadPic != null) canvas.drawPicture(_roadPic!);
+  }
+
+  @override
+  bool shouldRepaint(covariant _NeonStagePainter old) => old._laneHash != _laneHash || old.dstRect != dstRect;
 }
+
 
 /// ---------------------------------------------------------------------------
 /// 5) Notes + kit painter
 /// - Drops follow lanePaths using lane position (left->right)
-/// - Drops color uses KIT index (LED colors)
-/// - Labels inside circles
-/// - Drop width like old, tail long/tapered
+/// - Drops color uses KIT index colors from DrumParts
+/// - Labels inside circles from DrumParts
 /// ---------------------------------------------------------------------------
 class _NotesAndGlowPainter extends CustomPainter {
   _NotesAndGlowPainter({
@@ -330,7 +382,7 @@ class _NotesAndGlowPainter extends CustomPainter {
   final ValueListenable<int> songMs;
 
   final Rect dstRect;
-  final List<Color> laneColors; // indexed by KIT index 0..7
+  final List<Color> laneColors; // KIT index colors 0..7
   final LaneFlashController flashCtrl;
   final ui.Image? noteSprite;
 
@@ -338,7 +390,7 @@ class _NotesAndGlowPainter extends CustomPainter {
   final int maxNotesPerFrame;
   final int dynamicLookahead;
 
-  final List<LanePath> lanePaths; // indexed by LANE POS 0..7 (left->right order)
+  final List<LanePath> lanePaths; // indexed by LANE POS 0..7 (left->right)
 
   static const int pastMs = 160;
   static const int hitTightMs = 18;
@@ -382,7 +434,8 @@ class _NotesAndGlowPainter extends CustomPainter {
     );
   }
 
-  double _anchorRadiusPx(int kitIndex) => DrumKitLayout.anchor[kitIndex]!.r * dstRect.width;
+  double _anchorRadiusPx(int kitIndex) =>
+      DrumKitLayout.anchor[kitIndex]!.r * dstRect.width;
 
   int _laneColorsHash() {
     int h = 17;
@@ -408,7 +461,10 @@ class _NotesAndGlowPainter extends CustomPainter {
 
     _labelPainters = List.generate(8, (kitIndex) {
       final r = _anchorRadiusPx(kitIndex);
-      final label = DrumKitLayout.labels[kitIndex] ?? '';
+
+      // ✅ label from DrumParts (NO static labels here)
+      final label = DrumParts.nameByKitIndex(kitIndex);
+
       final fontSize = (r * 0.34).clamp(10.0, 18.0);
 
       final tp = TextPainter(
@@ -430,8 +486,9 @@ class _NotesAndGlowPainter extends CustomPainter {
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
         maxLines: 2,
-      );
-      tp.layout(maxWidth: r * 1.6);
+        ellipsis: '…',
+      )..layout(maxWidth: r * 1.6);
+
       return tp;
     });
   }
@@ -577,7 +634,6 @@ class _NotesAndGlowPainter extends CustomPainter {
     int idx = _lowerBoundAbsT(song.absT, start);
     idx = math.max(0, idx - 16);
 
-    // ✅ width like old
     final noteR = dstRect.width * 0.020;
     final scale = noteR / 16.0;
 
@@ -602,7 +658,6 @@ class _NotesAndGlowPainter extends CustomPainter {
         if ((mask & (1 << kitIndex)) == 0) continue;
         if (w >= maxNotesPerFrame) break;
 
-        // ✅ map kitIndex -> lanePos (left->right order)
         final lanePos = _kitIndexToLanePos(kitIndex);
         final p = lanePaths[lanePos].at(progress);
 
@@ -656,7 +711,7 @@ class _NotesAndGlowPainter extends CustomPainter {
     int idx = _lowerBoundAbsT(song.absT, start);
     idx = math.max(0, idx - 16);
 
-    final noteR = dstRect.width * 0.020; // ✅ width like old
+    final noteR = dstRect.width * 0.020;
     final paint = Paint()..isAntiAlias = true;
 
     for (int i = idx; i < song.absT.length; i++) {
@@ -666,7 +721,6 @@ class _NotesAndGlowPainter extends CustomPainter {
       final timeToHit = t - tNow;
       final timeSinceHit = tNow - t;
       if (timeSinceHit > pastMs) continue;
-      // ✅ hit anında kaybolsun
       if (timeToHit < 0) continue;
 
       final alphaRaw = (t - tNow) / lookahead;
@@ -748,7 +802,6 @@ class _DrumSendInfo {
 
 class _SongV2PlayerViewState extends State<SongV2PlayerView>
     with SingleTickerProviderStateMixin {
-  // Responsive layout - dimensions calculated dynamically based on screen size
   bool _isPlaying = false;
 
   double _speed = 1.0;
@@ -764,7 +817,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   double _playerMs = 0.0;
 
-  // ✅ used by UI always
   late final ValueNotifier<int> _playerMsN = ValueNotifier<int>(0);
   late final ValueNotifier<int> _songMsN = ValueNotifier<int>(0);
 
@@ -818,8 +870,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _bluetoothBloc = context.read<BluetoothBloc>();
     _ticker = createTicker(_onTick);
 
-    _laneColors = List<Color>.generate(8, (i) => _getLedColor(i));
+    // ✅ Colors from DrumParts (NO static colors)
+    _laneColors = List<Color>.generate(8, (i) => DrumParts.colorByKitIndex(i));
+
+    // ✅ Bluetooth mapping from DrumParts (NO DB warmup)
     _warmupDrumCache();
+
     _loadAll();
   }
 
@@ -832,7 +888,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    
+
     _speedSliderTimer?.cancel();
     _ticker.dispose();
     _ytController?.dispose();
@@ -846,28 +902,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   }
 
   void _warmupDrumCache() {
-    unawaited(() async {
-      for (int lane = 0; lane < 8; lane++) {
-        final drumPart = (lane + 1).toString();
-        final drum = await StorageService.getDrumPart(drumPart);
-        if (drum != null &&
-            drum.led != null &&
-            drum.rgb != null &&
-            drum.rgb!.length == 3) {
-          _drumSendCache[lane] =
-              _DrumSendInfo(drum.led!, List<int>.from(drum.rgb!));
-        }
-      }
-    }());
-  }
-
-  Color _getLedColor(int index) {
-    final drumPartKey = (index + 1).toString();
-    final rgb = DrumParts.drumParts[drumPartKey]?['rgb'] as List<dynamic>?;
-    if (rgb != null && rgb.length == 3) {
-      return Color.fromRGBO(rgb[0] as int, rgb[1] as int, rgb[2] as int, 1);
+    for (int kitIndex = 0; kitIndex < 8; kitIndex++) {
+      _drumSendCache[kitIndex] = _DrumSendInfo(
+        DrumParts.ledByKitIndex(kitIndex),
+        DrumParts.rgbByKitIndex(kitIndex),
+      );
     }
-    return Colors.white;
   }
 
   Future<void> _loadAll() async {
@@ -889,7 +929,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _song = s;
       _dynamicLookahead = s.lookaheadMs;
 
-      // ✅ tapered tail sprite (narrow width, long height)
       _noteSprite = await _createNoteSpriteWaterDropReadable();
 
       if (s.source.type.toLowerCase() == 'youtube') {
@@ -908,7 +947,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _ytController!.setPlaybackRate(_nearestPlaybackRate(_speed));
       }
 
-      // ✅ ensure timer/progress show correct initial state
       _playerMsN.value = _playerMs.round();
       _songMsN.value = (_playerMs - s.syncMs).round();
 
@@ -979,7 +1017,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       if (_ytController != null && _ytReady) _ytController!.pause();
     }
 
-    // ✅ Always update timer/progress notifiers
     _playerMsN.value = _playerMs.round();
     _songMsN.value = songMs;
   }
@@ -1148,7 +1185,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         top: false,
         bottom: false,
         child: LayoutBuilder(
-          builder: (context, constraints) => _buildResponsiveCanvas(context, constraints),
+          builder: (context, constraints) =>
+              _buildResponsiveCanvas(context, constraints),
         ),
       ),
     );
@@ -1160,20 +1198,17 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     final screenHeight = constraints.maxHeight;
     final size = Size(screenWidth, screenHeight);
     final safeArea = MediaQuery.of(context).padding;
-    
-    // Calculate minimum dimension for responsive scaling
-    final minDimension = screenWidth < screenHeight ? screenWidth : screenHeight;
-    
-    // Responsive spacing ratios
+
+    final minDimension =
+        screenWidth < screenHeight ? screenWidth : screenHeight;
+
     final topPadding = safeArea.top + (minDimension * 0.02);
     final horizontalPadding = minDimension * 0.03;
-    
-    // Responsive control positions (percentage-based)
-    final topY = topPadding + (screenHeight * 0.0);
+
+    final topY = topPadding;
     final progressY = topY + (minDimension * 0.12);
     final speedY = progressY + (minDimension * 0.06);
-    
-    // Responsive button and font sizes
+
     final buttonSize = (minDimension * 0.11).clamp(40.0, 56.0);
     final timerFontSize = (minDimension * 0.03).clamp(10.0, 14.0);
     final speedFontSize = (minDimension * 0.035).clamp(12.0, 16.0);
@@ -1185,11 +1220,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       aspect: kDrumAspect,
     );
 
-    // Road geometry - responsive
     final roadTopY = (speedY - minDimension * 0.02).clamp(0.0, size.height);
     final roadBottomY = size.height - safeArea.bottom;
 
-    // Vertical lanes (left->right order)
     final lanePaths = _computePerspectiveLanePaths(
       size: size,
       dstRect: dstRect,
@@ -1243,7 +1276,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
             ),
           ),
 
-        // Back button - responsive
         Positioned(
           top: topY,
           left: horizontalPadding,
@@ -1254,46 +1286,43 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
           ),
         ),
 
-        // Play button - responsive
         Positioned(
           top: topY,
           left: horizontalPadding + buttonSize + (minDimension * 0.02),
           child: _ResponsivePillButton(
             icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
             size: buttonSize,
-            onTap: _togglePlay,
+            onTap: () => _togglePlay(),
           ),
         ),
 
-        // Timer - responsive
         Positioned(
           top: topY + (minDimension * 0.01),
           right: horizontalPadding,
           child: ValueListenableBuilder<int>(
             valueListenable: _playerMsN,
             builder: (_, ms, __) => Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: minDimension * 0.025,
-                  vertical: minDimension * 0.02,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.40),
-                  borderRadius: BorderRadius.circular(minDimension * 0.035),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Text(
-                  '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: timerFontSize,
-                    fontWeight: FontWeight.w700,
-                  ),
+              padding: EdgeInsets.symmetric(
+                horizontal: minDimension * 0.025,
+                vertical: minDimension * 0.02,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.40),
+                borderRadius: BorderRadius.circular(minDimension * 0.035),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Text(
+                '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: timerFontSize,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+            ),
           ),
         ),
 
-        // Progress bar - responsive
         Positioned(
           top: progressY + (minDimension * 0.02),
           left: horizontalPadding,
@@ -1317,7 +1346,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
           ),
         ),
 
-        // Speed chip/slider - responsive
         Positioned(
           top: topY + (minDimension * 0.01),
           left: 0,
@@ -1335,8 +1363,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                   horizontal: minDimension * 0.035,
                   vertical: minDimension * 0.02,
                 ),
-                width: _showSpeedSlider 
-                    ? (screenWidth * 0.82).clamp(200.0, 380.0) 
+                width: _showSpeedSlider
+                    ? (screenWidth * 0.82).clamp(200.0, 380.0)
                     : (minDimension * 0.23).clamp(70.0, 100.0),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.50),
@@ -1358,9 +1386,11 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                           Expanded(
                             child: SliderTheme(
                               data: SliderTheme.of(context).copyWith(
-                                trackHeight: (minDimension * 0.008).clamp(2.0, 4.0),
+                                trackHeight:
+                                    (minDimension * 0.008).clamp(2.0, 4.0),
                                 thumbShape: RoundSliderThumbShape(
-                                  enabledThumbRadius: (minDimension * 0.018).clamp(5.0, 9.0),
+                                  enabledThumbRadius:
+                                      (minDimension * 0.018).clamp(5.0, 9.0),
                                 ),
                               ),
                               child: Slider(
@@ -1400,49 +1430,38 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     );
   }
 
-  /// ✅ Vertical lanes from top to bottom, left->right order fixed.
-  /// Responsive: adapts to any screen size and aspect ratio
-  
-     List<LanePath> _computePerspectiveLanePaths({
-  required Size size,
-  required Rect dstRect,
-  required double roadTopY,
-}) {
-  Offset anchorOfKit(int kitIndex) {
-    final a = DrumKitLayout.anchor[kitIndex]!;
-    return Offset(
-      dstRect.left + a.x * dstRect.width,
-      dstRect.top + a.y * dstRect.height,
-    );
+  /// ✅ Vertical lanes from top to drum centers (straight vertical)
+  List<LanePath> _computePerspectiveLanePaths({
+    required Size size,
+    required Rect dstRect,
+    required double roadTopY,
+  }) {
+    Offset anchorOfKit(int kitIndex) {
+      final a = DrumKitLayout.anchor[kitIndex]!;
+      return Offset(
+        dstRect.left + a.x * dstRect.width,
+        dstRect.top + a.y * dstRect.height,
+      );
+    }
+
+    final targets = List<Offset>.generate(8, (lanePos) {
+      final kitIndex = kLaneOrderToKitIndex[lanePos];
+      return anchorOfKit(kitIndex);
+    });
+
+    final paths = <LanePath>[];
+    for (int lanePos = 0; lanePos < 8; lanePos++) {
+      final p2 = targets[lanePos];
+      final p0 = Offset(p2.dx, 0.0);
+      final p1 = Offset(p2.dx, p2.dy * 0.5);
+      paths.add(LanePath(p0, p1, p2));
+    }
+
+    return paths;
   }
-
-  // Lane hedefleri: drum circle merkezleri (p2)
-  final targets = List<Offset>.generate(8, (lanePos) {
-    final kitIndex = kLaneOrderToKitIndex[lanePos];
-    return anchorOfKit(kitIndex);
-  });
-
-  // ✅ Dikey çizgiler: Yukarıdan çemberin tam ortasına düz iniyor
-  final paths = <LanePath>[];
-  for (int lanePos = 0; lanePos < 8; lanePos++) {
-    final p2 = targets[lanePos]; // çemberin TAM merkezi
-
-    // p0: Ekranın en üstünde, X = çemberin merkez X'i (dikey hizalı)
-    final p0 = Offset(p2.dx, 0.0);
-
-    // p1: Orta nokta - aynı X'te (düz dikey çizgi için)
-    final p1 = Offset(p2.dx, p2.dy * 0.5);
-
-    paths.add(LanePath(p0, p1, p2));
-  }
-
-  return paths;
 }
 
-
-}
-
-/// Responsive Button that adapts to screen size
+/// Responsive Button
 class _ResponsivePillButton extends StatelessWidget {
   const _ResponsivePillButton({
     required this.icon,
@@ -1458,7 +1477,7 @@ class _ResponsivePillButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderRadius = size * 0.35;
     final iconSize = size * 0.55;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -1496,40 +1515,35 @@ Rect computeDrumRect({
   required EdgeInsets safe,
   required double aspect,
 }) {
-  // Account for safe areas on all sides
   final availW = screen.width - safe.left - safe.right;
   final availH = screen.height - safe.top - safe.bottom;
 
-  // Calculate optimal size maintaining aspect ratio
   double drawW = availW;
   double drawH = drawW / aspect;
 
-  // If too tall, constrain by height
   if (drawH > availH * 0.65) {
     drawH = availH * 0.65;
     drawW = drawH * aspect;
   }
 
-  // Ensure minimum size for very small screens
-  final minDimension = screen.width < screen.height ? screen.width : screen.height;
+  final minDimension =
+      screen.width < screen.height ? screen.width : screen.height;
   final minWidth = minDimension * 0.8;
   final minHeight = minWidth / aspect;
-  
+
   if (drawW < minWidth) {
     drawW = minWidth;
     drawH = minHeight;
   }
 
-  // Center horizontally, position at bottom with some margin
   final left = safe.left + (availW - drawW) / 2.0;
-  final bottomMargin = availH * 0.02; // Small margin from bottom
+  final bottomMargin = availH * 0.02;
   final top = screen.height - safe.bottom - drawH - bottomMargin;
-  
+
   return Rect.fromLTWH(left, top, drawW, drawH);
 }
 
-/// ✅ Narrow width, LONG tapered tail
-/// ✅ More readable note sprite: thicker head + outline + glow + core tail
+/// ✅ Readable tapered tail sprite
 Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
   const w = 48;
   const h = 160;
@@ -1540,11 +1554,9 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
   final cx = w * 0.5;
   final headCy = h * 0.84;
 
-  // Tail geometry
   final tailTopY = 8.0;
   final tailBottomY = headCy - 16.0;
 
-  // Slightly wider tail than before (still tapered)
   const topHalf = 2.6;
   const bottomHalf = 8.8;
 
@@ -1565,7 +1577,6 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
     )
     ..close();
 
-  // 1) Soft haze tail (wider, lower alpha, gives presence)
   final tailHazePaint = Paint()
     ..isAntiAlias = true
     ..shader = ui.Gradient.linear(
@@ -1578,13 +1589,11 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
         Colors.white.withValues(alpha: 0.40),
       ],
       const [0.0, 0.35, 0.75, 1.0],
-    );
+    )
+    ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 2.2);
 
-  // Slight blur to make it continuous but still visible
-  tailHazePaint.maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 2.2);
   canvas.drawPath(tail, tailHazePaint);
 
-  // 2) Core tail line (this is what makes tracking easy)
   final coreTop = Offset(cx, tailTopY + 6.0);
   final coreBottom = Offset(cx, tailBottomY);
 
@@ -1606,7 +1615,6 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
 
   canvas.drawLine(coreTop, coreBottom, tailCorePaint);
 
-  // Head (drop) — slightly bigger than before
   final s = 18.5;
 
   final head = Path()
@@ -1629,14 +1637,12 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
     )
     ..close();
 
-  // 3) Outer glow behind head
   final headGlowPaint = Paint()
     ..isAntiAlias = true
     ..color = Colors.white.withValues(alpha: 0.35)
     ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 6.0);
   canvas.drawPath(head, headGlowPaint);
 
-  // 4) Solid head fill
   final headFillPaint = Paint()
     ..isAntiAlias = true
     ..shader = ui.Gradient.radial(
@@ -1651,7 +1657,6 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
     );
   canvas.drawPath(head, headFillPaint);
 
-  // 5) Crisp outline (the big readability win)
   final headStrokePaint = Paint()
     ..isAntiAlias = true
     ..style = PaintingStyle.stroke
@@ -1659,7 +1664,6 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
     ..color = Colors.white.withValues(alpha: 0.55);
   canvas.drawPath(head, headStrokePaint);
 
-  // 6) Highlight (small glossy dot)
   canvas.drawCircle(
     Offset(cx - 5.0, headCy - 7.0),
     4.1,
@@ -1668,7 +1672,6 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
       ..color = Colors.white.withValues(alpha: 0.24),
   );
 
-  // 7) Tiny bright spec (helps at small scale)
   canvas.drawCircle(
     Offset(cx - 2.5, headCy - 3.0),
     1.6,

@@ -3,7 +3,7 @@ import 'package:drumly/services/song_service.dart';
 import 'package:flutter/material.dart';
 
 class TrainingViewModel extends ChangeNotifier {
-  final SongService _songService = SongService();
+  final BeatService _songService = BeatService();
   late BuildContext context;
 
   bool loading = false;
