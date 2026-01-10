@@ -38,6 +38,7 @@ dependencies:
   confetti: ^0.8.0
   # Add Flame game engine
   flame: ^1.34.0
+  flame_audio: ^2.11.12
 
   flutter_localizations:
     sdk: flutter
@@ -62,6 +63,7 @@ flutter:
     - assets/images/draw/
     - assets/images/icons/
     - assets/sounds/
+    - assets/audio/
     - assets/langs/
     - assets/animation/
 
