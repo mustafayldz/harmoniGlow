@@ -870,8 +870,10 @@ class DrumGame extends FlameGame with TapCallbacks {
         // Notayı hareket ettir
         note.position.y += note.speed * dt;
 
-        // Hit zone'a ulaştıysa ve vurulmadıysa miss say
-        if (!note.isHit && !note.isMissed && note.position.y >= pad.cy) {
+        // Nota pad'i tamamen geçtiyse ve vurulmadıysa miss say
+        final noteRadius = note.radius * note.scale.x;
+        final notePastPad = note.position.y - noteRadius > pad.cy + pad.r;
+        if (!note.isHit && !note.isMissed && notePastPad) {
           note.isMissed = true;
           toRemove.add(note);
           add(
@@ -939,61 +941,44 @@ class DrumGame extends FlameGame with TapCallbacks {
         final pad = _pads[lane];
         final queue = _notesByLane[lane];
         final note = queue.isNotEmpty ? queue.first : null;
-        final isInCatchZone =
-            note != null && _isNoteInCatchZone(note, pad);
+        final spatialQuality = note != null
+            ? _evaluateSpatialHitQuality(note, pad)
+            : HitQuality.miss;
 
-        if (isInCatchZone) {
-          final hitResult = _gameController!.processTap(tapPosition);
+        final hitResult = _gameController!.processSpatialHit(
+          lane: lane,
+          quality: spatialQuality,
+        );
 
-          if (hitResult != null && hitResult.isSuccessful) {
-            // Notayı kaldır
+        if (hitResult.isSuccessful) {
+          // Notayı kaldır
+          if (note != null) {
             queue.removeAt(0);
             note.markHit();
-
-            add(
-              HitFeedbackRingFactory.success(
-                position: Vector2(pad.cx, pad.cy),
-                radius: pad.r * 0.9,
-                performanceMode: performanceMode,
-              ),
-            );
-
-            // Ses çal
-            DrumAudioService.playLane(lane);
-
-            // Flash efekti - hem eski sistem hem circle lane
-            _drumFlashTimers[lane] = GameConstants.drumFlashDuration;
-            if (lane < _circleLanes.length) {
-              _circleLanes[lane].triggerFlash();
-            }
-
-            // Haptic feedback
-            _triggerHaptic(hitResult.quality);
-
-            // Hit tracking için quality'yi kaydet
-            switch (hitResult.quality) {
-              case HitQuality.perfect:
-                _perfectHits++;
-                break;
-              case HitQuality.good:
-                _goodHits++;
-                break;
-              case HitQuality.miss:
-                _missCount++;
-                break;
-            }
-          } else {
-            // Catch zone içindeyken timing kaçırıldıysa miss
-            add(
-              HitFeedbackRingFactory.miss(
-                position: Vector2(pad.cx, pad.cy),
-                radius: pad.r * 0.9,
-                performanceMode: performanceMode,
-              ),
-            );
           }
+
+          // Yeşil görsel feedback (her temas için)
+          add(
+            HitFeedbackRingFactory.success(
+              position: Vector2(pad.cx, pad.cy),
+              radius: pad.r * 0.9,
+              performanceMode: performanceMode,
+            ),
+          );
+
+          // Ses çal
+          DrumAudioService.playLane(lane);
+
+          // Flash efekti - hem eski sistem hem circle lane
+          _drumFlashTimers[lane] = GameConstants.drumFlashDuration;
+          if (lane < _circleLanes.length) {
+            _circleLanes[lane].triggerFlash();
+          }
+
+          // Haptic feedback
+          _triggerHaptic(hitResult.quality);
         } else {
-          // Catch zone dışında tap => miss feedback
+          // Temas yoksa miss feedback
           add(
             HitFeedbackRingFactory.miss(
               position: Vector2(pad.cx, pad.cy),
@@ -1002,15 +987,43 @@ class DrumGame extends FlameGame with TapCallbacks {
             ),
           );
         }
+
+        // Hit tracking için quality'yi kaydet
+        switch (hitResult.quality) {
+          case HitQuality.perfect:
+            _perfectHits++;
+            break;
+          case HitQuality.good:
+            _goodHits++;
+            break;
+          case HitQuality.miss:
+            _missCount++;
+            break;
+        }
       }
     }
   }
 
-  bool _isNoteInCatchZone(NoteComponent note, PadSpec pad) {
+  /// Geometriye göre hit kalitesi hesaplar.
+  ///
+  /// - Nota çemberi tamamen pad içinde: Perfect
+  /// - Çemberler temas ediyorsa: Good
+  /// - Temas yoksa: Miss
+  HitQuality _evaluateSpatialHitQuality(NoteComponent note, PadSpec pad) {
     final dx = note.position.x - pad.cx;
     final dy = note.position.y - pad.cy;
-    final maxR = pad.r * 0.65;
-    return (dx * dx + dy * dy) <= (maxR * maxR);
+    final distance = math.sqrt(dx * dx + dy * dy);
+    final noteRadius = note.radius * note.scale.x;
+
+    if (distance + noteRadius <= pad.r) {
+      return HitQuality.perfect;
+    }
+
+    if (distance <= pad.r + noteRadius) {
+      return HitQuality.good;
+    }
+
+    return HitQuality.miss;
   }
 
   /// Hit quality'ye göre haptic feedback tetikler.

@@ -113,6 +113,38 @@ class GameController {
     return result;
   }
 
+  /// Spatial hit işlemi (geometriye göre quality belirlenmişse).
+  ///
+  /// [lane] hedef lane.
+  /// [quality] spatial değerlendirme sonucu.
+  ///
+  /// Returns: HitResult (miss dahil).
+  HitResult processSpatialHit({
+    required int lane,
+    required HitQuality quality,
+  }) {
+    final hitTime = _currentTime;
+
+    if (quality == HitQuality.miss) {
+      final missResult = HitResult.miss(lane: lane, hitTime: hitTime);
+      scoreController.processHit(missResult);
+      return missResult;
+    }
+
+    // Lane'deki en yakın notayı kaldır (varsa)
+    final notes = _activeNotesByLane[lane];
+    if (notes.isNotEmpty) {
+      _removeNote(lane, notes.first);
+    }
+
+    final result = quality == HitQuality.perfect
+        ? HitResult.perfect(lane: lane, timingOffset: 0, hitTime: hitTime)
+        : HitResult.good(lane: lane, timingOffset: 0, hitTime: hitTime);
+
+    scoreController.processHit(result);
+    return result;
+  }
+
   /// Miss kontrolü (geçen notalar).
   ///
   /// Returns: Miss olan notaların lane'leri.
