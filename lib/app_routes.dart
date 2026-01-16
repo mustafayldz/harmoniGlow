@@ -18,7 +18,13 @@ class AppRoute {
         '/song-request': (context) => const SongRequestPage(),
         '/requested-songs': (context) => const RequestedSongsPage(),
         '/songsv2': (context) => const SongV2View(),
-        '/drum-hero': (context) => const DrumHeroScreen(),
+        // 🎮 Drum Hero - performanceMode için:
+        // - true: düşük cihazlarda glow efektleri kapalı
+        // - false: normal cihazlarda tam efektler
+        // debugMode: true yaparak bölge kalibrasyonu yapabilirsin
+        '/drum-hero': (context) => const DrumHeroScreen(
+          
+        ),
       };
 
   static String getInitialRoute() => '/splash';

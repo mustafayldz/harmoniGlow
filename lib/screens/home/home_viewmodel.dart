@@ -1,8 +1,6 @@
 import 'package:drumly/screens/home/components/card_data.dart';
 import 'package:drumly/screens/my_drum/drum_model.dart';
 import 'package:drumly/services/local_service.dart';
-import 'package:drumly/adMob/ad_service.dart';
-import 'package:drumly/provider/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:drumly/constants.dart';
@@ -57,27 +55,6 @@ class HomeViewModel extends ChangeNotifier {
     final isConnected = bluetoothBloc.state.isConnected;
     _initCards(isConnected);
     _animationController.forward();
-
-    // 🎯 Ana sayfa açıldıktan 30 saniye sonra reklam göster
-    _scheduleInitialAd(context);
-  }
-
-  /// 📺 Ana sayfa için zamanlı reklam
-  void _scheduleInitialAd(BuildContext context) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-
-    // Eğer bu session'da zaten gösterildiyse tekrar gösterme
-    if (userProvider.hasShownInitialAdThisSession) {
-      return;
-    }
-
-    await Future.delayed(const Duration(seconds: 10));
-
-    // Flag'i işaretle ki bir daha gösterilmesin
-    userProvider.markInitialAdAsShown();
-
-    // Reklam göster
-    AdService.instance.showInterstitialAd();
   }
 
   void _initCards(bool isBluetoothConnected) {
@@ -111,8 +88,8 @@ class HomeViewModel extends ChangeNotifier {
       // Ritmi Takip Et Oyunu Card
       CardData(
         key: 'retim',
-        title: 'Ritmi Takip Et Oyunu',
-        subtitle: 'Ritmi takip ederek puan kazan!',
+        title: 'rhythmGameTitle'.tr(),
+        subtitle: 'rhythmGameSubtitle'.tr(),
         color: Colors.deepPurple,
         icon: Icons.timeline_outlined,
         gradient: const LinearGradient(
@@ -125,8 +102,8 @@ class HomeViewModel extends ChangeNotifier {
       if (isBluetoothConnected)
         CardData(
           key: 'mydrum',
-          title: 'My Drum',
-          subtitle: 'Customize your drum kit',
+          title: 'myDrumTitle'.tr(),
+          subtitle: 'myDrumSubtitle'.tr(),
           color: AppColors.drumBlue,
           icon: Icons.settings_input_component_outlined,
           gradient: const LinearGradient(
@@ -139,7 +116,7 @@ class HomeViewModel extends ChangeNotifier {
       CardData(
         key: 'settings',
         title: 'settings'.tr(),
-        subtitle: 'Test new LED system',
+        subtitle: 'settingsLedSubtitle'.tr(),
         color: AppColors.settingsRed,
         icon: Icons.lightbulb_outline,
         gradient: const LinearGradient(
