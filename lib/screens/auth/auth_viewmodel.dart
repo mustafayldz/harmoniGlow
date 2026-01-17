@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:drumly/models/user_model.dart';
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/services/age_gate_service.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -15,6 +18,9 @@ class AuthViewModel extends ChangeNotifier {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  int? selectedBirthYear;
+  bool _hasStoredBirthYear = false;
+
   bool isLoginMode = true;
   bool isButtonLoading = false;
 
@@ -24,13 +30,45 @@ class AuthViewModel extends ChangeNotifier {
     passwordController.addListener(_onFormChanged);
   }
 
+  Future<void> initializeAgeGate() async {
+    if (!Platform.isAndroid) {
+      _hasStoredBirthYear = true;
+      notifyListeners();
+      return;
+    }
+    _hasStoredBirthYear = await AgeGateService.instance.hasBirthYear();
+    notifyListeners();
+  }
+
   void _onFormChanged() {
     notifyListeners();
   }
 
-  void toggleMode(bool login) {
+  Future<void> toggleMode(bool login) async {
     isLoginMode = login;
+    if (!Platform.isAndroid) {
+      _hasStoredBirthYear = true;
+      notifyListeners();
+      return;
+    }
+    _hasStoredBirthYear = await AgeGateService.instance.hasBirthYear();
     notifyListeners();
+  }
+
+  bool get isAgeRequired => Platform.isAndroid && (!isLoginMode || !_hasStoredBirthYear);
+
+  void setBirthYear(int? year) {
+    selectedBirthYear = year;
+    notifyListeners();
+  }
+
+  List<int> get birthYears {
+    final currentYear = DateTime.now().year;
+    const earliestYear = 1900;
+    return List<int>.generate(
+      currentYear - earliestYear + 1,
+      (index) => currentYear - index,
+    );
   }
 
   bool get isFormValid {
@@ -41,10 +79,27 @@ class AuthViewModel extends ChangeNotifier {
     final hasRequiredFields = email.isNotEmpty && password.isNotEmpty;
     final nameOk = isLoginMode || name.isNotEmpty;
 
-    return hasRequiredFields && nameOk && isValidEmail(email);
+    final ageOk = !isAgeRequired || selectedBirthYear != null;
+    return hasRequiredFields && nameOk && isValidEmail(email) && ageOk;
+  }
+
+  bool _ensureAgeSelected(BuildContext context) {
+    if (!isAgeRequired) return true;
+    if (selectedBirthYear != null) return true;
+    showTopSnackBar(context, 'ageGateYearRequired'.tr());
+    return false;
+  }
+
+  Future<void> _persistBirthYearIfNeeded() async {
+    if (!isAgeRequired) return;
+    if (selectedBirthYear == null) return;
+    await AgeGateService.instance.setBirthYear(selectedBirthYear!);
+    _hasStoredBirthYear = true;
   }
 
   Future<void> login(BuildContext context) async {
+    if (!_ensureAgeSelected(context)) return;
+
     isButtonLoading = true;
     notifyListeners();
 
@@ -58,6 +113,7 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (value.user != null) {
+        await _persistBirthYearIfNeeded();
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
 
@@ -172,6 +228,8 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<void> register(BuildContext context) async {
+    if (!_ensureAgeSelected(context)) return;
+
     isButtonLoading = true;
     notifyListeners();
 
@@ -189,6 +247,7 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (cred.user != null) {
+        await _persistBirthYearIfNeeded();
         if (name.isNotEmpty) {
           await cred.user!.updateDisplayName(name);
           await Future.microtask(() => cred.user!.reload());

@@ -6,6 +6,7 @@ import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/screens/songs/songv2_viewmodel.dart';
 import 'package:drumly/shared/app_gradients.dart';
 import 'package:drumly/shared/common_functions.dart';
+import 'package:drumly/services/age_gate_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,8 @@ class _SongV2ViewState extends State<SongV2View> {
 
   String _lastSearch = '';
   bool _isGridView = false;
+  bool _hideLockedForMinors = false;
+  bool _ageChecked = false;
 
   late final UserProvider userProvider;
   SharedPreferences? _prefs;
@@ -46,6 +49,11 @@ class _SongV2ViewState extends State<SongV2View> {
     vm.addListener(() {
       if (vm.songs.isNotEmpty && _prefs != null) {
         _preloadUnlockStates(vm.songs);
+      }
+
+      if (!_ageChecked && !vm.isLoading) {
+        _ageChecked = true;
+        Future.microtask(() async => _initAgeGateFilter());
       }
     });
 
@@ -75,6 +83,17 @@ class _SongV2ViewState extends State<SongV2View> {
 
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
+  }
+
+  Future<void> _initAgeGateFilter() async {
+    final status = await AgeGateService.instance.getStatus();
+    if (!mounted) return;
+    setState(() => _hideLockedForMinors = status == AgeGateStatus.under18);
+  }
+
+  List<SongV2Model> _filterSongsForAge(List<SongV2Model> songs) {
+    if (!_hideLockedForMinors) return songs;
+    return songs.where((song) => !song.isLocked).toList();
   }
 
   bool _isSongLockedSync(SongV2Model song, bool isBluetoothConnected) {
@@ -164,6 +183,7 @@ class _SongV2ViewState extends State<SongV2View> {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final visibleSongs = _filterSongsForAge(vm.songs);
 
     return ChangeNotifierProvider<SongV2ViewModel>.value(
       value: vm,
@@ -308,7 +328,7 @@ class _SongV2ViewState extends State<SongV2View> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
-                                      '${vm.songs.length}',
+                                      '${visibleSongs.length}',
                                       style: TextStyle(
                                         fontSize: _sz(13, sc, min: 12, max: 14),
                                         fontWeight: FontWeight.bold,
@@ -323,7 +343,7 @@ class _SongV2ViewState extends State<SongV2View> {
                             ),
                           ),
 
-                          if (vm.songs.isEmpty && !vm.isLoading)
+                          if (visibleSongs.isEmpty && !vm.isLoading)
                             SliverFillRemaining(
                               hasScrollBody: false,
                               child: _buildEmptyState(isDarkMode, sc),
@@ -333,7 +353,7 @@ class _SongV2ViewState extends State<SongV2View> {
                               padding: EdgeInsets.symmetric(horizontal: hp),
                               sliver: _isGridView
                                   ? _buildSongsGrid(
-                                      songs: vm.songs,
+                                      songs: visibleSongs,
                                       isConnected: isConnected,
                                       bluetoothBloc: bluetoothBloc,
                                       isDarkMode: isDarkMode,
@@ -343,7 +363,7 @@ class _SongV2ViewState extends State<SongV2View> {
                                       sc: sc,
                                     )
                                   : _buildSongsList(
-                                      songs: vm.songs,
+                                      songs: visibleSongs,
                                       isConnected: isConnected,
                                       bluetoothBloc: bluetoothBloc,
                                       isDarkMode: isDarkMode,

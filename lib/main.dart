@@ -5,6 +5,7 @@ import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/provider/notification_provider.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/services/age_gate_service.dart';
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/notification_handler.dart';
 import 'package:drumly/services/version_control_service.dart';
@@ -117,22 +118,16 @@ Future<void> _runBackgroundTasks() async {
   try {
     // 1. MobileAds - HEMEN başlat, reklam hazır olsun
     try {
-      final config = RequestConfiguration(
-      maxAdContentRating: MaxAdContentRating.g,
-      tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
-      tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
-    );
+      // Yaş durumuna göre AdMob konfigürasyonu
+      await AgeGateService.instance.applyRequestConfiguration();
 
-    // ⚠️ MUTLAKA await
-    await MobileAds.instance.updateRequestConfiguration(config);
-
-    final initStatus = await MobileAds.instance.initialize();
-    debugPrint(
-      '✅ MobileAds initialized: ${initStatus.adapterStatuses}',
-    );
-  } catch (e) {
-    debugPrint('❌ MobileAds init error: $e');
-  }
+      final initStatus = await MobileAds.instance.initialize();
+      debugPrint(
+        '✅ MobileAds initialized: ${initStatus.adapterStatuses}',
+      );
+    } catch (e) {
+      debugPrint('❌ MobileAds init error: $e');
+    }
 
     // 2. Firebase Notification - 1 saniye sonra
     Future.delayed(const Duration(seconds: 1), () async {

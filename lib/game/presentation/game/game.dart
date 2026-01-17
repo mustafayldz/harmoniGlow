@@ -109,6 +109,9 @@ class DrumGame extends FlameGame with TapCallbacks {
   /// Oyun duraklatıldı mı?
   bool _isPaused = false;
 
+  /// Pause sonrası ilk update'i atla (büyük dt sıçramasını engelle)
+  bool _justResumed = false;
+
   /// Mevcut oyun durumu (menu, playing, gameOver).
   GameState _gameState = GameState.menu;
 
@@ -327,14 +330,16 @@ class DrumGame extends FlameGame with TapCallbacks {
             .reduce((a, b) => a + b) /
         _pads.length;
 
-    // Controller'ları güncelle (FAZ 0) - sadece initialize edilmişlerse
+    // Controller'ları güncelle (FAZ 0) - sadece ilk kez oluştur
     if (_timingController != null && _scoreController != null) {
-      _inputController = InputController(pads: _pads);
-      _gameController = GameController(
-        inputController: _inputController!,
-        timingController: _timingController!,
-        scoreController: _scoreController!,
-      );
+      if (_gameController == null) {
+        _inputController = InputController(pads: _pads);
+        _gameController = GameController(
+          inputController: _inputController!,
+          timingController: _timingController!,
+          scoreController: _scoreController!,
+        );
+      }
     }
 
     // Mevcut state'e göre UI'ı rebuild et
@@ -749,10 +754,24 @@ class DrumGame extends FlameGame with TapCallbacks {
 
   @override
   void update(double dt) {
-    super.update(dt);
-
     // Oyun oynamıyorsa veya duraklatıldıysa güncelleme yapma
-    if (_gameState != GameState.playing || _isPaused) return;
+    if (_gameState != GameState.playing || _isPaused) {
+      super.update(0);
+      return;
+    }
+
+    // Resume sonrası ilk frame'de büyük dt jump'ı normal dt'ye çevir
+    if (_justResumed) {
+      _justResumed = false;
+      dt = 0.016; // ~60 FPS normal frame time
+    }
+
+    // Çok büyük dt sıçramalarını her zaman kısıtla
+    if (dt > 0.05) {
+      dt = 0.05; // 20 FPS üstü için güvenli limit
+    }
+
+    super.update(dt);
 
     _gameTime += dt;
 
@@ -1275,6 +1294,7 @@ class DrumGame extends FlameGame with TapCallbacks {
     _isPaused = false;
     resumeEngine();
     _pauseButton?.setPaused(false);
+    _justResumed = true;
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:drumly/adMob/ad_helper.dart';
+import 'package:drumly/services/age_gate_service.dart';
 
 class AdService {
   AdService._();
@@ -10,13 +11,6 @@ class AdService {
 
   bool _isLoading = false;
   InterstitialAd? interstitialAd;
-
-  /// Families Policy uyumlu AdRequest oluştur
-  /// - tagForChildDirectedTreatment: Çocuklara yönelik içerik
-  /// - maxAdContentRating: G = Genel izleyici (en güvenli)
-  static AdRequest get _childSafeAdRequest => const AdRequest(
-        nonPersonalizedAds: true,
-      );
 
   /// Reklam göstermeden önce immersive mode'u kapat (X butonu görünsün)
   Future<void> _disableImmersiveForAd() async {
@@ -27,6 +21,12 @@ class AdService {
 
   /// Reklam göster ve tamamlanmasını bekle
   Future<bool> showInterstitialAd() async {
+    final canShow = await AgeGateService.instance.canShowFullScreenAds();
+    if (!canShow) {
+      debugPrint('Interstitial ad disabled for under/unknown age');
+      return true; // Navigasyona izin ver, reklam yok
+    }
+
     if (_isLoading) {
       debugPrint('Ad is already loading, skipping...');
       return true; // Zaten yükleniyor, navigasyona izin ver
@@ -42,7 +42,7 @@ class AdService {
     try {
       await InterstitialAd.load(
         adUnitId: AdHelper().interstitialAdUnitId,
-        request: _childSafeAdRequest, // Families Policy uyumlu request
+        request: const AdRequest(),
         adLoadCallback: InterstitialAdLoadCallback(
           onAdLoaded: (InterstitialAd ad) {
             debugPrint('Interstitial ad loaded successfully');

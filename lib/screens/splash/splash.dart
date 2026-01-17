@@ -95,6 +95,7 @@ class _SplashViewState extends State<SplashView>
     }
   }
 
+
   /// Hive başlatma - optimize edilmiş
   Future<void> _initializeHive() async {
     // Path'i al

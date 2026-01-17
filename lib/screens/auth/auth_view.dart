@@ -19,6 +19,7 @@ class _AuthViewState extends State<AuthView> {
     super.initState();
     viewModel = AuthViewModel();
     viewModel.init();
+    viewModel.initializeAgeGate();
   }
 
   @override
@@ -127,6 +128,42 @@ class AuthViewBody extends StatelessWidget {
                       ),
                     ),
                   if (!viewModel.isLoginMode) const SizedBox(height: 16),
+                  if (viewModel.isAgeRequired) ...[
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'ageGateTitle'.tr(),
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<int>(
+                      initialValue: viewModel.selectedBirthYear,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'ageGateYearLabel'.tr(),
+                        filled: true,
+                        fillColor: fieldColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      items: viewModel.birthYears
+                          .map(
+                            (year) => DropdownMenuItem<int>(
+                              value: year,
+                              child: Text(year.toString()),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: viewModel.setBirthYear,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   TextField(
                     controller: viewModel.emailController,
                     keyboardType: TextInputType.emailAddress,

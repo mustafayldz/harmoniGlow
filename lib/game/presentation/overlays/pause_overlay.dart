@@ -92,12 +92,25 @@ class _PauseOverlayState extends State<PauseOverlay>
       builder: (context, child) => Opacity(
           opacity: _fadeAnimation.value,
           child: Scaffold(
-            backgroundColor: DrumlyColors.darkBg.withValues(alpha: 0.9),
-            body: Center(
-              child: Transform.scale(
-                scale: _scaleAnimation.value,
-                child: child,
-              ),
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                // Oyunu görünür tutan blur/overlay katmanı
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                    child: Container(
+                      color: DrumlyColors.darkBg.withValues(alpha: 0.35),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: child,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

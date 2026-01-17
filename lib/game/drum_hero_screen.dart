@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 
 import 'package:drumly/game/game.dart';
 import 'package:drumly/adMob/ad_service.dart';
+import 'package:drumly/services/age_gate_service.dart';
 
 /// ============================================================================
 /// DRUM HERO SCREEN - Flame oyununu barındıran Flutter ekranı
@@ -198,6 +199,9 @@ class _DrumHeroScreenState extends State<DrumHeroScreen>
     // Kısa bir gecikme ile reklam göster (UI'ın çizmesini bekle)
     Future.delayed(const Duration(milliseconds: 500), () async {
       if (!mounted) return;
+
+      final canShow = await AgeGateService.instance.canShowFullScreenAds();
+      if (!canShow) return;
 
       _isShowingAd = true;
       _game.pauseGame();
