@@ -19,7 +19,6 @@ class AuthViewModel extends ChangeNotifier {
   final passwordController = TextEditingController();
 
   int? selectedBirthYear;
-  bool _hasStoredBirthYear = false;
 
   bool isLoginMode = true;
   bool isButtonLoading = false;
@@ -30,37 +29,15 @@ class AuthViewModel extends ChangeNotifier {
     passwordController.addListener(_onFormChanged);
   }
 
-  Future<void> initializeAgeGate() async {
-    if (!Platform.isAndroid) {
-      _hasStoredBirthYear = true;
-      notifyListeners();
-      return;
-    }
-    _hasStoredBirthYear = await AgeGateService.instance.hasBirthYear();
-    notifyListeners();
-  }
-
   void _onFormChanged() {
     notifyListeners();
   }
 
   Future<void> toggleMode(bool login) async {
     isLoginMode = login;
-    if (!Platform.isAndroid) {
-      _hasStoredBirthYear = true;
-      notifyListeners();
-      return;
-    }
-    _hasStoredBirthYear = await AgeGateService.instance.hasBirthYear();
     notifyListeners();
   }
 
-  bool get isAgeRequired => Platform.isAndroid && (!isLoginMode || !_hasStoredBirthYear);
-
-  void setBirthYear(int? year) {
-    selectedBirthYear = year;
-    notifyListeners();
-  }
 
   List<int> get birthYears {
     final currentYear = DateTime.now().year;
@@ -79,27 +56,15 @@ class AuthViewModel extends ChangeNotifier {
     final hasRequiredFields = email.isNotEmpty && password.isNotEmpty;
     final nameOk = isLoginMode || name.isNotEmpty;
 
-    final ageOk = !isAgeRequired || selectedBirthYear != null;
-    return hasRequiredFields && nameOk && isValidEmail(email) && ageOk;
-  }
-
-  bool _ensureAgeSelected(BuildContext context) {
-    if (!isAgeRequired) return true;
-    if (selectedBirthYear != null) return true;
-    showTopSnackBar(context, 'ageGateYearRequired'.tr());
-    return false;
+    return hasRequiredFields && nameOk && isValidEmail(email);
   }
 
   Future<void> _persistBirthYearIfNeeded() async {
-    if (!isAgeRequired) return;
     if (selectedBirthYear == null) return;
     await AgeGateService.instance.setBirthYear(selectedBirthYear!);
-    _hasStoredBirthYear = true;
   }
 
   Future<void> login(BuildContext context) async {
-    if (!_ensureAgeSelected(context)) return;
-
     isButtonLoading = true;
     notifyListeners();
 
@@ -113,7 +78,6 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (value.user != null) {
-        await _persistBirthYearIfNeeded();
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
 
@@ -184,6 +148,9 @@ class AuthViewModel extends ChangeNotifier {
           debugPrint('❌ Failed to create user in backend');
         }
 
+        final canContinue = await _captureBirthYearIfNeeded(context);
+        if (!canContinue) return;
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushNamed(context, '/home');
         });
@@ -228,8 +195,6 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<void> register(BuildContext context) async {
-    if (!_ensureAgeSelected(context)) return;
-
     isButtonLoading = true;
     notifyListeners();
 
@@ -247,7 +212,6 @@ class AuthViewModel extends ChangeNotifier {
       );
 
       if (cred.user != null) {
-        await _persistBirthYearIfNeeded();
         if (name.isNotEmpty) {
           await cred.user!.updateDisplayName(name);
           await Future.microtask(() => cred.user!.reload());
@@ -289,6 +253,8 @@ class AuthViewModel extends ChangeNotifier {
           debugPrint('❌ Failed to get Firebase ID token');
         }
       }
+      final canContinue = await _captureBirthYearIfNeeded(context);
+      if (!canContinue) return;
       toggleMode(true);
     } catch (e) {
       Future.delayed(Duration.zero, () {
@@ -326,5 +292,68 @@ class AuthViewModel extends ChangeNotifier {
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
+  }
+
+  Future<bool> _captureBirthYearIfNeeded(BuildContext context) async {
+    if (!Platform.isAndroid) return true;
+
+    final hasStored = await AgeGateService.instance.hasBirthYear();
+    if (hasStored) return true;
+
+    if (selectedBirthYear != null) {
+      await _persistBirthYearIfNeeded();
+      notifyListeners();
+      return true;
+    }
+
+    int? tempYear;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text('ageGateTitle'.tr()),
+          content: DropdownButtonFormField<int>(
+            initialValue: tempYear,
+            isExpanded: true,
+            decoration: InputDecoration(
+              labelText: 'ageGateYearLabel'.tr(),
+              border: const OutlineInputBorder(),
+            ),
+            items: birthYears
+                .map(
+                  (year) => DropdownMenuItem<int>(
+                    value: year,
+                    child: Text(year.toString()),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) => setState(() => tempYear = value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('cancel'.tr()),
+            ),
+            TextButton(
+              onPressed: tempYear == null
+                  ? null
+                  : () => Navigator.of(context).pop(true),
+              child: Text('ok'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && tempYear != null) {
+      selectedBirthYear = tempYear;
+      await _persistBirthYearIfNeeded();
+      notifyListeners();
+      return true;
+    }
+
+    showTopSnackBar(context, 'ageGateYearRequired'.tr());
+    return false;
   }
 }

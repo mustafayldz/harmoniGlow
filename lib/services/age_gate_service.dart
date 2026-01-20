@@ -37,6 +37,15 @@ class AgeGateService {
     await applyRequestConfiguration();
   }
 
+  Future<void> clearBirthYear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_birthYearKey);
+    _cachedBirthYear = null;
+    _loaded = true;
+
+    await applyRequestConfiguration();
+  }
+
   Future<AgeGateStatus> getStatus() async {
     if (!Platform.isAndroid) return AgeGateStatus.adult; // Android dışı: kısıtlama yok
 

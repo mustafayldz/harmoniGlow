@@ -182,4 +182,10 @@ class StorageService {
       }
     }
   }
+
+  /// Clear all stored preferences
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
 }
