@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:drumly/adMob/ad_helper.dart';
-import 'package:drumly/services/age_gate_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -21,15 +20,6 @@ class AdServiceReward {
   Future<void> loadRewardedAd() async {
     debugPrint('AdServiceReward: Loading rewarded ad...');
     _loadCompleter = Completer<void>();
-
-    final canShow = await AgeGateService.instance.canShowFullScreenAds();
-    if (!canShow) {
-      debugPrint('AdServiceReward: Rewarded ads disabled for under/unknown age');
-      _isRewardedAdReady = false;
-      _rewardedAd = null;
-      _loadCompleter?.complete();
-      return;
-    }
 
     RewardedAd.load(
       adUnitId: AdHelper.rewardedAdUnitId,
@@ -57,12 +47,6 @@ class AdServiceReward {
     debugPrint(
       'AdServiceReward: Attempting to show rewarded ad with confetti...',
     );
-
-    final canShow = await AgeGateService.instance.canShowFullScreenAds();
-    if (!canShow) {
-      debugPrint('AdServiceReward: Rewarded ads disabled for under/unknown age');
-      return false;
-    }
 
     // Eğer reklam hazır değilse, yüklemeyi başlat ve bitmesini bekle
     if (!_isRewardedAdReady || _rewardedAd == null) {
@@ -129,12 +113,6 @@ class AdServiceReward {
   /// Sadece showRewardedAd çağırılarak reklamı yükleyip göstermeye çalışır
   Future<bool> showRewardedAd() async {
     debugPrint('AdServiceReward: Attempting to show rewarded ad...');
-
-    final canShow = await AgeGateService.instance.canShowFullScreenAds();
-    if (!canShow) {
-      debugPrint('AdServiceReward: Rewarded ads disabled for under/unknown age');
-      return false;
-    }
 
     // Eğer reklam hazır değilse, yüklemeyi başlat ve bitmesini bekle
     if (!_isRewardedAdReady || _rewardedAd == null) {

@@ -1,8 +1,5 @@
 {
   "settings": "Settings",
-  "ageGateTitle": "How old are you?",
-  "ageGateYearLabel": "Birth year",
-  "ageGateYearRequired": "Please select your birth year",
   "darkMode": "Dark Mode",
   "adjustCountdown": "Adjust Countdown",
   "electronic": "Electronic",

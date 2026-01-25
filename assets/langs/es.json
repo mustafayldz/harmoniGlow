@@ -1,8 +1,5 @@
 {
   "settings": "Configuración",
-  "ageGateTitle": "¿Cuántos años tienes?",
-  "ageGateYearLabel": "Año de nacimiento",
-  "ageGateYearRequired": "Selecciona tu año de nacimiento",
   "darkMode": "Modo Oscuro",
   "adjustCountdown": "Ajustar Cuenta Regresiva",
   "electronic": "Electrónico",

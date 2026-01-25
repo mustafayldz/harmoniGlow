@@ -1,9 +1,6 @@
-import 'dart:io';
-
 import 'package:drumly/models/user_model.dart';
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/local_service.dart';
-import 'package:drumly/services/age_gate_service.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -17,8 +14,6 @@ class AuthViewModel extends ChangeNotifier {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
-  int? selectedBirthYear;
 
   bool isLoginMode = true;
   bool isButtonLoading = false;
@@ -39,15 +34,6 @@ class AuthViewModel extends ChangeNotifier {
   }
 
 
-  List<int> get birthYears {
-    final currentYear = DateTime.now().year;
-    const earliestYear = 1900;
-    return List<int>.generate(
-      currentYear - earliestYear + 1,
-      (index) => currentYear - index,
-    );
-  }
-
   bool get isFormValid {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -57,11 +43,6 @@ class AuthViewModel extends ChangeNotifier {
     final nameOk = isLoginMode || name.isNotEmpty;
 
     return hasRequiredFields && nameOk && isValidEmail(email);
-  }
-
-  Future<void> _persistBirthYearIfNeeded() async {
-    if (selectedBirthYear == null) return;
-    await AgeGateService.instance.setBirthYear(selectedBirthYear!);
   }
 
   Future<void> login(BuildContext context) async {
@@ -147,9 +128,6 @@ class AuthViewModel extends ChangeNotifier {
         } else {
           debugPrint('❌ Failed to create user in backend');
         }
-
-        final canContinue = await _captureBirthYearIfNeeded(context);
-        if (!canContinue) return;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushNamed(context, '/home');
@@ -253,8 +231,6 @@ class AuthViewModel extends ChangeNotifier {
           debugPrint('❌ Failed to get Firebase ID token');
         }
       }
-      final canContinue = await _captureBirthYearIfNeeded(context);
-      if (!canContinue) return;
       toggleMode(true);
     } catch (e) {
       Future.delayed(Duration.zero, () {
@@ -294,66 +270,4 @@ class AuthViewModel extends ChangeNotifier {
     passwordController.dispose();
   }
 
-  Future<bool> _captureBirthYearIfNeeded(BuildContext context) async {
-    if (!Platform.isAndroid) return true;
-
-    final hasStored = await AgeGateService.instance.hasBirthYear();
-    if (hasStored) return true;
-
-    if (selectedBirthYear != null) {
-      await _persistBirthYearIfNeeded();
-      notifyListeners();
-      return true;
-    }
-
-    int? tempYear;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text('ageGateTitle'.tr()),
-          content: DropdownButtonFormField<int>(
-            initialValue: tempYear,
-            isExpanded: true,
-            decoration: InputDecoration(
-              labelText: 'ageGateYearLabel'.tr(),
-              border: const OutlineInputBorder(),
-            ),
-            items: birthYears
-                .map(
-                  (year) => DropdownMenuItem<int>(
-                    value: year,
-                    child: Text(year.toString()),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) => setState(() => tempYear = value),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('cancel'.tr()),
-            ),
-            TextButton(
-              onPressed: tempYear == null
-                  ? null
-                  : () => Navigator.of(context).pop(true),
-              child: Text('ok'.tr()),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (confirmed == true && tempYear != null) {
-      selectedBirthYear = tempYear;
-      await _persistBirthYearIfNeeded();
-      notifyListeners();
-      return true;
-    }
-
-    showTopSnackBar(context, 'ageGateYearRequired'.tr());
-    return false;
-  }
 }

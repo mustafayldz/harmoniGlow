@@ -1,8 +1,5 @@
 {
   "settings": "Настройки",
-  "ageGateTitle": "Сколько тебе лет?",
-  "ageGateYearLabel": "Год рождения",
-  "ageGateYearRequired": "Пожалуйста, выбери год рождения",
   "darkMode": "Тёмный режим",
   "adjustCountdown": "Настроить обратный отсчёт",
   "electronic": "Электронный",

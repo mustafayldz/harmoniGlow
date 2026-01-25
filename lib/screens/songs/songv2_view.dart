@@ -6,7 +6,6 @@ import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/screens/songs/songv2_viewmodel.dart';
 import 'package:drumly/shared/app_gradients.dart';
 import 'package:drumly/shared/common_functions.dart';
-import 'package:drumly/services/age_gate_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -27,8 +26,6 @@ class _SongV2ViewState extends State<SongV2View> {
 
   String _lastSearch = '';
   bool _isGridView = false;
-  bool _hideLockedForMinors = false;
-  bool _ageChecked = false;
 
   late final UserProvider userProvider;
   SharedPreferences? _prefs;
@@ -49,11 +46,6 @@ class _SongV2ViewState extends State<SongV2View> {
     vm.addListener(() {
       if (vm.songs.isNotEmpty && _prefs != null) {
         _preloadUnlockStates(vm.songs);
-      }
-
-      if (!_ageChecked && !vm.isLoading) {
-        _ageChecked = true;
-        Future.microtask(() async => _initAgeGateFilter());
       }
     });
 
@@ -85,16 +77,6 @@ class _SongV2ViewState extends State<SongV2View> {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  Future<void> _initAgeGateFilter() async {
-    final status = await AgeGateService.instance.getStatus();
-    if (!mounted) return;
-    setState(() => _hideLockedForMinors = status == AgeGateStatus.under18);
-  }
-
-  List<SongV2Model> _filterSongsForAge(List<SongV2Model> songs) {
-    if (!_hideLockedForMinors) return songs;
-    return songs.where((song) => !song.isLocked).toList();
-  }
 
   bool _isSongLockedSync(SongV2Model song, bool isBluetoothConnected) {
     if (!song.isLocked || isBluetoothConnected) return false;
@@ -183,7 +165,7 @@ class _SongV2ViewState extends State<SongV2View> {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final visibleSongs = _filterSongsForAge(vm.songs);
+    final visibleSongs = vm.songs;
 
     return ChangeNotifierProvider<SongV2ViewModel>.value(
       value: vm,

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:drumly/adMob/ad_helper.dart';
-import 'package:drumly/services/age_gate_service.dart';
 
 class AdService {
   AdService._();
@@ -21,12 +20,6 @@ class AdService {
 
   /// Reklam göster ve tamamlanmasını bekle
   Future<bool> showInterstitialAd() async {
-    final canShow = await AgeGateService.instance.canShowFullScreenAds();
-    if (!canShow) {
-      debugPrint('Interstitial ad disabled for under/unknown age');
-      return true; // Navigasyona izin ver, reklam yok
-    }
-
     if (_isLoading) {
       debugPrint('Ad is already loading, skipping...');
       return true; // Zaten yükleniyor, navigasyona izin ver

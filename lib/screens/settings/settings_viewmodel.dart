@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:drumly/services/local_service.dart';
-import 'package:drumly/services/age_gate_service.dart';
 import 'package:drumly/game/data/repositories/local_storage_repository.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/models/user_model.dart';
@@ -59,7 +58,6 @@ class SettingViewModel extends ChangeNotifier {
 
   Future<void> logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    await AgeGateService.instance.clearBirthYear();
     await LocalStorageRepository.clearAll();
     await storageService.clearAll();
     await Navigator.of(context)
@@ -118,7 +116,6 @@ class SettingViewModel extends ChangeNotifier {
         // 3. Clear local storage
         debugPrint('💾 Step 3: Clearing local storage...');
         await FirebaseAuth.instance.signOut();
-        await AgeGateService.instance.clearBirthYear();
         await LocalStorageRepository.clearAll();
         await storageService.clearAll();
         debugPrint('💾 Local storage cleared');
