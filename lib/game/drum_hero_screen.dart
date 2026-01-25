@@ -7,44 +7,6 @@ import 'package:drumly/game/game.dart';
 import 'package:drumly/adMob/ad_service.dart';
 import 'package:drumly/services/age_gate_service.dart';
 
-/// ============================================================================
-/// DRUM HERO SCREEN - Flame oyununu barındıran Flutter ekranı
-/// ============================================================================
-///
-/// Bu widget, DrumGame'i Flutter widget tree'sine entegre eder ve
-/// platform-spesifik özellikleri yönetir.
-///
-/// ## Sorumluluklar
-///
-/// 1. Android geri tuşu yönetimi (PopScope ile)
-/// 2. Oyun lifecycle yönetimi (pause/resume)
-/// 3. Reklam gösterim entegrasyonu
-/// 4. Immersive mode (sistem UI gizleme)
-///
-/// ## Android Geri Tuşu
-///
-/// ```
-/// Kullanıcı geri tuşuna basınca:
-/// - Menüdeyse: Çıkış onayı göster
-/// - Oyundaysa: Oyunu duraklat ve onay göster
-/// - Game Over'daysa: Doğrudan çık
-/// ```
-///
-/// ## Kullanım
-///
-/// ```dart
-/// Navigator.push(
-///   context,
-///   MaterialPageRoute(
-///     builder: (_) => DrumHeroScreen(
-///       debugMode: false,
-///       performanceMode: false,
-///       showAdOnGameEnd: true,
-///     ),
-///   ),
-/// );
-/// ```
-/// ============================================================================
 class DrumHeroScreen extends StatefulWidget {
   /// Yeni bir DrumHeroScreen instance'ı oluşturur.
   ///

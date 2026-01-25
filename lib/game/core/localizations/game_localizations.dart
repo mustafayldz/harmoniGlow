@@ -26,7 +26,7 @@ class GameLocalizations {
     required this.tryAgain,
     required this.playAgain,
     required this.mainMenu,
-    required this.drumHero,
+    required this.drumlyGame,
     required this.catchTheBeat,
     required this.highest,
     required this.start,
@@ -54,7 +54,7 @@ class GameLocalizations {
       tryAgain: texts['tryAgain'] ?? '💪 Try Again!',
       playAgain: texts['playAgain'] ?? '🔄  PLAY AGAIN',
       mainMenu: texts['mainMenu'] ?? '🏠  MAIN MENU',
-      drumHero: texts['drumHero'] ?? 'DRUM HERO',
+      drumlyGame: texts['drumlyGame'] ?? 'DRUMLY GAME',
       catchTheBeat: texts['catchTheBeat'] ?? 'Catch the Beat!',
       highest: texts['highest'] ?? '🏆 Highest:',
       start: texts['start'] ?? '▶  START',
@@ -81,7 +81,7 @@ class GameLocalizations {
   final String tryAgain;
   final String playAgain;
   final String mainMenu;
-  final String drumHero;
+  final String drumlyGame;
   final String catchTheBeat;
   final String highest;
   final String start;

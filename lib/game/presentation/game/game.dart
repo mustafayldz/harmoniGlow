@@ -385,7 +385,7 @@ class DrumGame extends FlameGame with TapCallbacks {
 
     // Başlık
     final title = TextComponent(
-      text: localizations.drumHero,
+      text: localizations.drumlyGame,
       anchor: Anchor.topCenter,
       position: Vector2(centerX, topY),
       textRenderer: TextPaint(
