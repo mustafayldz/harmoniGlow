@@ -165,12 +165,13 @@ class _SongV2ViewState extends State<SongV2View> {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final visibleSongs = vm.songs;
 
     return ChangeNotifierProvider<SongV2ViewModel>.value(
       value: vm,
       child: Consumer<SongV2ViewModel>(
-        builder: (context, vm, _) => Scaffold(
+        builder: (context, vm, _) {
+          final visibleSongs = vm.songs;
+          return Scaffold(
           body: Stack(
             children: [
               DecoratedBox(
@@ -397,7 +398,8 @@ class _SongV2ViewState extends State<SongV2View> {
               ),
             ],
           ),
-        ),
+        );
+        },
       ),
     );
   }
