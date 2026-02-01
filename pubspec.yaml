@@ -1,6 +1,6 @@
 name: drumly
 description: "Light Up Your Beat"
-version: 1.1.7+30
+version: 1.1.7+31
 
 environment:
   sdk: ^3.5.4

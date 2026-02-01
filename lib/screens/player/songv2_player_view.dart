@@ -18,6 +18,7 @@ import 'dart:ui' as ui;
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 import 'package:drumly/shared/countdown.dart';
 import 'package:drumly/shared/send_data.dart';
+import 'package:drumly/widgets/song_intro_overlay.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -848,6 +849,13 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       List<_DrumSendInfo?>.filled(8, null);
   Future<void> _btSendChain = Future.value();
 
+  // UI visibility control
+  bool _showControls = true;
+  Timer? _hideControlsTimer;
+
+  // Song intro overlay
+  bool _showSongIntro = false;
+
   @override
   void initState() {
     super.initState();
@@ -890,6 +898,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     ]);
 
     _speedSliderTimer?.cancel();
+    _hideControlsTimer?.cancel();
     _ticker.dispose();
     _ytController?.dispose();
     _flashCtrl.dispose();
@@ -950,7 +959,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _playerMsN.value = _playerMs.round();
       _songMsN.value = (_playerMs - s.syncMs).round();
 
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _showSongIntro = true; // Show song intro when loaded
+      });
     } catch (e) {
       setState(() {
         _error = 'Failed to load: $e';
@@ -1094,10 +1106,20 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _songMsN.value = (-s.syncMs).round();
       }
 
+      // Hide song intro when play is pressed
+      if (_showSongIntro) {
+        setState(() => _showSongIntro = false);
+      }
+
       await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) => const Countdown(),
+        builder: (_) => Countdown(
+          onCountdownComplete: () {
+            // Hide controls after countdown finishes
+            setState(() => _showControls = false);
+          },
+        ),
       );
 
       setState(() => _isPlaying = true);
@@ -1109,11 +1131,19 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _ytController!.play();
       }
     } else {
-      setState(() => _isPlaying = false);
+      setState(() {
+        _isPlaying = false;
+        _showControls = true; // Show controls when pausing
+      });
       _lastElapsed = null;
       _ticker.stop();
       if (_ytController != null && _ytReady) _ytController!.pause();
     }
+  }
+
+  void _toggleControlsVisibility() {
+    _hideControlsTimer?.cancel();
+    setState(() => _showControls = !_showControls);
   }
 
   void _onSpeedChanged(double v) {
@@ -1135,6 +1165,24 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       } else {
         _ytController!.pause();
       }
+    }
+  }
+
+  void _seekTo(int ms) {
+    final s = _song;
+    if (s == null) return;
+
+    _playerMs = ms.toDouble().clamp(0.0, s.durationMs.toDouble());
+    _playerMsN.value = _playerMs.round();
+    _songMsN.value = (_playerMs - s.syncMs).round();
+
+    // Reset hit cursor to find correct position
+    _hitCursor = _lowerBoundAbsT(s.absT, _songMsN.value);
+    _sentNoteIndices.clear();
+
+    // Sync YouTube if playing at normal speed
+    if (_ytController != null && _ytReady && _speed == 1.0) {
+      _ytController!.seekTo(Duration(milliseconds: _playerMs.round()));
     }
   }
 
@@ -1207,7 +1255,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     final topY = topPadding;
     final progressY = topY + (minDimension * 0.12);
-    final speedY = progressY + (minDimension * 0.06);
 
     final buttonSize = (minDimension * 0.11).clamp(40.0, 56.0);
     final timerFontSize = (minDimension * 0.03).clamp(10.0, 14.0);
@@ -1220,7 +1267,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       aspect: kDrumAspect,
     );
 
-    final roadTopY = (speedY - minDimension * 0.02).clamp(0.0, size.height);
+    // Grid ve lane çizgileri ekranın en üstünden başlıyor
+    final roadTopY = 0.0;
     final roadBottomY = size.height - safeArea.bottom;
 
     final lanePaths = _computePerspectiveLanePaths(
@@ -1229,40 +1277,43 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       roadTopY: roadTopY,
     );
 
-    return Stack(
-      children: [
-        CustomPaint(
-          painter: _NeonStagePainter(
-            dstRect: dstRect,
-            roadTopY: roadTopY,
-            roadBottomY: roadBottomY,
-            lanePaths: lanePaths,
-          ),
-          child: const SizedBox.expand(),
-        ),
-
-        RepaintBoundary(
-          child: CustomPaint(
-            painter: _NotesAndGlowPainter(
-              song: s,
-              songMs: _songMsN,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: _toggleControlsVisibility,
+      child: Stack(
+        children: [
+          CustomPaint(
+            painter: _NeonStagePainter(
               dstRect: dstRect,
-              laneColors: _laneColors,
-              flashCtrl: _flashCtrl,
-              noteSprite: _noteSprite,
-              enableGlow: _enableGlow,
-              maxNotesPerFrame: _maxNotesPerFrame,
-              dynamicLookahead: _dynamicLookahead,
+              roadTopY: roadTopY,
+              roadBottomY: roadBottomY,
               lanePaths: lanePaths,
             ),
-            isComplex: true,
-            willChange: true,
             child: const SizedBox.expand(),
           ),
-        ),
 
-        if (_ytController != null)
-          Positioned(
+          RepaintBoundary(
+            child: CustomPaint(
+              painter: _NotesAndGlowPainter(
+                song: s,
+                songMs: _songMsN,
+                dstRect: dstRect,
+                laneColors: _laneColors,
+                flashCtrl: _flashCtrl,
+                noteSprite: _noteSprite,
+                enableGlow: _enableGlow,
+                maxNotesPerFrame: _maxNotesPerFrame,
+                dynamicLookahead: _dynamicLookahead,
+                lanePaths: lanePaths,
+              ),
+              isComplex: true,
+              willChange: true,
+              child: const SizedBox.expand(),
+            ),
+          ),
+
+          if (_ytController != null)
+            Positioned(
             top: -1000,
             child: SizedBox(
               width: 1,
@@ -1276,87 +1327,152 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
             ),
           ),
 
+        // Song Intro Overlay
+        Positioned(
+          top: progressY + (minDimension * 0.08),
+          left: horizontalPadding,
+          right: screenWidth * 0.15,
+          child: SongIntroOverlay(
+            title: s.title,
+            artist: s.artist,
+            bpm: s.bpm,
+            timeSignature: s.ts,
+            visible: _showSongIntro,
+            onHide: () {
+              if (mounted) setState(() => _showSongIntro = false);
+            },
+          ),
+        ),
+
+        // Back Button
         Positioned(
           top: topY,
           left: horizontalPadding,
-          child: _ResponsivePillButton(
-            icon: Icons.arrow_back,
-            size: buttonSize,
-            onTap: () => Navigator.pop(context),
+          child: AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: _ResponsivePillButton(
+                icon: Icons.arrow_back,
+                size: buttonSize,
+                onTap: () => Navigator.pop(context),
+              ),
+            ),
           ),
         ),
 
+        // Play/Pause Button
         Positioned(
           top: topY,
           left: horizontalPadding + buttonSize + (minDimension * 0.02),
-          child: _ResponsivePillButton(
-            icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-            size: buttonSize,
-            onTap: () => _togglePlay(),
+          child: AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: _ResponsivePillButton(
+                icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                size: buttonSize,
+                onTap: () => _togglePlay(),
+              ),
+            ),
           ),
         ),
 
+        // Timer Display
         Positioned(
           top: topY + (minDimension * 0.01),
           right: horizontalPadding,
-          child: ValueListenableBuilder<int>(
-            valueListenable: _playerMsN,
-            builder: (_, ms, __) => Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: minDimension * 0.025,
-                vertical: minDimension * 0.02,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.40),
-                borderRadius: BorderRadius.circular(minDimension * 0.035),
-                border: Border.all(color: Colors.white24),
-              ),
-              child: Text(
-                '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: timerFontSize,
-                  fontWeight: FontWeight.w700,
+          child: AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: ValueListenableBuilder<int>(
+                valueListenable: _playerMsN,
+                builder: (_, ms, __) => Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: minDimension * 0.025,
+                    vertical: minDimension * 0.02,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.40),
+                    borderRadius: BorderRadius.circular(minDimension * 0.035),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Text(
+                    '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: timerFontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
 
+        // Progress Bar (Seekable)
         Positioned(
           top: progressY + (minDimension * 0.02),
           left: horizontalPadding,
           right: horizontalPadding,
-          child: ValueListenableBuilder<int>(
-            valueListenable: _playerMsN,
-            builder: (_, ms, __) {
-              final progress = (ms / s.durationMs).clamp(0.0, 1.0).toDouble();
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(progressHeight),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: progressHeight,
-                  backgroundColor: Colors.white.withValues(alpha: 0.10),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Colors.yellowAccent.withValues(alpha: 0.9),
-                  ),
-                ),
-              );
-            },
+          child: AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: ValueListenableBuilder<int>(
+                valueListenable: _playerMsN,
+                builder: (_, ms, __) {
+                  final progress = (ms / s.durationMs).clamp(0.0, 1.0).toDouble();
+                  return SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: progressHeight,
+                      thumbShape: RoundSliderThumbShape(
+                        enabledThumbRadius: progressHeight * 0.9,
+                      ),
+                      overlayShape: RoundSliderOverlayShape(
+                        overlayRadius: progressHeight * 2,
+                      ),
+                      activeTrackColor: Colors.yellowAccent.withValues(alpha: 0.9),
+                      inactiveTrackColor: Colors.white.withValues(alpha: 0.10),
+                      thumbColor: Colors.yellowAccent,
+                      overlayColor: Colors.yellowAccent.withValues(alpha: 0.2),
+                    ),
+                    child: Slider(
+                      value: progress,
+                      onChanged: (value) {
+                        _seekTo((value * s.durationMs).round());
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ),
 
+        // Speed Slider
         Positioned(
           top: topY + (minDimension * 0.01),
           left: 0,
           right: 0,
-          child: Center(
-            child: GestureDetector(
-              onTap: () {
-                _speedSliderTimer?.cancel();
-                setState(() => _showSpeedSlider = !_showSpeedSlider);
-              },
-              child: AnimatedContainer(
+          child: AnimatedOpacity(
+            opacity: _showControls ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {
+                    _speedSliderTimer?.cancel();
+                    setState(() => _showSpeedSlider = !_showSpeedSlider);
+                  },
+                  child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 padding: EdgeInsets.symmetric(
@@ -1422,13 +1538,16 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                  ),
+                ),
               ),
             ),
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 
   /// ✅ Vertical lanes from top to drum centers (straight vertical)
   List<LanePath> _computePerspectiveLanePaths({

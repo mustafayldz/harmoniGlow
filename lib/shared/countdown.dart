@@ -5,7 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class Countdown extends StatefulWidget {
-  const Countdown({super.key});
+  const Countdown({
+    this.onCountdownComplete,
+    super.key,
+  });
+
+  final VoidCallback? onCountdownComplete;
 
   @override
   CountdownState createState() => CountdownState();
@@ -30,6 +35,7 @@ class CountdownState extends State<Countdown> {
             _counter--;
           } else {
             _timer.cancel();
+            widget.onCountdownComplete?.call();
             if (mounted) {
               Navigator.of(context).pop();
             }
