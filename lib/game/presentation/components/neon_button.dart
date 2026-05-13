@@ -205,7 +205,7 @@ class _NeonButtonState extends State<NeonButton>
   Widget build(BuildContext context) {
     final isDisabled = widget.onPressed == null;
     final color = widget.color;
-    final darkerColor = Color.lerp(color, Colors.black, 0.3)!;
+    final darkerColor = Color.lerp(color, Colors.black, 0.3);
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
@@ -215,7 +215,7 @@ class _NeonButtonState extends State<NeonButton>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_borderRadius),
             gradient: LinearGradient(
-              colors: [color, darkerColor],
+              colors: [color, darkerColor ?? Colors.black],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

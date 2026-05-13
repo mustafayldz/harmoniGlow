@@ -1066,7 +1066,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   }
 
   void _updateLaneHitsCursor(int songMs) {
-    final s = _song!;
+    final s = _song;
+    if (s == null) return;
     final absT = s.absT;
     final n = absT.length;
     if (n == 0) return;
@@ -1241,7 +1242,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   }
 
   Widget _buildResponsiveCanvas(BuildContext context, BoxConstraints constraints) {
-    final s = _song!;
+    final s = _song;
     final screenWidth = constraints.maxWidth;
     final screenHeight = constraints.maxHeight;
     final size = Size(screenWidth, screenHeight);
@@ -1295,7 +1296,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
           RepaintBoundary(
             child: CustomPaint(
               painter: _NotesAndGlowPainter(
-                song: s,
+                song: s!,
                 songMs: _songMsN,
                 dstRect: dstRect,
                 laneColors: _laneColors,

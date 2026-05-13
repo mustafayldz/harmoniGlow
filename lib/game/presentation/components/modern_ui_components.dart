@@ -23,18 +23,18 @@ class ModernBackgroundComponent extends Component {
       const ui.Color(0xFF1A1A2E),
       const ui.Color(0xFF16213E),
       _animationPhase,
-    )!;
+    );
     
     final color2 = ui.Color.lerp(
       const ui.Color(0xFF0F3460),
       const ui.Color(0xFF533483),
       _animationPhase,
-    )!;
+    );
 
     final gradient = ui.Gradient.linear(
       const ui.Offset(0, 0),
       ui.Offset(screenSize.width, screenSize.height),
-      [color1, color2],
+      [color1 ?? const ui.Color(0xFF000000), color2 ?? const ui.Color(0xFF000000)],
       [0.0, 1.0],
     );
 

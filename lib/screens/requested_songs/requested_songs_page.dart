@@ -559,28 +559,28 @@ class _RequestedSongsPageState extends State<RequestedSongsPage>
 
     switch (status.toLowerCase()) {
       case 'pending':
-        bgColor = Colors.orange[100]!;
-        textColor = Colors.orange[800]!;
+        bgColor = Colors.orange[100] ?? Colors.orange;
+        textColor = Colors.orange[800] ?? Colors.orange;
         icon = Icons.pending_rounded;
         break;
       case 'approved':
-        bgColor = Colors.green[100]!;
-        textColor = Colors.green[800]!;
+        bgColor = Colors.green[100] ?? Colors.green;
+        textColor = Colors.green[800] ?? Colors.green;
         icon = Icons.check_circle_rounded;
         break;
       case 'rejected':
-        bgColor = Colors.red[100]!;
-        textColor = Colors.red[800]!;
+        bgColor = Colors.red[100] ?? Colors.red;
+        textColor = Colors.red[800] ?? Colors.red;
         icon = Icons.cancel_rounded;
         break;
       case 'completed':
-        bgColor = Colors.blue[100]!;
-        textColor = Colors.blue[800]!;
+        bgColor = Colors.blue[100] ?? Colors.blue;
+        textColor = Colors.blue[800] ?? Colors.blue;
         icon = Icons.done_all_rounded;
         break;
       default:
-        bgColor = Colors.grey[100]!;
-        textColor = Colors.grey[800]!;
+        bgColor = Colors.grey[100] ?? Colors.grey;
+        textColor = Colors.grey[800] ?? Colors.grey;
         icon = Icons.help_rounded;
     }
 
