@@ -242,7 +242,6 @@ Future<String> getValidFirebaseToken() async {
     throw Exception('Not signed in');
   }
   final freshToken = await user.getIdToken(true);
-  debugPrint('fresh token: $freshToken');
   await StorageService.saveFirebaseToken(freshToken!);
 
   return freshToken;

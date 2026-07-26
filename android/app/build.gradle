@@ -32,7 +32,8 @@ android {
     defaultConfig {
         applicationId = "com.drumly.mobile"
         minSdkVersion = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Keep target API explicit for Play policy compliance.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

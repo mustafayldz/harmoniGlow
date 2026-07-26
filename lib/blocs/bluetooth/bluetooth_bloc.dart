@@ -18,6 +18,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     _initializeConnection();
   }
   StreamSubscription<List<ScanResult>>? _scanSubscription;
+  StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
   BluetoothCharacteristic? characteristic;
 
   Future<void> _initializeConnection() async {
@@ -151,7 +152,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       await event.device.connect();
 
       // Listen for connection state changes
-      event.device.connectionState.listen((state) {
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = event.device.connectionState.listen((state) {
         if (state == BluetoothConnectionState.disconnected) {
           add(ForceNavigationEvent()); // Trigger navigation event
         }
@@ -205,6 +207,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     Emitter<BluetoothStateC> emit,
   ) async {
     try {
+      await _connectionSubscription?.cancel();
+      _connectionSubscription = null;
       await event.device.disconnect();
       await StorageService().clearSavedDeviceId();
 
@@ -242,6 +246,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   @override
   Future<void> close() {
     _scanSubscription?.cancel();
+    _connectionSubscription?.cancel();
     FlutterBluePlus.stopScan();
     return super.close();
   }

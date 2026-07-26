@@ -7,6 +7,9 @@ analyzer:
     unawaited_futures: ignore
   exclude:
     - "**.g.dart" # Otomatik oluşturulan dosyaları analizden hariç tut
+    - "build/**"
+    - "ios/Pods/**"
+    - "ios/.symlinks/**"
 
 linter:
   rules:

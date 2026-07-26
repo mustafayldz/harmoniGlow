@@ -172,7 +172,7 @@ class SongV2Service {
     String songv2Id,
     Map<String, dynamic> updateData,
   ) async {
-    final String url = '${getBaseUrlSongV2()}$songv2Id';
+    final String url = '${getBaseUrlSongV2()}/$songv2Id';
 
     try {
       final response = await RequestHelper.requestAsync(
@@ -207,7 +207,7 @@ class SongV2Service {
     BuildContext context,
     String songv2Id,
   ) async {
-    final String url = '${getBaseUrlSongV2()}$songv2Id';
+    final String url = '${getBaseUrlSongV2()}/$songv2Id';
 
     try {
       final response = await RequestHelper.requestAsync(

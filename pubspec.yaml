@@ -1,6 +1,6 @@
 name: drumly
 description: "Light Up Your Beat"
-version: 1.1.7+31
+version: 1.1.8+32
 
 environment:
   sdk: ^3.5.4
@@ -39,6 +39,8 @@ dependencies:
   # Add Flame game engine
   flame: ^1.34.0
   flame_audio: ^2.11.12
+  path_provider_android: ^2.2.18
+  webview_flutter_android: ^4.12.0
 
   flutter_localizations:
     sdk: flutter
@@ -66,8 +68,3 @@ flutter:
     - assets/audio/
     - assets/langs/
     - assets/animation/
-
-dependency_overrides:
-  # Updated versions that support Java 21 and Android SDK 35
-  path_provider_android: ^2.2.18
-  webview_flutter_android: ^4.10.2
