@@ -4,7 +4,6 @@ import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/screens/player/songv2_player_view.dart';
 import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/screens/songs/songv2_viewmodel.dart';
-import 'package:drumly/shared/app_gradients.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +75,6 @@ class _SongV2ViewState extends State<SongV2View> {
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
   }
-
 
   bool _isSongLockedSync(SongV2Model song, bool isBluetoothConnected) {
     if (!song.isLocked || isBluetoothConnected) return false;
@@ -172,233 +170,276 @@ class _SongV2ViewState extends State<SongV2View> {
         builder: (context, vm, _) {
           final visibleSongs = vm.songs;
           return Scaffold(
-          body: Stack(
-            children: [
-              DecoratedBox(
-                decoration: AppDecorations.backgroundDecoration(isDarkMode),
-                child: SafeArea(
-                  bottom: false,
-                  child: LayoutBuilder(
-                    builder: (context, c) {
-                      final w = c.maxWidth;
-                      final sc = _scale(w);
+            body: Stack(
+              children: [
+                ColoredBox(
+                  color: isDarkMode
+                      ? const Color(0xFF070A10)
+                      : const Color(0xFFF5F6F8),
+                  child: SafeArea(
+                    bottom: false,
+                    child: LayoutBuilder(
+                      builder: (context, c) {
+                        final w = c.maxWidth;
+                        final sc = _scale(w);
 
-                      final hp = _sz(12, sc, min: 10, max: 20);
-                      final gap = _sz(10, sc, min: 8, max: 14);
+                        final hp = _sz(12, sc, min: 10, max: 20);
+                        final gap = _sz(10, sc, min: 8, max: 14);
 
-                      // ✅ grid kolon hesabı (dinamik, ama basit)
-                      final targetTileW = _sz(175, sc, min: 150, max: 230);
-                      final cols = (w / targetTileW).floor().clamp(2, 6);
+                        // ✅ grid kolon hesabı (dinamik, ama basit)
+                        final targetTileW = _sz(175, sc, min: 150, max: 230);
+                        final cols = (w / targetTileW).floor().clamp(2, 6);
 
-                      // ✅ overflow-proof: kart yüksekliği sabit (scale’li)
-                      final gridExtent = _sz(142, sc, min: 128, max: 165);
+                        // ✅ overflow-proof: kart yüksekliği sabit (scale’li)
+                        final gridExtent = _sz(164, sc, min: 154, max: 184);
 
-                      final headerTitle = _sz(22, sc, min: 20, max: 28);
-                      final headerIcon = _sz(22, sc, min: 20, max: 26);
+                        final headerTitle = _sz(22, sc, min: 20, max: 28);
+                        final headerIcon = _sz(22, sc, min: 20, max: 26);
 
-                      final searchFont = _sz(14, sc, min: 13, max: 16);
-                      final listTitle = _sz(15, sc, min: 13.5, max: 17);
+                        final searchFont = _sz(14, sc, min: 13, max: 16);
+                        final listTitle = _sz(15, sc, min: 13.5, max: 17);
 
-                      return CustomScrollView(
-                        controller: _scrollController,
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(hp, 6, hp, 0),
-                              child: Column(
-                                children: [
-                                  Row(
-                                    children: [
-                                      DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: isDarkMode
-                                              ? Colors.white.withValues(alpha: 0.10)
-                                              : Colors.black.withValues(alpha: 0.10),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.arrow_back_ios_rounded,
-                                            color: isDarkMode ? Colors.white : Colors.black,
-                                            size: headerIcon,
-                                          ),
-                                          onPressed: () => Navigator.pop(context),
-                                        ),
-                                      ),
-                                      SizedBox(width: gap),
-                                      Expanded(
-                                        child: Text(
-                                          'songs'.tr(),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: headerTitle,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDarkMode ? Colors.white : Colors.black,
-                                          ),
-                                        ),
-                                      ),
-                                      DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: isDarkMode
-                                              ? Colors.white.withValues(alpha: 0.10)
-                                              : Colors.black.withValues(alpha: 0.10),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: IconButton(
-                                          icon: Icon(
-                                            _isGridView
-                                                ? Icons.view_list_rounded
-                                                : Icons.grid_view_rounded,
-                                            color: isDarkMode ? Colors.white : Colors.black,
-                                            size: headerIcon,
-                                          ),
-                                          onPressed: () => setState(() => _isGridView = !_isGridView),
-                                        ),
-                                      ),
-                                      SizedBox(width: _sz(8, sc, min: 6, max: 12)),
-                                      DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: isDarkMode
-                                              ? const Color(0xFF6366F1).withValues(alpha: 0.20)
-                                              : const Color(0xFF4F46E5).withValues(alpha: 0.10),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.library_music_rounded,
+                        return CustomScrollView(
+                          controller: _scrollController,
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(hp, 14, hp, 0),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 42,
+                                          height: 42,
+                                          decoration: BoxDecoration(
                                             color: isDarkMode
-                                                ? const Color(0xFF6366F1)
-                                                : const Color(0xFF4F46E5),
-                                            size: headerIcon,
+                                                ? Colors.white
+                                                    .withValues(alpha: 0.07)
+                                                : Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                            border: Border.all(
+                                              color: isDarkMode
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.09,
+                                                    )
+                                                  : Colors.black.withValues(
+                                                      alpha: 0.06,
+                                                    ),
+                                            ),
                                           ),
-                                          onPressed: () => Navigator.pushNamed(context, '/requested-songs'),
+                                          child: IconButton(
+                                            icon: Icon(
+                                              Icons.arrow_back_rounded,
+                                              color: isDarkMode
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.88,
+                                                    )
+                                                  : const Color(0xFF252733),
+                                              size: headerIcon - 1,
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  SizedBox(height: _sz(12, sc, min: 8, max: 16)),
-                                  _buildSearchBar(isDarkMode, searchFont),
-                                  SizedBox(height: _sz(10, sc, min: 8, max: 14)),
-                                ],
+                                        SizedBox(width: gap),
+                                        Expanded(
+                                          child: Text(
+                                            'songs'.tr(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: headerTitle,
+                                              fontWeight: FontWeight.w900,
+                                              color: isDarkMode
+                                                  ? Colors.white
+                                                  : const Color(0xFF171820),
+                                              letterSpacing: -0.7,
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          width: 42,
+                                          height: 42,
+                                          decoration: BoxDecoration(
+                                            color: isDarkMode
+                                                ? Colors.white
+                                                    .withValues(alpha: 0.07)
+                                                : Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(14),
+                                            border: Border.all(
+                                              color: isDarkMode
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.09,
+                                                    )
+                                                  : Colors.black.withValues(
+                                                      alpha: 0.06,
+                                                    ),
+                                            ),
+                                          ),
+                                          child: IconButton(
+                                            icon: Icon(
+                                              _isGridView
+                                                  ? Icons.view_list_rounded
+                                                  : Icons.grid_view_rounded,
+                                              color: isDarkMode
+                                                  ? Colors.white.withValues(
+                                                      alpha: 0.88,
+                                                    )
+                                                  : const Color(0xFF252733),
+                                              size: headerIcon - 1,
+                                            ),
+                                            onPressed: () => setState(
+                                              () => _isGridView = !_isGridView,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(
+                                      height: _sz(12, sc, min: 8, max: 16),
+                                    ),
+                                    _buildSearchBar(isDarkMode, searchFont),
+                                    SizedBox(
+                                      height: _sz(10, sc, min: 8, max: 14),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ),
-
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(hp, 6, hp, 6),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    'All Songs',
-                                    style: TextStyle(
-                                      fontSize: _sz(16, sc, min: 14, max: 18),
-                                      fontWeight: FontWeight.bold,
-                                      color: isDarkMode ? Colors.white : Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(width: _sz(10, sc, min: 8, max: 12)),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: _sz(12, sc, min: 10, max: 14),
-                                      vertical: _sz(6, sc, min: 5, max: 7),
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? Colors.white.withValues(alpha: 0.10)
-                                          : Colors.black.withValues(alpha: 0.05),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '${visibleSongs.length}',
-                                      style: TextStyle(
-                                        fontSize: _sz(13, sc, min: 12, max: 14),
-                                        fontWeight: FontWeight.bold,
-                                        color: isDarkMode
-                                            ? Colors.white.withValues(alpha: 0.85)
-                                            : Colors.black.withValues(alpha: 0.80),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          if (visibleSongs.isEmpty && !vm.isLoading)
-                            SliverFillRemaining(
-                              hasScrollBody: false,
-                              child: _buildEmptyState(isDarkMode, sc),
-                            )
-                          else ...[
-                            SliverPadding(
-                              padding: EdgeInsets.symmetric(horizontal: hp),
-                              sliver: _isGridView
-                                  ? _buildSongsGrid(
-                                      songs: visibleSongs,
-                                      isConnected: isConnected,
-                                      bluetoothBloc: bluetoothBloc,
-                                      isDarkMode: isDarkMode,
-                                      cols: cols,
-                                      spacing: gap,
-                                      mainExtent: gridExtent,
-                                      sc: sc,
-                                    )
-                                  : _buildSongsList(
-                                      songs: visibleSongs,
-                                      isConnected: isConnected,
-                                      bluetoothBloc: bluetoothBloc,
-                                      isDarkMode: isDarkMode,
-                                      sc: sc,
-                                      listTitleFont: listTitle,
-                                    ),
                             ),
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 10, 0, 80),
-                                child: vm.isLoading
-                                    ? const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(16),
-                                          child: CircularProgressIndicator(),
+                                padding: EdgeInsets.fromLTRB(hp, 6, hp, 6),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'all_songs'.tr(),
+                                      style: TextStyle(
+                                        fontSize: _sz(16, sc, min: 14, max: 18),
+                                        fontWeight: FontWeight.w800,
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : const Color(0xFF171820),
+                                        letterSpacing: -0.35,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: _sz(10, sc, min: 8, max: 12),
+                                    ),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal:
+                                            _sz(12, sc, min: 10, max: 14),
+                                        vertical: _sz(6, sc, min: 5, max: 7),
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isDarkMode
+                                            ? Colors.white
+                                                .withValues(alpha: 0.07)
+                                            : Colors.white,
+                                        borderRadius:
+                                            BorderRadius.circular(999),
+                                        border: Border.all(
+                                          color: isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.08)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.05),
                                         ),
-                                      )
-                                    : const SizedBox.shrink(),
+                                      ),
+                                      child: Text(
+                                        '${visibleSongs.length}',
+                                        style: TextStyle(
+                                          fontSize:
+                                              _sz(13, sc, min: 12, max: 14),
+                                          fontWeight: FontWeight.bold,
+                                          color: isDarkMode
+                                              ? Colors.white
+                                                  .withValues(alpha: 0.85)
+                                              : Colors.black
+                                                  .withValues(alpha: 0.80),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
+                            if (visibleSongs.isEmpty && !vm.isLoading)
+                              SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: _buildEmptyState(isDarkMode, sc),
+                              )
+                            else ...[
+                              SliverPadding(
+                                padding: EdgeInsets.symmetric(horizontal: hp),
+                                sliver: _isGridView
+                                    ? _buildSongsGrid(
+                                        songs: visibleSongs,
+                                        isConnected: isConnected,
+                                        bluetoothBloc: bluetoothBloc,
+                                        isDarkMode: isDarkMode,
+                                        cols: cols,
+                                        spacing: gap,
+                                        mainExtent: gridExtent,
+                                        sc: sc,
+                                      )
+                                    : _buildSongsList(
+                                        songs: visibleSongs,
+                                        isConnected: isConnected,
+                                        bluetoothBloc: bluetoothBloc,
+                                        isDarkMode: isDarkMode,
+                                        sc: sc,
+                                        listTitleFont: listTitle,
+                                      ),
+                              ),
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 10, 0, 80),
+                                  child: vm.isLoading
+                                      ? const Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(16),
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-
-              Align(
-                alignment: Alignment.topCenter,
-                child: ConfettiWidget(
-                  confettiController: _confettiController,
-                  blastDirection: 1.57,
-                  blastDirectionality: BlastDirectionality.explosive,
-                  emissionFrequency: 0.06,
-                  numberOfParticles: 40,
-                  maxBlastForce: 90,
-                  minBlastForce: 65,
-                  gravity: 0.25,
-                  colors: const [
-                    Colors.green,
-                    Colors.blue,
-                    Colors.pink,
-                    Colors.orange,
-                    Colors.purple,
-                    Colors.yellow,
-                  ],
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: ConfettiWidget(
+                    confettiController: _confettiController,
+                    blastDirection: 1.57,
+                    blastDirectionality: BlastDirectionality.explosive,
+                    emissionFrequency: 0.06,
+                    numberOfParticles: 40,
+                    maxBlastForce: 90,
+                    minBlastForce: 65,
+                    gravity: 0.25,
+                    colors: const [
+                      Colors.green,
+                      Colors.blue,
+                      Colors.pink,
+                      Colors.orange,
+                      Colors.purple,
+                      Colors.yellow,
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
+              ],
+            ),
+          );
         },
       ),
     );
@@ -406,15 +447,21 @@ class _SongV2ViewState extends State<SongV2View> {
 
   Widget _buildSearchBar(bool isDarkMode, double fontSize) => DecoratedBox(
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
+          color:
+              isDarkMode ? Colors.white.withValues(alpha: 0.065) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isDarkMode
-                ? Colors.white.withValues(alpha: 0.10)
-                : Colors.black.withValues(alpha: 0.10),
+                ? Colors.white.withValues(alpha: 0.09)
+                : Colors.black.withValues(alpha: 0.055),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDarkMode ? 0.14 : 0.045),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: TextField(
           controller: _searchController,
@@ -433,9 +480,7 @@ class _SongV2ViewState extends State<SongV2View> {
             ),
             prefixIcon: Icon(
               Icons.search_rounded,
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.70)
-                  : Colors.black.withValues(alpha: 0.70),
+              color: const Color(0xFF6C5CE7).withValues(alpha: 0.9),
             ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
@@ -452,7 +497,8 @@ class _SongV2ViewState extends State<SongV2View> {
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
           ),
         ),
       );
@@ -535,93 +581,115 @@ class _SongV2ViewState extends State<SongV2View> {
     required double sc,
     required double titleFont,
   }) =>
-      GestureDetector(
-        onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDarkMode
-                  ? [
-                      const Color(0xFF1E293B).withValues(alpha: 0.80),
-                      const Color(0xFF334155).withValues(alpha: 0.60),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.92),
-                      const Color(0xFFF1F5F9).withValues(alpha: 0.84),
-                    ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 24)),
-            border: Border.all(
+      Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: () =>
+              _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
+          borderRadius: BorderRadius.circular(20),
+          child: Ink(
+            padding: EdgeInsets.all(_sz(14, sc, min: 13, max: 17)),
+            decoration: BoxDecoration(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : Colors.black.withValues(alpha: 0.10),
-            ),
-            boxShadow: [
-              BoxShadow(
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
                 color: isDarkMode
-                    ? Colors.black.withValues(alpha: 0.25)
-                    : Colors.grey.withValues(alpha: 0.18),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.05),
               ),
-            ],
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(_sz(16, sc, min: 14, max: 20)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: isDarkMode ? 0.13 : 0.04,
+                  ),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(_sz(11, sc, min: 10, max: 12)),
-                      decoration: BoxDecoration(
-                        color: isDarkMode
-                            ? Colors.white.withValues(alpha: 0.10)
-                            : Colors.black.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        isLocked ? Icons.lock_rounded : Icons.play_arrow_rounded,
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        size: _sz(24, sc, min: 22, max: 26),
-                      ),
+                Container(
+                  width: _sz(52, sc, min: 48, max: 58),
+                  height: _sz(52, sc, min: 48, max: 58),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6C5CE7).withValues(
+                      alpha: isDarkMode ? 0.20 : 0.11,
                     ),
-                    SizedBox(width: _sz(12, sc, min: 10, max: 14)),
-                    Expanded(
-                      child: Text(
-                        '${song.artist} – ${song.title}',
-                        maxLines: 2,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    isLocked
+                        ? Icons.lock_outline_rounded
+                        : Icons.play_arrow_rounded,
+                    color: isDarkMode
+                        ? const Color(0xFFB8B0FF)
+                        : const Color(0xFF6C5CE7),
+                    size: _sz(23, sc, min: 21, max: 26),
+                  ),
+                ),
+                SizedBox(width: _sz(13, sc, min: 11, max: 16)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        song.title,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: titleFont,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w800,
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF171820),
+                          letterSpacing: -0.3,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        song.artist,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: _sz(12, sc, min: 11, max: 13),
+                          fontWeight: FontWeight.w500,
+                          color: isDarkMode
+                              ? Colors.white.withValues(alpha: 0.46)
+                              : const Color(0xFF171820).withValues(alpha: 0.48),
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      Row(
+                        children: [
+                          _buildInfoChip(
+                            icon: Icons.speed_rounded,
+                            label: '${song.bpm} BPM',
+                            isDarkMode: isDarkMode,
+                            sc: sc,
+                          ),
+                          SizedBox(width: _sz(7, sc, min: 6, max: 9)),
+                          _buildInfoChip(
+                            icon: Icons.timer_outlined,
+                            label: _durationText(song.durationMs),
+                            isDarkMode: isDarkMode,
+                            sc: sc,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(height: _sz(12, sc, min: 10, max: 14)),
-                Row(
-                  children: [
-                    _buildInfoChip(
-                      icon: Icons.speed_rounded,
-                      label: '${song.bpm} BPM',
-                      isDarkMode: isDarkMode,
-                      sc: sc,
-                    ),
-                    SizedBox(width: _sz(10, sc, min: 8, max: 12)),
-                    _buildInfoChip(
-                      icon: Icons.timer_outlined,
-                      label: _durationText(song.durationMs),
-                      isDarkMode: isDarkMode,
-                      sc: sc,
-                    ),
-                  ],
+                SizedBox(width: _sz(8, sc, min: 6, max: 10)),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 18,
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : Colors.black.withValues(alpha: 0.22),
                 ),
               ],
             ),
@@ -642,51 +710,54 @@ class _SongV2ViewState extends State<SongV2View> {
         onTap: () => _onSongTap(song, isConnected, bluetoothBloc, vm, isLocked),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDarkMode
-                  ? [
-                      const Color(0xFF1E293B).withValues(alpha: 0.80),
-                      const Color(0xFF334155).withValues(alpha: 0.60),
-                    ]
-                  : [
-                      Colors.white.withValues(alpha: 0.92),
-                      const Color(0xFFF1F5F9).withValues(alpha: 0.84),
-                    ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 24)),
+            color: isDarkMode
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 22)),
             border: Border.all(
               color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : Colors.black.withValues(alpha: 0.10),
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.05),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: isDarkMode ? 0.13 : 0.04,
+                ),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 24)),
+            borderRadius: BorderRadius.circular(_sz(20, sc, min: 18, max: 22)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  height: _sz(56, sc, min: 50, max: 62),
+                  height: _sz(62, sc, min: 56, max: 68),
                   child: Stack(
                     children: [
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isDarkMode
-                                ? const [Color(0xFF6366F1), Color(0xFF8B5CF6)]
-                                : const [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                          color: const Color(0xFF6C5CE7).withValues(
+                            alpha: isDarkMode ? 0.20 : 0.10,
                           ),
                         ),
                         child: Center(
-                          child: Icon(
-                            Icons.music_note_rounded,
-                            size: _sz(28, sc, min: 24, max: 34),
-                            color: Colors.white,
+                          child: Container(
+                            width: _sz(38, sc, min: 34, max: 44),
+                            height: _sz(38, sc, min: 34, max: 44),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6C5CE7),
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: Icon(
+                              Icons.music_note_rounded,
+                              size: _sz(21, sc, min: 19, max: 24),
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -718,8 +789,10 @@ class _SongV2ViewState extends State<SongV2View> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: _sz(12, sc, min: 11, max: 14),
-                            fontWeight: FontWeight.bold,
-                            color: isDarkMode ? Colors.white : Colors.black,
+                            fontWeight: FontWeight.w800,
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color(0xFF171820),
                             height: 1.05,
                           ),
                         ),
@@ -731,8 +804,9 @@ class _SongV2ViewState extends State<SongV2View> {
                           style: TextStyle(
                             fontSize: _sz(11, sc, min: 10, max: 13),
                             color: isDarkMode
-                                ? Colors.white.withValues(alpha: 0.70)
-                                : Colors.black.withValues(alpha: 0.70),
+                                ? Colors.white.withValues(alpha: 0.46)
+                                : const Color(0xFF171820)
+                                    .withValues(alpha: 0.48),
                             height: 1.05,
                           ),
                         ),
@@ -779,9 +853,9 @@ class _SongV2ViewState extends State<SongV2View> {
         ),
         decoration: BoxDecoration(
           color: isDarkMode
-              ? Colors.white.withValues(alpha: 0.10)
-              : Colors.black.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
+              ? Colors.white.withValues(alpha: 0.07)
+              : const Color(0xFFF2F1F8),
+          borderRadius: BorderRadius.circular(999),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -821,17 +895,17 @@ class _SongV2ViewState extends State<SongV2View> {
             Container(
               padding: EdgeInsets.all(_sz(26, sc, min: 20, max: 34)),
               decoration: BoxDecoration(
-                color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.black.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(24),
+                color: const Color(0xFF6C5CE7).withValues(
+                  alpha: isDarkMode ? 0.18 : 0.10,
+                ),
+                borderRadius: BorderRadius.circular(22),
               ),
               child: Icon(
-                Icons.music_note_rounded,
-                size: _sz(60, sc, min: 50, max: 72),
+                Icons.library_music_rounded,
+                size: _sz(48, sc, min: 42, max: 56),
                 color: isDarkMode
-                    ? Colors.white.withValues(alpha: 0.60)
-                    : Colors.black.withValues(alpha: 0.60),
+                    ? const Color(0xFFB8B0FF)
+                    : const Color(0xFF6C5CE7),
               ),
             ),
             SizedBox(height: _sz(18, sc, min: 14, max: 22)),
@@ -839,14 +913,17 @@ class _SongV2ViewState extends State<SongV2View> {
               _lastSearch.isNotEmpty ? 'no_songs_found'.tr() : 'empty'.tr(),
               style: TextStyle(
                 fontSize: _sz(22, sc, min: 18, max: 26),
-                fontWeight: FontWeight.bold,
-                color: isDarkMode ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w900,
+                color: isDarkMode ? Colors.white : const Color(0xFF171820),
+                letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: _sz(10, sc, min: 8, max: 14)),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: _sz(40, sc, min: 24, max: 56)),
+              padding: EdgeInsets.symmetric(
+                horizontal: _sz(40, sc, min: 24, max: 56),
+              ),
               child: Text(
                 _lastSearch.isNotEmpty
                     ? 'search_not_found_desc'.tr()
@@ -860,6 +937,31 @@ class _SongV2ViewState extends State<SongV2View> {
                 ),
               ),
             ),
+            if (_lastSearch.isNotEmpty) ...[
+              SizedBox(height: _sz(20, sc, min: 16, max: 24)),
+              FilledButton.icon(
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  '/song-request',
+                  arguments: _lastSearch,
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C5CE7),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: _sz(22, sc, min: 18, max: 28),
+                    vertical: _sz(13, sc, min: 11, max: 16),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.add_rounded),
+                label: Text(
+                  'request_song'.tr(),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
           ],
         ),
       );

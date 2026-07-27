@@ -1,63 +1,31 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
+
 import 'package:drumly/constants.dart';
 import 'package:drumly/models/user_model.dart';
+import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/enums.dart';
 import 'package:drumly/shared/request_helper.dart';
-import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserService {
-  // Locale kodunu tam metin isme çevirir
-  String _getLanguageFull(String code) {
-    switch (code) {
-      case 'tr':
-        return 'turkish';
-      case 'en':
-        return 'english';
-      case 'es':
-        return 'spanish';
-      case 'fr':
-        return 'french';
-      case 'ru':
-        return 'russian';
-      default:
-        return 'english';
-    }
-  }
+  static const _notificationDeviceIdKey = 'notification_device_id';
 
-  String getBaseUrlUser() => ApiServiceUrl.user;
-
-  /*----------------------------------------------------------------------
-                  Get User
-----------------------------------------------------------------------*/
   Future<UserModel?> getUser(BuildContext context) async {
-    final String url = '${ApiServiceUrl.baseUrl}users/me';
-
-    final response =
-        await RequestHelper.requestAsync(context, RequestType.get, url);
-
-    if (response != null) {
-      try {
-        final jsonResponse = json.decode(response);
-
-        // API response'da data field'i var, onu kullanmaliyiz
-        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
-          final userData = jsonResponse['data'];
-          return UserModel.fromJson(userData);
-        } else {
-          return null;
-        }
-      } catch (e) {
-        return null;
-      }
-    } else {
-      return null;
-    }
+    final response = await RequestHelper.requestAsync(
+      context,
+      RequestType.get,
+      ApiServiceUrl.endpoint('users/me'),
+    );
+    return _parseUser(response);
   }
 
-  /*----------------------------------------------------------------------
-                  Create or Update User - DÜZELTME
-----------------------------------------------------------------------*/
+  /// `GET /users/me` creates a missing profile in drumly-core. Profile updates
+  /// now accept only the user's display name.
   Future<UserModel?> createOrUpdateUser(
     BuildContext context, {
     required String firebaseToken,
@@ -65,192 +33,100 @@ class UserService {
     String? email,
     String? fcmToken,
   }) async {
-    // DOĞRU ENDPOINT: /users/me kullan (405 hatasını önlemek için)
-    final String url = '${ApiServiceUrl.baseUrl}users/me';
+    await StorageService.saveFirebaseToken(firebaseToken);
 
-    try {
-      // Uygulama dili tam metin olarak
-      final String languageFull = _getLanguageFull(EasyLocalization.of(context)?.locale.languageCode ?? 'en');
-      final Map<String, dynamic> userData = {
-        'firebase_token': firebaseToken,
-        if (name != null && name.isNotEmpty) 'name': name,
-        if (email != null && email.isNotEmpty) 'email': email,
-        if (fcmToken != null && fcmToken.isNotEmpty) 'fcm_token': fcmToken,
-        'language': languageFull,
-        'score': 0,
-      };
+    var user = await getUser(context);
+    if (user == null) return null;
 
-      // PUT method kullan (users/me endpoint'i için)
+    if (name != null && name.isNotEmpty && name != user.name) {
       final response = await RequestHelper.requestAsync(
         context,
-        RequestType.put, // POST değil PUT kullan
-        url,
-        userData,
+        RequestType.put,
+        ApiServiceUrl.endpoint('users/me'),
+        {'name': name},
       );
-      if (response != null && response.isNotEmpty) {
-        try {
-          final jsonResponse = json.decode(response);
-
-          // API response yapısını kontrol et
-          if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
-            return UserModel.fromJson(jsonResponse['data']);
-          } else if (jsonResponse['data'] != null) {
-            return UserModel.fromJson(jsonResponse['data']);
-          } else if (jsonResponse is Map<String, dynamic> &&
-              jsonResponse.containsKey('email')) {
-            return UserModel.fromJson(jsonResponse);
-          } else {
-            return null;
-          }
-        } catch (parseError) {
-          return null;
-        }
-      } else {
-        return null;
-      }
-    } catch (e) {
-      if (e is Exception) {}
-      return null;
+      user = _parseUser(response) ?? user;
     }
+
+    if (fcmToken != null && fcmToken.isNotEmpty) {
+      await updateFCMToken(context, fcmToken: fcmToken);
+    }
+    return user;
   }
 
-  /*----------------------------------------------------------------------
-                  Update Firebase Token Only
-----------------------------------------------------------------------*/
+  /// Firebase ID tokens are authentication credentials and are no longer
+  /// persisted in the user document.
   Future<UserModel?> updateFirebaseToken(
     BuildContext context, {
     required String userId,
     required String firebaseToken,
   }) async {
-    final String url = '${ApiServiceUrl.baseUrl}users/me/firebase-token';
-
-    try {
-      final Map<String, dynamic> tokenData = {
-        'firebase_token': firebaseToken,
-      };
-
-      final response = await RequestHelper.requestAsync(
-        context,
-        RequestType.put,
-        url,
-        tokenData,
-      );
-
-      if (response != null && response.isNotEmpty) {
-        final jsonResponse = json.decode(response);
-        if (jsonResponse['data'] != null) {
-          return UserModel.fromJson(jsonResponse['data']);
-        } else {
-          return UserModel.fromJson(jsonResponse);
-        }
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
+    await StorageService.saveFirebaseToken(firebaseToken);
+    return getUser(context);
   }
 
-  /*----------------------------------------------------------------------
-                  Update FCM Token Only - DÜZELTME
-----------------------------------------------------------------------*/
-  Future<UserModel?> updateFCMToken(
+  /// Register or refresh this installation through the notification-device
+  /// upsert endpoint.
+  Future<bool> updateFCMToken(
     BuildContext context, {
     required String fcmToken,
   }) async {
-    final String url = '${ApiServiceUrl.baseUrl}users/me/fcm-token';
+    if (fcmToken.isEmpty) return false;
 
-    try {
-      final Map<String, dynamic> tokenData = {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final locale = EasyLocalization.of(context)?.locale.languageCode ?? 'en';
+    final response = await RequestHelper.requestAsync(
+      context,
+      RequestType.post,
+      ApiServiceUrl.endpoint('users/me/notification-devices'),
+      {
+        'device_id': await _getOrCreateNotificationDeviceId(),
         'fcm_token': fcmToken,
-      };
+        'platform': Platform.isIOS ? 'ios' : 'android',
+        'app_version': packageInfo.version,
+        'language': locale,
+        'timezone': DateTime.now().timeZoneName,
+      },
+    );
 
-      final response = await RequestHelper.requestAsync(
-        context,
-        RequestType.put,
-        url,
-        tokenData,
-      );
-
-      if (response != null && response.isNotEmpty) {
-        final jsonResponse = json.decode(response);
-        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
-          return UserModel.fromJson(jsonResponse['data']);
-        } else if (jsonResponse['data'] != null) {
-          return UserModel.fromJson(jsonResponse['data']);
-        } else {
-          return UserModel.fromJson(jsonResponse);
-        }
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
+    if (response == null || response.isEmpty) return false;
+    final decoded = json.decode(response);
+    return decoded is Map<String, dynamic> && decoded['success'] == true;
   }
 
-  /*----------------------------------------------------------------------
-                  Separate FCM Token Update (Alternative)
-----------------------------------------------------------------------*/
   Future<bool> sendFCMTokenToServer(
     BuildContext context, {
     required String fcmToken,
-  }) async {
-    try {
-      final result = await updateFCMToken(context, fcmToken: fcmToken);
+  }) =>
+      updateFCMToken(context, fcmToken: fcmToken);
 
-      if (result != null) {
-        return true;
-      } else {
-        return false;
+  UserModel? _parseUser(String? response) {
+    if (response == null || response.isEmpty) return null;
+    try {
+      final decoded = json.decode(response);
+      if (decoded is Map<String, dynamic> &&
+          decoded['success'] == true &&
+          decoded['data'] is Map<String, dynamic>) {
+        return UserModel.fromJson(decoded['data'] as Map<String, dynamic>);
       }
-    } catch (e) {
-      return false;
+    } catch (_) {
+      return null;
     }
+    return null;
   }
 
-  /*----------------------------------------------------------------------
-                  Delete User Account
-----------------------------------------------------------------------*/
-  Future<bool> deleteAccount(BuildContext context) async {
-    final String url = '${ApiServiceUrl.baseUrl}users/me';
+  Future<String> _getOrCreateNotificationDeviceId() async {
+    final preferences = await SharedPreferences.getInstance();
+    final existing = preferences.getString(_notificationDeviceIdKey);
+    if (existing != null && existing.isNotEmpty) return existing;
 
-    try {
-      debugPrint('🗑️ Starting account deletion...');
-      debugPrint('🔗 DELETE request to: $url');
-      
-      final response = await RequestHelper.requestAsync(
-        context,
-        RequestType.delete,
-        url,
-      );
-
-      debugPrint('📥 Delete response received: $response');
-
-      if (response != null && response.isNotEmpty) {
-        try {
-          final jsonResponse = json.decode(response);
-          debugPrint('📦 Parsed response: $jsonResponse');
-          
-          // Backend'den gelen response yapısını kontrol et
-          // 404 (user not found) = zaten silinmiş = başarılı kabul et
-          final bool isSuccess = jsonResponse['status'] == 'success' ||
-              jsonResponse['success'] == true ||
-              (jsonResponse['success'] == false && 
-               jsonResponse['message']?.toString().contains('bulunamadı') == true);
-          
-          debugPrint('✅ Delete result: $isSuccess');
-          return isSuccess;
-        } catch (parseError) {
-          debugPrint('❌ JSON parse error: $parseError');
-          debugPrint('Raw response: $response');
-          return false;
-        }
-      }
-      
-      debugPrint('❌ No response received from server');
-      return false;
-    } catch (e) {
-      debugPrint('❌ Error deleting account: $e');
-      return false;
-    }
+    final random = Random.secure();
+    final suffix = List.generate(
+      16,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+    final deviceId = 'mobile-${DateTime.now().microsecondsSinceEpoch}-$suffix';
+    await preferences.setString(_notificationDeviceIdKey, deviceId);
+    return deviceId;
   }
 }

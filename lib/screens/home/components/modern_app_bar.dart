@@ -12,77 +12,78 @@ class ModernAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<BluetoothBloc>().state;
     final isConnected = state.isConnected;
-    final deviceName = state.connectedDevice?.advName ?? 'Unknown Device';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 360;
-    final isMediumScreen = screenWidth < 600;
-
-    return Container(
+    return Padding(
       padding: EdgeInsets.fromLTRB(
         isSmallScreen ? 16 : 20,
-        20,
+        18,
         isSmallScreen ? 16 : 20,
-        isSmallScreen ? 16 : 20,
+        8,
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                flex: isSmallScreen ? 2 : 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [Color(0xFF60A5FA), Color(0xFF34D399)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ).createShader(bounds),
-                      child: Text(
-                        'Drumly',
-                        style: TextStyle(
-                          fontSize:
-                              isSmallScreen ? 24 : (isMediumScreen ? 28 : 32),
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    if (!isSmallScreen) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'followTheBeat'.tr(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDarkMode
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.black.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ],
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFF6C5CE7),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF6C5CE7).withValues(alpha: 0.22),
+                  blurRadius: 16,
+                  offset: const Offset(0, 7),
                 ),
-              ),
-              Flexible(
-                flex: isSmallScreen ? 1 : 2,
-                child: BluetoothBanner(
-                  isConnected: isConnected,
-                  deviceName: deviceName,
-                  isDarkMode: isDarkMode,
-                  isSmallScreen: isSmallScreen,
-                  isMediumScreen: isMediumScreen,
+              ],
+            ),
+            child: const Icon(
+              Icons.graphic_eq_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Drumly',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: isSmallScreen ? 22 : 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.8,
+                    height: 1,
+                  ),
                 ),
-              ),
-              NotificationButton(
-                isDarkMode: isDarkMode,
-                isSmallScreen: isSmallScreen,
-              ),
-            ],
+                const SizedBox(height: 5),
+                Text(
+                  'followTheBeat'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.46),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          BluetoothBanner(
+            isConnected: isConnected,
+            isDarkMode: isDarkMode,
+          ),
+          const SizedBox(width: 8),
+          NotificationButton(
+            isDarkMode: isDarkMode,
+            isSmallScreen: isSmallScreen,
           ),
         ],
       ),

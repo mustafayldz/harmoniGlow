@@ -6,7 +6,7 @@ import 'package:drumly/shared/request_helper.dart';
 import 'package:flutter/material.dart';
 
 class SongV2Service {
-  String getBaseUrlSongV2() => '${ApiServiceUrl.baseUrl}songsv2';
+  String getBaseUrlSongV2() => ApiServiceUrl.endpoint('songs');
 
   /*----------------------------------------------------------------------
                   Get SongsV2 - Paginated list
@@ -38,7 +38,9 @@ class SongV2Service {
         uri.toString(),
       );
 
-      debugPrint('📥 Response received: ${response?.substring(0, response.length > 200 ? 200 : response.length)}...');
+      debugPrint(
+        '📥 Response received: ${response?.substring(0, response.length > 200 ? 200 : response.length)}...',
+      );
 
       if (response == null || response.isEmpty) {
         debugPrint('❌ Empty response from server');
@@ -99,7 +101,7 @@ class SongV2Service {
     int limit = 20,
     int offset = 0,
   }) async {
-    final String url = '${getBaseUrlSongV2()}/search';
+    final String url = getBaseUrlSongV2();
     debugPrint('🔍 Searching songs: $url with query: $query');
 
     try {

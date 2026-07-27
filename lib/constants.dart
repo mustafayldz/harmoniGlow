@@ -24,7 +24,6 @@ class AppColors {
   static const white = Color(0xFFFFFFFF);
 
   // Additional colors from the cards
-  static const trainingGreen = Color(0xFF22C55E); // Training
   static const songsPink = Color(0xFFEC4899); // Songs
   static const drumBlue = Color(0xFF3B82F6); // My Drum
   static const settingsRed = Color(0xFFEF4444); // Settings
@@ -40,11 +39,27 @@ class AppColors {
 }
 
 class ApiServiceUrl {
-  static const baseUrl = Env.apiBaseUrl;
+  static String get baseUrl {
+    var value = Env.apiBaseUrl.trim();
+    while (value.endsWith('/')) {
+      value = value.substring(0, value.length - 1);
+    }
 
-  static const user = '${baseUrl}users/';
-  static const song = '${baseUrl}songs/';
-  static const beat = '${baseUrl}beats/';
+    if (value.endsWith('/api')) {
+      value = '$value/v1';
+    } else if (!value.endsWith('/api/v1')) {
+      value = '$value/api/v1';
+    }
+    return '$value/';
+  }
+
+  static String endpoint(String path) {
+    final normalizedPath = path.replaceFirst(RegExp(r'^/+'), '');
+    return '$baseUrl$normalizedPath';
+  }
+
+  static String get user => endpoint('users/');
+  static String get song => endpoint('songs/');
 }
 
 class DrumParts {

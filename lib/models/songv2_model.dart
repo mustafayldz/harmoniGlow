@@ -1,7 +1,15 @@
-/// songsv2 API response modeli
+/// Songs API response model.
 class SongV2Model {
   SongV2Model({
-    required this.songv2Id, required this.v, required this.title, required this.artist, required this.bpm, required this.ts, required this.durationMs, required this.source, this.id,
+    required this.songv2Id,
+    required this.v,
+    required this.title,
+    required this.artist,
+    required this.bpm,
+    required this.ts,
+    required this.durationMs,
+    required this.source,
+    this.id,
     this.syncMs = 0,
     this.lookaheadMs = 2200,
     this.hitMs = 80,
@@ -116,7 +124,7 @@ class SongSource {
   factory SongSource.fromJson(Map<String, dynamic> json) => SongSource(
         type: json['type'] as String,
         url: json['url'] as String,
-        videoId: json['video_id'] as String,
+        videoId: json['video_id'] as String? ?? '',
       );
   final String type; // "youtube"
   final String url;
@@ -229,40 +237,63 @@ class ChartEvent {
 class SongV2Response {
   SongV2Response({
     required this.success,
-    required this.message,
+    this.message,
     this.data,
     this.total,
     this.limit,
     this.offset,
+    this.page,
+    this.totalPages,
   });
 
-  factory SongV2Response.fromJson(Map<String, dynamic> json) => SongV2Response(
-        success: json['success'] as bool,
-        message: json['message'] as String,
-        data: json['data'] != null
-            ? (json['data'] is List
-                ? (json['data'] as List<dynamic>)
-                    .map((e) => SongV2Model.fromJson(e as Map<String, dynamic>))
-                    .toList()
-                : [SongV2Model.fromJson(json['data'] as Map<String, dynamic>)])
-            : null,
-        total: json['total'] as int?,
-        limit: json['limit'] as int?,
-        offset: json['offset'] as int?,
-      );
+  factory SongV2Response.fromJson(Map<String, dynamic> json) {
+    final meta = json['meta'] as Map<String, dynamic>?;
+    return SongV2Response(
+      success: json['success'] as bool? ?? false,
+      message: json['message'] as String?,
+      data: json['data'] != null
+          ? (json['data'] is List
+              ? (json['data'] as List<dynamic>)
+                  .map(
+                    (e) => SongV2Model.fromJson(e as Map<String, dynamic>),
+                  )
+                  .toList()
+              : [
+                  SongV2Model.fromJson(
+                    json['data'] as Map<String, dynamic>,
+                  ),
+                ])
+          : null,
+      total: (meta?['total'] ?? json['total']) as int?,
+      limit: (meta?['limit'] ?? json['limit']) as int?,
+      offset: json['offset'] as int?,
+      page: meta?['page'] as int?,
+      totalPages: meta?['total_pages'] as int?,
+    );
+  }
   final bool success;
-  final String message;
+  final String? message;
   final List<SongV2Model>? data;
   final int? total;
   final int? limit;
   final int? offset;
+  final int? page;
+  final int? totalPages;
 
   Map<String, dynamic> toJson() => {
         'success': success,
-        'message': message,
+        if (message != null) 'message': message,
         if (data != null) 'data': data!.map((e) => e.toJson()).toList(),
-        if (total != null) 'total': total,
-        if (limit != null) 'limit': limit,
         if (offset != null) 'offset': offset,
+        if (total != null ||
+            limit != null ||
+            page != null ||
+            totalPages != null)
+          'meta': {
+            if (page != null) 'page': page,
+            if (limit != null) 'limit': limit,
+            if (total != null) 'total': total,
+            if (totalPages != null) 'total_pages': totalPages,
+          },
       };
 }

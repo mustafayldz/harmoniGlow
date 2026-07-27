@@ -1,128 +1,73 @@
 import 'package:drumly/screens/bluetooth/find_devices_view.dart';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
 
 class BluetoothBanner extends StatelessWidget {
   const BluetoothBanner({
     required this.isConnected,
-    required this.deviceName,
     required this.isDarkMode,
-    required this.isSmallScreen,
-    required this.isMediumScreen,
     super.key,
   });
   final bool isConnected;
-  final String deviceName;
   final bool isDarkMode;
-  final bool isSmallScreen;
-  final bool isMediumScreen;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const FindDevicesView()),
-        ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: isSmallScreen ? 32 : 36,
-          padding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 6 : 8, // Padding'i biraz azalttık
-            vertical: 4,
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const FindDevicesView()),
           ),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isConnected
-                  ? [const Color(0xFF22C55E), const Color(0xFF16A34A)]
-                  : [const Color(0xFFEF4444), const Color(0xFFDC2626)],
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isDarkMode
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.09)
+                    : Colors.black.withValues(alpha: 0.06),
+              ),
             ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: (isConnected ? Colors.green : Colors.red)
-                    .withValues(alpha: 0.2),
-                blurRadius: 3,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isConnected
-                    ? Icons.bluetooth_connected
-                    : Icons.bluetooth_disabled,
-                color: Colors.white,
-                size: isSmallScreen ? 12 : 14,
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                // ConstrainedBox yerine Flexible kullanıyoruz
-                child: Text(
-                  _getCompactDisplayText(),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isSmallScreen ? 9 : 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(
+                  isConnected
+                      ? Icons.bluetooth_connected_rounded
+                      : Icons.bluetooth_rounded,
+                  color: isDarkMode
+                      ? Colors.white.withValues(alpha: 0.84)
+                      : const Color(0xFF252733),
+                  size: 20,
                 ),
-              ),
-            ],
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: isConnected
+                          ? const Color(0xFF3ED598)
+                          : const Color(0xFF9A9CAA),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color:
+                            isDarkMode ? const Color(0xFF12151C) : Colors.white,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
-
-  String _getCompactDisplayText() {
-    if (!isConnected) {
-      // Lokalizasyonlu text'leri kullan
-      final notConnectedText = 'notConnected'.tr();
-
-      // Küçük ekranlar için kısaltılmış versiyon
-      if (isSmallScreen) {
-        // "Not Connected" -> "No BT" gibi kısa alternatifler
-        if (notConnectedText.length > 8) {
-          return 'OFF'; // Çok uzunsa basit "OFF" kullan
-        }
-      }
-      return notConnectedText;
-    }
-
-    if (deviceName.isEmpty) {
-      final connectedText = 'connected'.tr();
-
-      // Küçük ekranlar için kısaltılmış versiyon
-      if (isSmallScreen) {
-        if (connectedText.length > 8) {
-          return 'ON'; // Çok uzunsa basit "ON" kullan
-        }
-      }
-      return connectedText;
-    }
-
-    // Cihaz adı varsa, cihaz adını göster
-    final maxLength = isSmallScreen ? 6 : 10;
-
-    // Özel durumlar
-    if (deviceName.toLowerCase().contains('drumly')) {
-      return 'Drumly';
-    }
-
-    if (deviceName.toLowerCase().startsWith('bt')) {
-      return deviceName.substring(
-        0,
-        deviceName.length > maxLength ? maxLength : deviceName.length,
-      );
-    }
-
-    // İlk kelimeyi al
-    final firstWord = deviceName.split(' ').first;
-    if (firstWord.length <= maxLength) {
-      return firstWord;
-    }
-
-    return deviceName.substring(0, maxLength);
-  }
 }

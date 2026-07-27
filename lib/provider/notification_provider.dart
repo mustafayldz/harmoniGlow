@@ -1,70 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 import 'dart:convert';
 
-class NotificationModel {
-  NotificationModel({
-    required this.id,
-    required this.title,
-    required this.body,
-    required this.timestamp,
-    required this.data,
-    this.isRead = false,
-  });
-
-  factory NotificationModel.fromRemoteMessage(RemoteMessage message) =>
-      NotificationModel(
-        id: message.messageId ??
-            DateTime.now().millisecondsSinceEpoch.toString(),
-        title: message.notification?.title ?? 'Drumly Notification',
-        body: message.notification?.body ?? '',
-        timestamp: DateTime.now(),
-        data: message.data,
-      );
-
-  factory NotificationModel.fromJson(Map<String, dynamic> json) =>
-      NotificationModel(
-        id: json['id'],
-        title: json['title'],
-        body: json['body'],
-        timestamp: DateTime.fromMillisecondsSinceEpoch(json['timestamp']),
-        data: Map<String, dynamic>.from(json['data'] ?? {}),
-        isRead: json['isRead'] ?? false,
-      );
-  final String id;
-  final String title;
-  final String body;
-  final DateTime timestamp;
-  final Map<String, dynamic> data;
-  final bool isRead;
-
-  NotificationModel copyWith({
-    String? id,
-    String? title,
-    String? body,
-    DateTime? timestamp,
-    Map<String, dynamic>? data,
-    bool? isRead,
-  }) =>
-      NotificationModel(
-        id: id ?? this.id,
-        title: title ?? this.title,
-        body: body ?? this.body,
-        timestamp: timestamp ?? this.timestamp,
-        data: data ?? this.data,
-        isRead: isRead ?? this.isRead,
-      );
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'body': body,
-        'timestamp': timestamp.millisecondsSinceEpoch,
-        'data': data,
-        'isRead': isRead,
-      };
-}
+import 'package:drumly/models/notification_model.dart';
+import 'package:drumly/services/notification_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationProvider with ChangeNotifier {
   NotificationProvider() {
@@ -73,15 +14,51 @@ class NotificationProvider with ChangeNotifier {
   }
   static const int maxNotifications = 20; // Maximum 20 notifications
   final List<NotificationModel> _notifications = [];
+  final NotificationService _notificationService = NotificationService();
   int _unreadCount = 0;
+  bool _isSyncing = false;
 
   List<NotificationModel> get notifications => _notifications;
   int get unreadCount => _unreadCount;
   bool get hasUnreadNotifications => _unreadCount > 0;
   int get notificationCount => _notifications.length;
   int get maxNotificationLimit => maxNotifications;
+  bool get isSyncing => _isSyncing;
+
+  Future<void> syncNotifications(BuildContext context) async {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    notifyListeners();
+    try {
+      final page = await _notificationService.getNotifications(context);
+      if (page == null) return;
+      _notifications
+        ..clear()
+        ..addAll(page.notifications);
+      _unreadCount = page.unreadCount;
+      await _saveNotifications();
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+  }
 
   void addNotification(NotificationModel notification) {
+    final existingIndex =
+        _notifications.indexWhere((item) => item.id == notification.id);
+    if (existingIndex != -1) {
+      // Aynı push daha sonra notification tap veya API sync ile tekrar
+      // geldiğinde unread sayısını iki kez artırma.
+      final existing = _notifications.removeAt(existingIndex);
+      _notifications.insert(
+        0,
+        notification.copyWith(isRead: existing.isRead),
+      );
+      notifyListeners();
+      unawaited(_saveNotifications());
+      return;
+    }
+
     // Add new notification at the beginning (latest first)
     _notifications.insert(0, notification);
 
@@ -111,7 +88,7 @@ class NotificationProvider with ChangeNotifier {
     );
 
     notifyListeners();
-    _saveNotifications();
+    unawaited(_saveNotifications());
   }
 
   void addNotificationFromRemoteMessage(RemoteMessage message) {
@@ -119,13 +96,14 @@ class NotificationProvider with ChangeNotifier {
     addNotification(notification);
   }
 
-  void markAsRead(String notificationId) {
+  void markAsRead(BuildContext context, String notificationId) {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index != -1 && !_notifications[index].isRead) {
       _notifications[index] = _notifications[index].copyWith(isRead: true);
       _unreadCount = (_unreadCount - 1).clamp(0, _notifications.length);
       notifyListeners();
       _saveNotifications();
+      unawaited(_notificationService.markAsRead(context, notificationId));
     }
   }
 
@@ -139,7 +117,7 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  void markAllAsRead() {
+  void markAllAsRead(BuildContext context) {
     for (int i = 0; i < _notifications.length; i++) {
       if (!_notifications[i].isRead) {
         _notifications[i] = _notifications[i].copyWith(isRead: true);
@@ -148,9 +126,10 @@ class NotificationProvider with ChangeNotifier {
     _unreadCount = 0;
     notifyListeners();
     _saveNotifications();
+    unawaited(_notificationService.markAllAsRead(context));
   }
 
-  void removeNotification(String notificationId) {
+  void removeNotification(BuildContext context, String notificationId) {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index != -1) {
       if (!_notifications[index].isRead) {
@@ -159,6 +138,9 @@ class NotificationProvider with ChangeNotifier {
       _notifications.removeAt(index);
       notifyListeners();
       _saveNotifications();
+      unawaited(
+        _notificationService.deleteNotification(context, notificationId),
+      );
     }
   }
 

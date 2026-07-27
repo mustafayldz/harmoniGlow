@@ -17,8 +17,12 @@ class FirebaseNotificationService {
       FlutterLocalNotificationsPlugin();
 
   String? _fcmToken;
+  bool _isInitialized = false;
+
   Future<String?>? get fcmToken async {
-    _fcmToken ??= await _firebaseMessaging.getToken();
+    if (_fcmToken == null || _fcmToken!.isEmpty) {
+      await _getToken();
+    }
     return _fcmToken;
   }
 
@@ -30,6 +34,8 @@ class FirebaseNotificationService {
   /// Firebase Messaging'i başlat
   /// Ağ hatalarında graceful degradation - uygulama çalışmaya devam eder
   Future<void> initialize() async {
+    if (_isInitialized) return;
+
     try {
       // İzin ve local notification işlemlerini paralel başlat
       // Bu işlemler ağ gerektirmez
@@ -39,7 +45,10 @@ class FirebaseNotificationService {
       ]).timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          developer.log('⚠️ Permission/Local notification timeout', name: 'FCM');
+          developer.log(
+            '⚠️ Permission/Local notification timeout',
+            name: 'FCM',
+          );
           return [null, null];
         },
       );
@@ -56,9 +65,15 @@ class FirebaseNotificationService {
           final isNetworkError = e.toString().contains('unavailable') ||
               e.toString().contains('network');
           if (isNetworkError) {
-            developer.log('🌐 FCM Token ağ hatası - daha sonra alınacak', name: 'FCM');
+            developer.log(
+              '🌐 FCM Token ağ hatası - daha sonra alınacak',
+              name: 'FCM',
+            );
           } else {
-            developer.log('FCM Token error (will retry later): $e', name: 'FCM');
+            developer.log(
+              'FCM Token error (will retry later): $e',
+              name: 'FCM',
+            );
           }
         }),
       );
@@ -67,7 +82,10 @@ class FirebaseNotificationService {
       _firebaseMessaging.onTokenRefresh.listen((token) {
         _fcmToken = token;
         onTokenRefresh?.call(token);
-        developer.log('FCM Token refreshed: ${token.substring(0, 20)}...', name: 'FCM');
+        developer.log(
+          'FCM Token refreshed: ${_maskedToken(token)}',
+          name: 'FCM',
+        );
       });
 
       // Foreground mesaj dinleyicisi
@@ -79,12 +97,16 @@ class FirebaseNotificationService {
       // Uygulama kapalıyken gelen mesajları kontrol et
       unawaited(_checkInitialMessage());
 
-      developer.log('✅ Firebase Messaging initialized successfully', name: 'FCM');
+      _isInitialized = true;
+      developer.log(
+        '✅ Firebase Messaging initialized successfully',
+        name: 'FCM',
+      );
     } catch (e) {
       final isNetworkError = e.toString().contains('unavailable') ||
           e.toString().contains('network') ||
           e.toString().contains('timeout');
-      
+
       if (isNetworkError) {
         developer.log(
           '🌐 Firebase Messaging: Ağ bağlantısı yok - bildirimler daha sonra aktif olacak',
@@ -104,6 +126,10 @@ class FirebaseNotificationService {
   /// İzin iste
   Future<void> _requestPermission() async {
     final settings = await _firebaseMessaging.requestPermission();
+
+    // Foreground'da bildirimi local notification olarak kendimiz gösteriyoruz.
+    // iOS sistem sunumunu kapalı tutarak çift bildirim oluşmasını engelle.
+    await _firebaseMessaging.setForegroundNotificationPresentationOptions();
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       developer.log('User granted permission', name: 'FCM');
@@ -168,8 +194,12 @@ class FirebaseNotificationService {
         }
       }
 
-      _fcmToken = await _firebaseMessaging.getToken();
-      developer.log('FCM Token: $_fcmToken', name: 'FCM');
+      final token = await _firebaseMessaging.getToken();
+      _fcmToken = token;
+      if (token != null && token.isNotEmpty) {
+        developer.log('FCM Token: ${_maskedToken(token)}', name: 'FCM');
+        onTokenRefresh?.call(token);
+      }
     } catch (e) {
       developer.log('Failed to get FCM token', name: 'FCM', error: e);
     }
@@ -210,7 +240,17 @@ class FirebaseNotificationService {
   /// Local notification göster
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
-    if (notification == null) return;
+    final title =
+        notification?.title ?? message.data['_title'] ?? message.data['title'];
+    final body =
+        notification?.body ?? message.data['_body'] ?? message.data['body'];
+    if ((title == null || title.isEmpty) && (body == null || body.isEmpty)) {
+      developer.log(
+        'Foreground message has no displayable title/body',
+        name: 'FCM',
+      );
+      return;
+    }
 
     const androidDetails = AndroidNotificationDetails(
       'drumly_channel',
@@ -218,24 +258,29 @@ class FirebaseNotificationService {
       channelDescription: 'Drumly app notifications',
       importance: Importance.high,
       priority: Priority.high,
-      // Ses ayarını kaldırdık - sistem varsayılan sesini kullanacak
+      icon: 'ic_notification',
     );
 
-    const iosDetails = DarwinNotificationDetails(
-        // Ses ayarını kaldırdık - sistem varsayılan sesini kullanacak
-        );
+    const iosDetails = DarwinNotificationDetails();
 
     const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
+    final payload = <String, dynamic>{
+      ...message.data,
+      if (title != null) '_title': title,
+      if (body != null) '_body': body,
+      if (message.messageId != null) '_message_id': message.messageId,
+    };
+
     await _localNotifications.show(
-      message.messageId.hashCode,
-      notification.title,
-      notification.body,
+      (message.data['notification_id'] ?? message.messageId).hashCode,
+      title,
+      body,
       details,
-      payload: jsonEncode(message.data),
+      payload: jsonEncode(payload),
     );
   }
 
@@ -305,7 +350,15 @@ class FirebaseNotificationService {
       await _firebaseMessaging.deleteToken();
       await Future.delayed(const Duration(milliseconds: 500));
       _fcmToken = await _firebaseMessaging.getToken();
-      developer.log('FCM Token refreshed: $_fcmToken', name: 'FCM');
+      if (_fcmToken != null && _fcmToken!.isNotEmpty) {
+        developer.log(
+          'FCM Token refreshed: ${_maskedToken(_fcmToken!)}',
+          name: 'FCM',
+        );
+      }
+      if (_fcmToken != null && _fcmToken!.isNotEmpty) {
+        onTokenRefresh?.call(_fcmToken!);
+      }
       return _fcmToken;
     } catch (e) {
       developer.log('Failed to refresh FCM token', name: 'FCM', error: e);
@@ -318,7 +371,11 @@ class FirebaseNotificationService {
   Future<String?> getTokenManually() async {
     const maxRetries = 3;
     // Firebase Installations Service'in hazır olması için daha uzun bekleme
-    const retryDelays = [Duration(seconds: 3), Duration(seconds: 5), Duration(seconds: 8)];
+    const retryDelays = [
+      Duration(seconds: 3),
+      Duration(seconds: 5),
+      Duration(seconds: 8),
+    ];
 
     for (int i = 0; i < maxRetries; i++) {
       try {
@@ -342,7 +399,7 @@ class FirebaseNotificationService {
         final isNetworkError = e.toString().contains('unavailable') ||
             e.toString().contains('network') ||
             e.toString().contains('timeout');
-        
+
         if (isNetworkError) {
           developer.log(
             '🌐 Ağ bağlantısı sorunu - FCM Token daha sonra alınacak (${i + 1}/$maxRetries)',
@@ -354,7 +411,7 @@ class FirebaseNotificationService {
             name: 'FCM',
           );
         }
-        
+
         if (i < maxRetries - 1) {
           await Future.delayed(retryDelays[i]);
         }
@@ -375,7 +432,10 @@ class FirebaseNotificationService {
       final apnsToken = await _firebaseMessaging.getAPNSToken();
 
       if (apnsToken != null) {
-        developer.log('APNS Token: $apnsToken', name: 'FCM');
+        developer.log(
+          'APNS Token: ${_maskedToken(apnsToken)}',
+          name: 'FCM',
+        );
       } else {
         await Future.delayed(const Duration(seconds: 2));
 
@@ -394,6 +454,11 @@ class FirebaseNotificationService {
       developer.log('APNS token alma hatası: $e', name: 'FCM');
       developer.log('Failed to get APNS token', name: 'FCM', error: e);
     }
+  }
+
+  String _maskedToken(String token) {
+    final visibleLength = token.length < 12 ? token.length : 12;
+    return '${token.substring(0, visibleLength)}…';
   }
 }
 

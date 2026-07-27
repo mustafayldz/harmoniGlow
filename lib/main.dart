@@ -91,7 +91,7 @@ void _configureSystemUI() {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  
+
   // Immersive mode - async ama bloklamaz
   unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
 }
@@ -128,9 +128,10 @@ Future<void> _runBackgroundTasks() async {
     // 2. Firebase Notification - 1 saniye sonra
     Future.delayed(const Duration(seconds: 1), () async {
       try {
-        await FirebaseNotificationService().initialize();
+        // Callback'ler initial message ve ilk token alınmadan önce bağlı olmalı.
         NotificationHandler.initialize();
-        
+        await FirebaseNotificationService().initialize();
+
         // Topic subscription - arka planda
         unawaited(
           NotificationHandler.subscribeToDefaultTopics().catchError((e) {
@@ -138,7 +139,7 @@ Future<void> _runBackgroundTasks() async {
             return null;
           }),
         );
-        
+
         debugPrint('✅ Notification services initialized');
       } catch (e) {
         debugPrint('⚠️ Notification init error: $e');
@@ -163,7 +164,6 @@ Future<void> _runBackgroundTasks() async {
         }),
       );
     });
-
   } catch (e) {
     debugPrint('❌ Background tasks error: $e');
   }
@@ -217,21 +217,21 @@ class Drumly extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-    // Selector ile sadece isDarkMode değiştiğinde rebuild
-    Selector<AppProvider, bool>(
-      selector: (_, provider) => provider.isDarkMode,
-      builder: (context, isDarkMode, child) => MaterialApp(
-        navigatorKey: navigatorKey,
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: context.localizationDelegates,
-        supportedLocales: context.supportedLocales,
-        locale: context.locale,
-        navigatorObservers: [_analyticsObserver],
-        theme: _lightTheme,
-        darkTheme: _darkTheme,
-        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-        initialRoute: AppRoute.getInitialRoute(),
-        routes: AppRoute.getRoute(),
-      ),
-    );
+      // Selector ile sadece isDarkMode değiştiğinde rebuild
+      Selector<AppProvider, bool>(
+        selector: (_, provider) => provider.isDarkMode,
+        builder: (context, isDarkMode, child) => MaterialApp(
+          navigatorKey: navigatorKey,
+          debugShowCheckedModeBanner: false,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          locale: context.locale,
+          navigatorObservers: [_analyticsObserver],
+          theme: _lightTheme,
+          darkTheme: _darkTheme,
+          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          initialRoute: AppRoute.getInitialRoute(),
+          routes: AppRoute.getRoute(),
+        ),
+      );
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// 🎨 Shared App Gradient Themes
 /// Centralized gradient definitions to avoid duplication across screens
-/// Used in: Settings, Songs, Training, Home, Player, Notifications, etc.
+/// Used in: Settings, Songs, Home, Player, Notifications, etc.
 abstract final class AppGradients {
   // ===== CACHED GRADIENT LISTS =====
   // Pre-computed to avoid repeated allocations

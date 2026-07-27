@@ -7,6 +7,7 @@ import 'package:drumly/provider/app_provider.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:drumly/shared/enums.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -26,12 +27,22 @@ class RequestHelper {
     appProvider.setLoading(true);
 
     final StorageService storageService = StorageService();
-    String? token = await storageService.getFirebaseToken();
+    String? token;
+    try {
+      token = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (token != null && token.isNotEmpty) {
+        await StorageService.saveFirebaseToken(token);
+      }
+    } catch (_) {
+      token = await storageService.getFirebaseToken();
+    }
 
     if (token != null && token.isNotEmpty) {
       if (isJwtExpired(token)) {
         token = await getValidFirebaseToken();
       }
+    } else {
+      token = await storageService.getFirebaseToken();
     }
 
     final HttpClient client = HttpClient();
@@ -126,7 +137,7 @@ class RequestHelper {
         default:
           debugPrint('❓ Unexpected status code: ${response.statusCode}');
       }
-      
+
       debugPrint('Response details: $result');
       appProvider.setLoading(false);
       return null;

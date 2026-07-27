@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drumly/services/firebase_notification_service.dart';
@@ -88,9 +89,9 @@ class NotificationHandler {
     if (context != null) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       if (userProvider.isLoggedIn) {
-        userProvider.updateFCMToken(context, token);
-      } else {}
-    } else {}
+        unawaited(userProvider.updateFCMToken(context, token));
+      }
+    }
   }
 
   /// Topic'lere abone ol
@@ -111,7 +112,7 @@ class NotificationHandler {
 
   /// Debug için token'ı manuel olarak yazdır
   static Future<void> printCurrentToken() async {
-    final token = _notificationService.fcmToken;
+    final token = await _notificationService.fcmToken;
 
     if (token == null) {
       await _notificationService.getTokenManually();
@@ -133,10 +134,17 @@ class NotificationHandler {
 
       // Yeni notification'ı oluştur
       final newNotification = {
-        'id': message.messageId ??
+        'id': message.data['notification_id'] ??
+            message.messageId ??
             DateTime.now().millisecondsSinceEpoch.toString(),
-        'title': message.notification?.title ?? 'Drumly Notification',
-        'body': message.notification?.body ?? '',
+        'title': message.notification?.title ??
+            message.data['_title'] ??
+            message.data['title'] ??
+            'Drumly Notification',
+        'body': message.notification?.body ??
+            message.data['_body'] ??
+            message.data['body'] ??
+            '',
         'timestamp': DateTime.now().millisecondsSinceEpoch,
         'data': message.data,
         'isRead': false,

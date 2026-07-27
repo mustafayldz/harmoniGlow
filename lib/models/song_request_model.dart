@@ -1,124 +1,43 @@
-
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-
-SongRequestModel songRequestModelFromJson(String str) =>
-    SongRequestModel.fromJson(json.decode(str));
-
-String songRequestModelToJson(SongRequestModel data) =>
-    json.encode(data.toJson());
-
 class SongRequestModel {
-  SongRequestModel({
-    required this.artistName,
+  const SongRequestModel({
     required this.songTitle,
     this.requestId,
     this.userId,
-    this.userEmail,
-    this.userName,
-    this.songLink,
-    this.albumName,
-    this.genre,
-    this.releaseYear,
-    this.language,
-    this.description,
+    this.artist,
+    this.notes,
     this.status = 'pending',
-    this.priority = 'normal',
+    this.publishedSongId,
     this.createdAt,
+    this.updatedAt,
   });
 
-  factory SongRequestModel.fromJson(Map<String, dynamic> json) {
-    // Debug log to see incoming JSON
-    debugPrint('🔍 SongRequestModel.fromJson received: $json');
-
-    return SongRequestModel(
-      requestId: json['request_id'] ?? json['id'],
-      userId: json['user_id'],
-      userEmail: json['user_email'],
-      userName: json['user_name'],
-      artistName: json['artist_name'] ?? json['artist'] ?? '',
-      songTitle: json['song_title'] ?? json['title'] ?? json['song_name'] ?? '',
-      songLink: json['song_link'] ?? json['link'],
-      albumName: json['album_name'] ?? json['album'],
-      genre: json['genre'],
-      releaseYear: json['release_year'],
-      language: json['language'],
-      description: json['description'] ?? json['note'] ?? json['comment'],
-      status: json['status'] ?? 'pending',
-      priority: json['priority'] ?? 'normal',
-      createdAt: json['created_at'] == null
-          ? null
-          : DateTime.parse(json['created_at']),
-    );
-  }
-
-  String? requestId;
-  String? userId;
-  String? userEmail;
-  String? userName;
-  String artistName;
-  String songTitle;
-  String? songLink;
-  String? albumName;
-  String? genre;
-  int? releaseYear;
-  String? language;
-  String? description;
-  String status; // pending, approved, rejected
-  String priority; // low, normal, high
-  DateTime? createdAt;
-
-  Map<String, dynamic> toJson() => {
-        'request_id': requestId,
-        'user_id': userId,
-        'user_email': userEmail,
-        'user_name': userName,
-        'artist_name': artistName,
-        'song_title': songTitle,
-        'song_link': songLink,
-        'album_name': albumName,
-        'genre': genre,
-        'release_year': releaseYear,
-        'language': language,
-        'description': description,
-        'status': status,
-        'priority': priority,
-        'created_at': createdAt?.toIso8601String(),
-      };
-
-  /// Copy with method for easier updates
-  SongRequestModel copyWith({
-    String? requestId,
-    String? userId,
-    String? userEmail,
-    String? userName,
-    String? artistName,
-    String? songTitle,
-    String? songLink,
-    String? albumName,
-    String? genre,
-    int? releaseYear,
-    String? language,
-    String? description,
-    String? status,
-    String? priority,
-    DateTime? createdAt,
-  }) =>
+  factory SongRequestModel.fromJson(Map<String, dynamic> json) =>
       SongRequestModel(
-        requestId: requestId ?? this.requestId,
-        userId: userId ?? this.userId,
-        userEmail: userEmail ?? this.userEmail,
-        userName: userName ?? this.userName,
-        artistName: artistName ?? this.artistName,
-        songTitle: songTitle ?? this.songTitle,
-        songLink: songLink ?? this.songLink,
-        albumName: albumName ?? this.albumName,
-        genre: genre ?? this.genre,
-        releaseYear: releaseYear ?? this.releaseYear,
-        language: language ?? this.language,
-        description: description ?? this.description,
-        status: status ?? this.status,
-        priority: priority ?? this.priority,
-        createdAt: createdAt ?? this.createdAt,
+        requestId: (json['request_id'] ?? json['id']) as String?,
+        userId: json['user_id'] as String?,
+        songTitle: json['song_title'] as String? ?? '',
+        artist: json['artist'] as String?,
+        notes: json['notes'] as String?,
+        status: json['status'] as String? ?? 'pending',
+        publishedSongId: json['published_song_id'] as String?,
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
       );
+
+  final String? requestId;
+  final String? userId;
+  final String songTitle;
+  final String? artist;
+  final String? notes;
+  final String status;
+  final String? publishedSongId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  /// The public mobile endpoint must derive `user_id` from the bearer token.
+  Map<String, dynamic> toCreateJson() => {
+        'song_title': songTitle.trim(),
+        if (artist?.trim().isNotEmpty ?? false) 'artist': artist!.trim(),
+        if (notes?.trim().isNotEmpty ?? false) 'notes': notes!.trim(),
+      };
 }

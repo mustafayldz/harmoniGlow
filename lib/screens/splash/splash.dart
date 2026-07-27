@@ -62,10 +62,10 @@ class _SplashViewState extends State<SplashView>
       if (token != null && token.isNotEmpty) {
         // Token varsa, validity check
         if (isJwtExpired(token)) {
-          // Token expired - yenile
-          unawaited(_refreshTokenInBackground());
+          // İlk korumalı API çağrısından önce token'ı yenile.
+          await _refreshToken();
         }
-        
+
         // User initialization - arka planda başlat, beklemeden devam et
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         unawaited(
@@ -73,7 +73,7 @@ class _SplashViewState extends State<SplashView>
             debugPrint('⚠️ User init error: $e');
           }),
         );
-        
+
         _nextRoute = '/home';
       } else {
         _nextRoute = '/auth';
@@ -95,16 +95,15 @@ class _SplashViewState extends State<SplashView>
     }
   }
 
-
   /// Hive başlatma - optimize edilmiş
   Future<void> _initializeHive() async {
     // Path'i al
     final appDocDir = await getApplicationDocumentsDirectory();
-    
+
     // Hive'ı sadece bir kere başlat
     if (!Hive.isBoxOpen(Constants.lockSongBox)) {
       Hive.init(appDocDir.path);
-      
+
       // Adapter'ları kaydet (sadece kayıtlı değilse)
       if (!Hive.isAdapterRegistered(0)) {
         Hive.registerAdapter(BeatMakerModelAdapter());
@@ -121,8 +120,7 @@ class _SplashViewState extends State<SplashView>
     ]);
   }
 
-  /// Token yenileme - arka planda
-  Future<void> _refreshTokenInBackground() async {
+  Future<void> _refreshToken() async {
     try {
       final newToken = await getValidFirebaseToken();
       await StorageService.saveFirebaseToken(newToken);

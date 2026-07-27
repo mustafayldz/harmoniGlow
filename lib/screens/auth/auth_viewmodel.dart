@@ -1,4 +1,3 @@
-import 'package:drumly/models/user_model.dart';
 import 'package:drumly/services/firebase_notification_service.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/services/user_service.dart';
@@ -32,7 +31,6 @@ class AuthViewModel extends ChangeNotifier {
     isLoginMode = login;
     notifyListeners();
   }
-
 
   bool get isFormValid {
     final email = emailController.text.trim();
@@ -76,55 +74,16 @@ class AuthViewModel extends ChangeNotifier {
           fcmToken = null;
         }
 
-        // Önce mevcut kullanıcıyı kontrol et
-        final existingUser = await userService.getUser(context);
-
-        UserModel? user;
-        if (existingUser != null &&
-            (existingUser.firebaseToken == null ||
-                existingUser.firebaseToken!.isEmpty)) {
-          debugPrint(
-            '🔄 Updating missing Firebase token for existing user during login',
-          );
-
-          user = await userService.createOrUpdateUser(
-            context,
-            firebaseToken: idToken,
-            email: email,
-            name: existingUser.name,
-            fcmToken: fcmToken, // FCM token'ı gönder
-          );
-        } else {
-          debugPrint('🆕 Creating/updating user with all tokens');
-
-          user = await userService.createOrUpdateUser(
-            context,
-            firebaseToken: idToken,
-            email: email,
-            name: value.user!.displayName,
-            fcmToken: fcmToken, // FCM token'ı gönder
-          );
-        }
-
-        // FCM token ayrıca gönderilmemişse, özel method ile gönder
-        if (user != null && fcmToken != null && fcmToken.isNotEmpty) {
-          if (user.fcmToken == null || user.fcmToken != fcmToken) {
-            debugPrint('🔔 FCM token eksik, ayrıca gönderiliyor...');
-            final fcmResult = await userService.sendFCMTokenToServer(
-              context,
-              fcmToken: fcmToken,
-            );
-            debugPrint('🔔 FCM token separate send result: $fcmResult');
-          } else {
-            debugPrint('✅ FCM token already updated in user profile');
-          }
-        }
+        final user = await userService.createOrUpdateUser(
+          context,
+          firebaseToken: idToken,
+          email: email,
+          name: value.user!.displayName,
+          fcmToken: fcmToken,
+        );
 
         if (user != null) {
           debugPrint('✅ User login successful: ${user.email}');
-          debugPrint(
-            '✅ User FCM token: ${user.fcmToken?.substring(0, 20) ?? "null"}...',
-          );
         } else {
           debugPrint('❌ Failed to create user in backend');
         }
@@ -135,10 +94,10 @@ class AuthViewModel extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ Login error: $e');
-      
+
       // Kullanıcı dostu hata mesajı
       String errorMessage = 'auth.sign_in_failed'.tr();
-      
+
       if (e is FirebaseAuthException) {
         switch (e.code) {
           case 'network-request-failed':
@@ -162,7 +121,7 @@ class AuthViewModel extends ChangeNotifier {
       } else if (e.toString().contains('network')) {
         errorMessage = 'auth.network_error'.tr();
       }
-      
+
       Future.delayed(Duration.zero, () {
         showTopSnackBar(context, errorMessage);
       });
@@ -221,9 +180,6 @@ class AuthViewModel extends ChangeNotifier {
 
           if (user != null) {
             debugPrint('✅ User registration successful: ${user.email}');
-            debugPrint(
-              '✅ Registered user FCM token: ${user.fcmToken?.substring(0, 20) ?? "null"}...',
-            );
           } else {
             debugPrint('❌ Failed to create user in backend');
           }
@@ -269,5 +225,4 @@ class AuthViewModel extends ChangeNotifier {
     emailController.dispose();
     passwordController.dispose();
   }
-
 }

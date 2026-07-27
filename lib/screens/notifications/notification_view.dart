@@ -1,7 +1,8 @@
+import 'package:drumly/models/notification_model.dart';
+import 'package:drumly/provider/notification_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:drumly/provider/notification_provider.dart';
 
 class NotificationView extends StatefulWidget {
   const NotificationView({super.key});
@@ -11,6 +12,16 @@ class NotificationView extends StatefulWidget {
 }
 
 class _NotificationViewState extends State<NotificationView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<NotificationProvider>().syncNotifications(context);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -72,21 +83,18 @@ class _NotificationViewState extends State<NotificationView> {
                                         : Colors.black.withValues(alpha: 0.7),
                                   ),
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    _showClearAllDialog(
-                                      context,
-                                      notificationProvider,
-                                    );
-                                  },
-                                  child: Text(
-                                    'clearAll'.tr(),
-                                    style: const TextStyle(
-                                      color: Color(0xFFEF4444),
-                                      fontWeight: FontWeight.w600,
+                                if (notificationProvider.hasUnreadNotifications)
+                                  TextButton(
+                                    onPressed: () => notificationProvider
+                                        .markAllAsRead(context),
+                                    child: Text(
+                                      'markAllAsRead'.tr(),
+                                      style: const TextStyle(
+                                        color: Color(0xFF2563EB),
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
-                                ),
                               ],
                             ),
                           ),
@@ -358,13 +366,13 @@ class _NotificationViewState extends State<NotificationView> {
                     onSelected: (value) {
                       switch (value) {
                         case 'markRead':
-                          provider.markAsRead(notification.id);
-                          break;
-                        case 'markUnread':
-                          provider.markAsUnread(notification.id);
+                          provider.markAsRead(context, notification.id);
                           break;
                         case 'delete':
-                          provider.removeNotification(notification.id);
+                          provider.removeNotification(
+                            context,
+                            notification.id,
+                          );
                           break;
                       }
                     },
@@ -383,25 +391,14 @@ class _NotificationViewState extends State<NotificationView> {
                             ],
                           ),
                         ),
-                      if (notification.isRead)
-                        PopupMenuItem(
-                          value: 'markUnread',
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.mark_email_unread_outlined,
-                                color: Colors.orange,
-                              ),
-                              const SizedBox(width: 8),
-                              Text('markAsUnread'.tr()),
-                            ],
-                          ),
-                        ),
                       PopupMenuItem(
                         value: 'delete',
                         child: Row(
                           children: [
-                            const Icon(Icons.delete_outline, color: Colors.red),
+                            const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
                             const SizedBox(width: 8),
                             Text('delete'.tr()),
                           ],
@@ -446,34 +443,5 @@ class _NotificationViewState extends State<NotificationView> {
     } else {
       return DateFormat('MMM dd, yyyy').format(timestamp);
     }
-  }
-
-  void _showClearAllDialog(
-    BuildContext context,
-    NotificationProvider provider,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('clearAllNotifications'.tr()),
-        content: Text(
-          'clearAllConfirmation'.tr(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('cancel'.tr()),
-          ),
-          TextButton(
-            onPressed: () {
-              provider.clearAllNotifications();
-              Navigator.pop(context);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text('clearAll'.tr()),
-          ),
-        ],
-      ),
-    );
   }
 }

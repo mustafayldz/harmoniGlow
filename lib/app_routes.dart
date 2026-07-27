@@ -1,9 +1,8 @@
 import 'package:drumly/screens/bluetooth/find_devices_view.dart';
 import 'package:drumly/screens/home/home_view.dart';
 import 'package:drumly/screens/auth/auth_view.dart';
-import 'package:drumly/screens/song_request/song_request_page.dart';
-import 'package:drumly/screens/requested_songs/requested_songs_page.dart';
 import 'package:drumly/screens/splash/splash.dart';
+import 'package:drumly/screens/song_request/song_request_page.dart';
 import 'package:drumly/screens/songs/songv2_view.dart';
 import 'package:drumly/game/drum_hero_screen.dart';
 import 'package:flutter/material.dart';
@@ -16,11 +15,8 @@ class AppRoute {
         '/splash': (context) => const SplashView(),
         '/findDevices': (context) => const FindDevicesView(),
         '/song-request': (context) => const SongRequestPage(),
-        '/requested-songs': (context) => const RequestedSongsPage(),
-        '/songsv2': (context) => const SongV2View(),
-        '/drum-hero': (context) => const DrumHeroScreen(
-          
-        ),
+        '/songs': (context) => const SongV2View(),
+        '/drum-hero': (context) => const DrumHeroScreen(),
       };
 
   static String getInitialRoute() => '/splash';
@@ -37,11 +33,7 @@ class AppRoute {
         return MaterialPageRoute(builder: (context) => const FindDevicesView());
       case '/song-request':
         return MaterialPageRoute(builder: (context) => const SongRequestPage());
-      case '/requested-songs':
-        return MaterialPageRoute(
-          builder: (context) => const RequestedSongsPage(),
-        );
-      case '/songsv2':
+      case '/songs':
         return MaterialPageRoute(
           builder: (context) => const SongV2View(),
         );

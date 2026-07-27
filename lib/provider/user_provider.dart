@@ -13,11 +13,11 @@ class UserProvider with ChangeNotifier {
   // User data
   UserModel? _userModel;
   bool _isLoading = false;
-  
+
   // 🎯 Session flags
   bool _hasShownVersionCheckThisSession = false;
   bool _hasShownInitialAdThisSession = false;
-  
+
   // 🔒 Debounce
   bool _isNotifying = false;
 
@@ -26,7 +26,7 @@ class UserProvider with ChangeNotifier {
   UserModel get user => _userModel!;
   bool get isLoading => _isLoading;
   bool get isLoggedIn => _userModel != null;
-  
+
   // 🎯 Session flag getters
   bool get hasShownVersionCheckThisSession => _hasShownVersionCheckThisSession;
   bool get hasShownInitialAdThisSession => _hasShownInitialAdThisSession;
@@ -38,14 +38,14 @@ class UserProvider with ChangeNotifier {
       _safeNotifyListeners();
     }
   }
-  
+
   void markInitialAdAsShown() {
     if (!_hasShownInitialAdThisSession) {
       _hasShownInitialAdThisSession = true;
       _safeNotifyListeners();
     }
   }
-  
+
   // 🔄 Reset session flags
   void resetSessionFlags() {
     _hasShownVersionCheckThisSession = false;
@@ -72,7 +72,7 @@ class UserProvider with ChangeNotifier {
   /// Optimize edilmiş - ana thread'i bloklamaz
   Future<void> initializeUser(BuildContext context) async {
     if (_isLoading) return; // Zaten yükleniyor
-    
+
     _isLoading = true;
     _safeNotifyListeners();
 
@@ -82,13 +82,14 @@ class UserProvider with ChangeNotifier {
       if (firebaseUser != null) {
         // Firebase'den fresh token al - timeout ile
         final idToken = await firebaseUser.getIdToken(true).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () => null,
-        );
+              const Duration(seconds: 10),
+              onTimeout: () => null,
+            );
 
         if (idToken != null) {
-          // Token kaydetmeyi arka planda yap
-          unawaited(StorageService.saveFirebaseToken(idToken));
+          // API çağrısı başlamadan önce yeni token'ın kullanılabilir olduğundan
+          // emin ol.
+          await StorageService.saveFirebaseToken(idToken);
 
           // Önce mevcut kullanıcıyı kontrol et
           final existingUser = await _userService.getUser(context);
@@ -96,13 +97,11 @@ class UserProvider with ChangeNotifier {
           if (existingUser != null) {
             // Kullanıcı mevcut
             debugPrint('👤 User found: ${existingUser.email}');
-            
+
             setUser(existingUser);
 
-            // FCM token güncellemesini arka planda yap
-            if (existingUser.fcmToken == null || existingUser.fcmToken!.isEmpty) {
-              unawaited(_updateFCMTokenInBackground(context));
-            }
+            // The endpoint is an upsert and also refreshes device metadata.
+            unawaited(_updateFCMTokenInBackground(context));
           } else {
             // Yeni kullanıcı - arka planda oluştur
             unawaited(_createUserInBackground(context, firebaseUser, idToken));
@@ -121,18 +120,17 @@ class UserProvider with ChangeNotifier {
   Future<void> _updateFCMTokenInBackground(BuildContext context) async {
     try {
       debugPrint('🔔 Updating FCM token in background...');
-      
+
       var fcmToken = await FirebaseNotificationService().fcmToken;
       fcmToken ??= await FirebaseNotificationService().getTokenManually();
 
       if (fcmToken != null && fcmToken.isNotEmpty) {
-        final updatedUser = await _userService.updateFCMToken(
+        final updated = await _userService.updateFCMToken(
           context,
           fcmToken: fcmToken,
         );
 
-        if (updatedUser != null) {
-          setUser(updatedUser);
+        if (updated) {
           debugPrint('✅ FCM token updated in background');
         }
       }
@@ -201,28 +199,28 @@ class UserProvider with ChangeNotifier {
   ) async {
     if (_userModel?.userId != null) {
       try {
-        final updatedUser = await _userService.updateFCMToken(
+        final updated = await _userService.updateFCMToken(
           context,
           fcmToken: newFCMToken,
         );
 
-        if (updatedUser != null) {
-          setUser(updatedUser);
-          debugPrint('✅ FCM Token updated for user: ${updatedUser.email}');
+        if (updated) {
+          debugPrint('✅ FCM notification device updated');
         }
       } catch (e) {
         debugPrint('❌ Error updating FCM token: $e');
       }
     }
   }
-  
+
   /// Safe notify - aynı frame'de birden fazla notify'ı önler
   void _safeNotifyListeners() {
     if (_isNotifying) return;
     _isNotifying = true;
-    
+
     // Build sırasındaysa, sonraki frame'e ertele
-    if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _isNotifying = false;
         notifyListeners();

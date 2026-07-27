@@ -52,7 +52,8 @@ class Env {
   // API Configuration
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://drumly-backend-541755790098.us-central1.run.app/api/',
+    defaultValue:
+        'https://drumly-backend-541755790098.us-central1.run.app/api/v1/',
   );
 
   // Validate environment variables

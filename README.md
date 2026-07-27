@@ -117,14 +117,14 @@ flutter build ios --dart-define-from-file=.env --release
 
 ## 🌐 API Entegrasyonu
 
-Backend API: `https://drumly-backend.us-central1.run.app/api/`
+Backend API: `https://drumly-backend.us-central1.run.app/api/v1/`
 
 Endpoints:
 
-- `/users/` - Kullanıcı yönetimi
-- `/songs/` - Şarkı listesi
-- `/beats/` - Beat'ler
-- `/song-types/` - Şarkı kategorileri
+- `/users/me` - Kullanıcı profili
+- `/songs` - Şarkı kataloğu
+- `/users/me/notification-devices` - Bildirim cihazı kaydı
+- `/users/me/notifications` - Kullanıcı bildirimleri
 
 ## 📄 Lisans
 

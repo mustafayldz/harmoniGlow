@@ -1,9 +1,9 @@
 import 'package:drumly/screens/home/components/card_data.dart';
 import 'package:drumly/screens/my_drum/drum_model.dart';
 import 'package:drumly/services/local_service.dart';
+import 'package:drumly/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:drumly/constants.dart';
 import 'package:provider/provider.dart';
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
 
@@ -60,29 +60,11 @@ class HomeViewModel extends ChangeNotifier {
   void _initCards(bool isBluetoothConnected) {
     _cards = [
       CardData(
-        key: 'training',
-        title: 'training'.tr(),
-        subtitle: 'trainWithMusic'.tr(),
-        color: AppColors.trainingGreen,
-        icon: Icons.school_outlined,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF22C55E), Color(0xFF16A34A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-
-      CardData(
         key: 'songs',
         title: 'songs'.tr(),
         subtitle: 'discoverSongs'.tr(),
-        color: AppColors.songsPink,
+        color: const Color(0xFFE4578E),
         icon: Icons.music_note_outlined,
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEC4899), Color(0xFFDB2777)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
       ),
 
       // Ritmi Takip Et Oyunu Card
@@ -90,13 +72,8 @@ class HomeViewModel extends ChangeNotifier {
         key: 'retim',
         title: 'rhythmGameTitle'.tr(),
         subtitle: 'rhythmGameSubtitle'.tr(),
-        color: Colors.deepPurple,
+        color: const Color(0xFF8075E5),
         icon: Icons.timeline_outlined,
-        gradient: const LinearGradient(
-          colors: [Color(0xFF8A7CFF), Color(0xFF5F5AFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
       ),
 
       if (isBluetoothConnected)
@@ -104,26 +81,16 @@ class HomeViewModel extends ChangeNotifier {
           key: 'mydrum',
           title: 'myDrumTitle'.tr(),
           subtitle: 'myDrumSubtitle'.tr(),
-          color: AppColors.drumBlue,
+          color: const Color(0xFF4B87E8),
           icon: Icons.settings_input_component_outlined,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
         ),
 
       CardData(
         key: 'settings',
         title: 'settings'.tr(),
         subtitle: 'settingsLedSubtitle'.tr(),
-        color: AppColors.settingsRed,
+        color: const Color(0xFFE29B42),
         icon: Icons.lightbulb_outline,
-        gradient: const LinearGradient(
-          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
       ),
     ];
     notifyListeners();

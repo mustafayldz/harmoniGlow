@@ -14,42 +14,49 @@ class HomeCardsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Consumer<HomeViewModel>(
-        builder: (context, viewModel, child) => SliverGrid(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 1.1,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final card = viewModel.cards[index];
+        builder: (context, viewModel, child) {
+          // Hot reload sırasında eski ViewModel bellekte kalsa bile kaldırılmış
+          // Training kartını hiçbir zaman render etme.
+          final cards = viewModel.cards
+              .where((card) => card.key.toLowerCase() != 'training')
+              .toList(growable: false);
+          return SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.06,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final card = cards[index];
 
-              return AnimatedBuilder(
-                animation: fadeAnimation,
-                builder: (context, child) => Opacity(
-                  opacity: fadeAnimation.value,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: Offset(0, 0.3 + (index * 0.1)),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animationController,
-                        curve: Interval(
-                          index * 0.1,
-                          1.0,
-                          curve: Curves.easeOutCubic,
+                return AnimatedBuilder(
+                  animation: fadeAnimation,
+                  builder: (context, child) => Opacity(
+                    opacity: fadeAnimation.value,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: Offset(0, 0.3 + (index * 0.1)),
+                        end: Offset.zero,
+                      ).animate(
+                        CurvedAnimation(
+                          parent: animationController,
+                          curve: Interval(
+                            index * 0.1,
+                            1.0,
+                            curve: Curves.easeOutCubic,
+                          ),
                         ),
                       ),
+                      child: ModernCard(card: card),
                     ),
-                    child: ModernCard(card: card),
                   ),
-                ),
-              );
-            },
-            childCount: viewModel.cards.length,
-          ),
-        ),
+                );
+              },
+              childCount: cards.length,
+            ),
+          );
+        },
       );
 }
