@@ -14,7 +14,7 @@ class BluetoothBanner extends StatelessWidget {
   Widget build(BuildContext context) => Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => Navigator.pushReplacement(
+          onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const FindDevicesView()),
           ),

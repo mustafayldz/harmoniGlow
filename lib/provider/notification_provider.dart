@@ -12,31 +12,56 @@ class NotificationProvider with ChangeNotifier {
     // Load saved notifications when provider is created
     loadNotifications();
   }
-  static const int maxNotifications = 20; // Maximum 20 notifications
   final List<NotificationModel> _notifications = [];
   final NotificationService _notificationService = NotificationService();
   int _unreadCount = 0;
   bool _isSyncing = false;
+  String? _syncError;
 
   List<NotificationModel> get notifications => _notifications;
   int get unreadCount => _unreadCount;
   bool get hasUnreadNotifications => _unreadCount > 0;
   int get notificationCount => _notifications.length;
-  int get maxNotificationLimit => maxNotifications;
   bool get isSyncing => _isSyncing;
+  String? get syncError => _syncError;
 
   Future<void> syncNotifications(BuildContext context) async {
     if (_isSyncing) return;
     _isSyncing = true;
+    _syncError = null;
     notifyListeners();
     try {
-      final page = await _notificationService.getNotifications(context);
-      if (page == null) return;
+      const pageSize = 100;
+      var currentPage = 1;
+      var unreadCount = 0;
+      final apiNotifications = <NotificationModel>[];
+
+      while (true) {
+        final result = await _notificationService.getNotifications(
+          context,
+          page: currentPage,
+          limit: pageSize,
+        );
+        if (result == null) {
+          _syncError = 'notifications_load_failed';
+          return;
+        }
+        if (currentPage == 1) unreadCount = result.unreadCount;
+        apiNotifications.addAll(result.notifications);
+        if (currentPage >= result.totalPages || result.notifications.isEmpty) {
+          break;
+        }
+        currentPage++;
+      }
+
       _notifications
         ..clear()
-        ..addAll(page.notifications);
-      _unreadCount = page.unreadCount;
+        ..addAll(apiNotifications);
+      _unreadCount = unreadCount;
       await _saveNotifications();
+    } catch (error) {
+      _syncError = 'notifications_load_failed';
+      debugPrint('Notification sync failed: $error');
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -62,29 +87,13 @@ class NotificationProvider with ChangeNotifier {
     // Add new notification at the beginning (latest first)
     _notifications.insert(0, notification);
 
-    // Check if we exceeded the limit
-    if (_notifications.length > maxNotifications) {
-      // Remove the oldest notification (last in the list)
-      final removedNotification = _notifications.removeLast();
-
-      // Debug log when limit is reached
-      debugPrint(
-        '📢 Notification limit reached ($maxNotifications). Removed oldest: "${removedNotification.title}"',
-      );
-
-      // Adjust unread count if the removed notification was unread
-      if (!removedNotification.isRead) {
-        _unreadCount = (_unreadCount - 1).clamp(0, _notifications.length);
-      }
-    }
-
     // Increment unread count for new notification
     if (!notification.isRead) {
       _unreadCount++;
     }
 
     debugPrint(
-      '📢 Added notification. Current count: ${_notifications.length}/$maxNotifications',
+      '📢 Added notification. Current count: ${_notifications.length}',
     );
 
     notifyListeners();
@@ -96,15 +105,32 @@ class NotificationProvider with ChangeNotifier {
     addNotification(notification);
   }
 
-  void markAsRead(BuildContext context, String notificationId) {
+  Future<bool> markAsRead(
+    BuildContext context,
+    String notificationId,
+  ) async {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
-    if (index != -1 && !_notifications[index].isRead) {
-      _notifications[index] = _notifications[index].copyWith(isRead: true);
-      _unreadCount = (_unreadCount - 1).clamp(0, _notifications.length);
+    if (index == -1 || _notifications[index].isRead) return true;
+
+    _notifications[index] = _notifications[index].copyWith(isRead: true);
+    _unreadCount = (_unreadCount - 1).clamp(0, _notifications.length);
+    notifyListeners();
+    await _saveNotifications();
+
+    final success =
+        await _notificationService.markAsRead(context, notificationId);
+    if (success) return true;
+
+    final currentIndex =
+        _notifications.indexWhere((item) => item.id == notificationId);
+    if (currentIndex != -1 && _notifications[currentIndex].isRead) {
+      _notifications[currentIndex] =
+          _notifications[currentIndex].copyWith(isRead: false);
+      _unreadCount++;
       notifyListeners();
-      _saveNotifications();
-      unawaited(_notificationService.markAsRead(context, notificationId));
+      await _saveNotifications();
     }
+    return false;
   }
 
   void markAsUnread(String notificationId) {
@@ -117,7 +143,13 @@ class NotificationProvider with ChangeNotifier {
     }
   }
 
-  void markAllAsRead(BuildContext context) {
+  Future<bool> markAllAsRead(BuildContext context) async {
+    final unreadIds = _notifications
+        .where((notification) => !notification.isRead)
+        .map((notification) => notification.id)
+        .toSet();
+    if (unreadIds.isEmpty) return true;
+
     for (int i = 0; i < _notifications.length; i++) {
       if (!_notifications[i].isRead) {
         _notifications[i] = _notifications[i].copyWith(isRead: true);
@@ -125,23 +157,48 @@ class NotificationProvider with ChangeNotifier {
     }
     _unreadCount = 0;
     notifyListeners();
-    _saveNotifications();
-    unawaited(_notificationService.markAllAsRead(context));
+    await _saveNotifications();
+
+    final success = await _notificationService.markAllAsRead(context);
+    if (success) return true;
+
+    for (var index = 0; index < _notifications.length; index++) {
+      if (unreadIds.contains(_notifications[index].id)) {
+        _notifications[index] = _notifications[index].copyWith(isRead: false);
+      }
+    }
+    _unreadCount =
+        _notifications.where((notification) => !notification.isRead).length;
+    notifyListeners();
+    await _saveNotifications();
+    return false;
   }
 
-  void removeNotification(BuildContext context, String notificationId) {
+  Future<bool> removeNotification(
+    BuildContext context,
+    String notificationId,
+  ) async {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
-    if (index != -1) {
-      if (!_notifications[index].isRead) {
-        _unreadCount = (_unreadCount - 1).clamp(0, _notifications.length);
-      }
-      _notifications.removeAt(index);
-      notifyListeners();
-      _saveNotifications();
-      unawaited(
-        _notificationService.deleteNotification(context, notificationId),
-      );
+    if (index == -1) return true;
+
+    final removed = _notifications.removeAt(index);
+    if (!removed.isRead) {
+      _unreadCount = (_unreadCount - 1).clamp(0, _notifications.length);
     }
+    notifyListeners();
+    await _saveNotifications();
+
+    final success =
+        await _notificationService.deleteNotification(context, notificationId);
+    if (success) return true;
+
+    final restoredIndex =
+        index > _notifications.length ? _notifications.length : index;
+    _notifications.insert(restoredIndex, removed);
+    if (!removed.isRead) _unreadCount++;
+    notifyListeners();
+    await _saveNotifications();
+    return false;
   }
 
   void clearAllNotifications() {
@@ -176,12 +233,7 @@ class NotificationProvider with ChangeNotifier {
         // Clear existing notifications and add loaded ones
         _notifications.clear();
 
-        // Ensure we don't exceed the limit after loading
-        if (loadedNotifications.length > maxNotifications) {
-          _notifications.addAll(loadedNotifications.take(maxNotifications));
-        } else {
-          _notifications.addAll(loadedNotifications);
-        }
+        _notifications.addAll(loadedNotifications);
 
         // Update unread count based on actual unread notifications
         _unreadCount =

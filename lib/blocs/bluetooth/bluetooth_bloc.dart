@@ -10,6 +10,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   BluetoothBloc() : super(BluetoothStateC()) {
     on<StartScanEvent>(_onStartScan);
     on<StopScanEvent>(_onStopScan);
+    on<ScanResultsUpdatedEvent>(_onScanResultsUpdated);
+    on<ScanFailedEvent>(_onScanFailed);
     on<ConnectToDeviceEvent>(_onConnectToDevice);
     on<DisconnectFromDeviceEvent>(_onDisconnectFromDevice);
     on<ForceNavigationEvent>(_onForceNavigation);
@@ -19,10 +21,12 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
   }
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothConnectionState>? _connectionSubscription;
+  Timer? _scanTimer;
+  String? _savedDeviceId;
   BluetoothCharacteristic? characteristic;
 
   Future<void> _initializeConnection() async {
-    final lastId = await StorageService().getSavedDeviceId();
+    _savedDeviceId = await StorageService().getSavedDeviceId();
 
     // ─── 0) Wait for Bluetooth to be powered ON ────────────────────────
     // Bluetooth açık mı kontrol et
@@ -34,30 +38,16 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       return;
     }
 
-    if (lastId != null) {
+    if (_savedDeviceId != null) {
       // ─── 1) Check already‑connected devices ───────────────────────────
       final connected = FlutterBluePlus.connectedDevices;
-      final already = connected.where((d) => d.remoteId.str == lastId);
+      final already = connected.where((d) => d.remoteId.str == _savedDeviceId);
       if (already.isNotEmpty) {
         add(ConnectToDeviceEvent(already.first));
         return;
       }
-
-      // ─── 2) Scan briefly for your saved device ─────────────────────────
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 3));
-      _scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-        final candidates =
-            results.where((r) => r.device.remoteId.str == lastId);
-        if (candidates.isNotEmpty) {
-          add(ConnectToDeviceEvent(candidates.first.device));
-          add(StopScanEvent());
-        }
-      });
-    } else {
-      // ─── No saved device: scan for 5 seconds ───────────────────────────
-      add(StartScanEvent());
-      Future.delayed(const Duration(seconds: 5), () => add(StopScanEvent()));
     }
+    add(StartScanEvent());
   }
 
   Future<void> _onStartScan(
@@ -84,32 +74,31 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         return;
       }
 
-      emit(state.copyWith(isScanning: true));
+      emit(
+        state.copyWith(
+          isScanning: true,
+          scanResults: const [],
+          clearError: true,
+        ),
+      );
+
+      await _scanSubscription?.cancel();
+      _scanSubscription = FlutterBluePlus.scanResults.listen(
+        (results) => add(ScanResultsUpdatedEvent(results)),
+        onError: (Object error) =>
+            add(ScanFailedEvent('Failed to scan: $error')),
+      );
 
       await FlutterBluePlus.startScan(
         withNames: ['BT05'],
-        withServices: [],
         timeout: const Duration(seconds: 10),
       );
 
-      _scanSubscription = FlutterBluePlus.scanResults.listen(
-        (results) {
-          if (results.isEmpty) {}
-          emit(state.copyWith(scanResults: results));
-        },
-        onError: (error) {
-          emit(
-            state.copyWith(
-              isScanning: false,
-              errorMessage: 'Failed to scan: $error',
-            ),
-          );
-        },
+      _scanTimer?.cancel();
+      _scanTimer = Timer(
+        const Duration(seconds: 10),
+        () => add(StopScanEvent()),
       );
-
-      // İsteğe bağlı: 3 saniye sonra taramayı durdur
-      await Future.delayed(const Duration(seconds: 3));
-      await _stopScanning(emit);
     } catch (e) {
       emit(
         state.copyWith(
@@ -118,6 +107,27 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         ),
       );
     }
+  }
+
+  void _onScanResultsUpdated(
+    ScanResultsUpdatedEvent event,
+    Emitter<BluetoothStateC> emit,
+  ) {
+    emit(state.copyWith(scanResults: event.results));
+    if (_savedDeviceId == null || state.isConnected || state.isConnecting) {
+      return;
+    }
+    final saved = event.results.where(
+      (result) => result.device.remoteId.str == _savedDeviceId,
+    );
+    if (saved.isNotEmpty) add(ConnectToDeviceEvent(saved.first.device));
+  }
+
+  void _onScanFailed(
+    ScanFailedEvent event,
+    Emitter<BluetoothStateC> emit,
+  ) {
+    emit(state.copyWith(isScanning: false, errorMessage: event.message));
   }
 
   Future<void> _onStopScan(
@@ -129,6 +139,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
   Future<void> _stopScanning(Emitter<BluetoothStateC> emit) async {
     try {
+      _scanTimer?.cancel();
+      _scanTimer = null;
       await FlutterBluePlus.stopScan();
       await _scanSubscription?.cancel();
       _scanSubscription = null;
@@ -149,6 +161,18 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     Emitter<BluetoothStateC> emit,
   ) async {
     try {
+      await FlutterBluePlus.stopScan();
+      _scanTimer?.cancel();
+      _scanTimer = null;
+      await _scanSubscription?.cancel();
+      _scanSubscription = null;
+      emit(
+        state.copyWith(
+          isScanning: false,
+          isConnecting: true,
+          clearError: true,
+        ),
+      );
       await event.device.connect();
 
       // Listen for connection state changes
@@ -173,10 +197,13 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
               c.uuid.toString().toLowerCase() == 'ffe1' &&
               c.properties.write) {
             characteristic = c;
+            _savedDeviceId = event.device.remoteId.str;
+            await StorageService().saveDeviceId(event.device);
             emit(
               state.copyWith(
                 characteristic: c,
                 isConnected: true,
+                isConnecting: false,
                 connectedDevice: event.device,
               ),
             );
@@ -185,9 +212,12 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
         }
       }
 
+      _savedDeviceId = event.device.remoteId.str;
+      await StorageService().saveDeviceId(event.device);
       emit(
         state.copyWith(
           isConnected: true,
+          isConnecting: false,
           connectedDevice: event.device,
           errorMessage: 'No writable characteristic found.',
         ),
@@ -196,6 +226,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       emit(
         state.copyWith(
           isConnected: false,
+          isConnecting: false,
           errorMessage: 'Failed to connect to device: $e',
         ),
       );
@@ -211,10 +242,14 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
       _connectionSubscription = null;
       await event.device.disconnect();
       await StorageService().clearSavedDeviceId();
+      _savedDeviceId = null;
 
       emit(
         state.copyWith(
           isConnected: false,
+          isConnecting: false,
+          clearConnectedDevice: true,
+          clearCharacteristic: true,
         ),
       );
     } catch (e) {
@@ -240,12 +275,20 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
     ForceNavigationEvent event,
     Emitter<BluetoothStateC> emit,
   ) async {
-    emit(state.copyWith(isConnected: false));
+    emit(
+      state.copyWith(
+        isConnected: false,
+        isConnecting: false,
+        clearConnectedDevice: true,
+        clearCharacteristic: true,
+      ),
+    );
   }
 
   @override
   Future<void> close() {
     _scanSubscription?.cancel();
+    _scanTimer?.cancel();
     _connectionSubscription?.cancel();
     FlutterBluePlus.stopScan();
     return super.close();

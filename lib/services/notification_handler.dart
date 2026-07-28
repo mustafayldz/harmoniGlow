@@ -160,11 +160,6 @@ class NotificationHandler {
       // Listenin başına ekle (en yeni notification en üstte)
       notifications.insert(0, newNotification);
 
-      // Maximum 20 notification limit
-      if (notifications.length > 20) {
-        notifications = notifications.take(20).toList();
-      }
-
       // SharedPreferences'a kaydet
       await prefs.setString('notifications', jsonEncode(notifications));
     } catch (e) {

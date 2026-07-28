@@ -9,6 +9,7 @@ import 'package:drumly/shared/enums.dart';
 import 'package:drumly/shared/request_helper.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -85,13 +86,24 @@ class UserService {
         'platform': Platform.isIOS ? 'ios' : 'android',
         'app_version': packageInfo.version,
         'language': locale,
-        'timezone': DateTime.now().timeZoneName,
+        'timezone': await _getLocalTimezone(),
       },
     );
 
-    if (response == null || response.isEmpty) return false;
-    final decoded = json.decode(response);
-    return decoded is Map<String, dynamic> && decoded['success'] == true;
+    if (response == null || response.isEmpty) {
+      debugPrint('notification-device response: empty');
+      return false;
+    }
+    try {
+      final decoded = json.decode(response);
+      final success =
+          decoded is Map<String, dynamic> && decoded['success'] == true;
+      debugPrint('notification-device response success: $success');
+      return success;
+    } catch (error) {
+      debugPrint('notification-device response parse error: $error');
+      return false;
+    }
   }
 
   Future<bool> sendFCMTokenToServer(
@@ -128,5 +140,14 @@ class UserService {
     final deviceId = 'mobile-${DateTime.now().microsecondsSinceEpoch}-$suffix';
     await preferences.setString(_notificationDeviceIdKey, deviceId);
     return deviceId;
+  }
+
+  Future<String> _getLocalTimezone() async {
+    try {
+      return (await FlutterTimezone.getLocalTimezone()).identifier;
+    } catch (error) {
+      debugPrint('Timezone lookup failed, using platform fallback: $error');
+      return DateTime.now().timeZoneName;
+    }
   }
 }

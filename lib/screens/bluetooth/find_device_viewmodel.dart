@@ -17,13 +17,10 @@ class FindDevicesViewModel {
 
   Future<void> disconnect(BluetoothDevice device) async {
     bluetoothBloc.add(DisconnectFromDeviceEvent(device));
-    await storageService.clearSavedDeviceId();
   }
 
-  Future<void> connect(BluetoothDevice device) async {
-    bluetoothBloc.add(ConnectToDeviceEvent(device));
-    await storageService.saveDeviceId(device);
-  }
+  void connect(BluetoothDevice device) =>
+      bluetoothBloc.add(ConnectToDeviceEvent(device));
 
   List<ScanResult> filterScanResults(List<ScanResult> results) =>
       results.where((r) => r.device.advName.isNotEmpty).toList();

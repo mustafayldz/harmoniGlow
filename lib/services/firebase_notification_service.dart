@@ -198,7 +198,6 @@ class FirebaseNotificationService {
       _fcmToken = token;
       if (token != null && token.isNotEmpty) {
         developer.log('FCM Token: ${_maskedToken(token)}', name: 'FCM');
-        onTokenRefresh?.call(token);
       }
     } catch (e) {
       developer.log('Failed to get FCM token', name: 'FCM', error: e);
@@ -423,6 +422,49 @@ class FirebaseNotificationService {
       name: 'FCM',
     );
     return null;
+  }
+
+  /// Cihaz kaydı için izin -> APNs -> FCM sırasını garanti eder.
+  Future<String?> getTokenForRegistration() async {
+    var settings = await _firebaseMessaging.getNotificationSettings();
+    if (settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+      await _requestPermission();
+      settings = await _firebaseMessaging.getNotificationSettings();
+    }
+
+    final permissionGranted =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+    if (!permissionGranted) {
+      developer.log(
+        'Notification permission is not authorized/provisional',
+        name: 'FCM',
+      );
+      return null;
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      String? apnsToken;
+      for (var attempt = 0; attempt < 5; attempt++) {
+        apnsToken = await _firebaseMessaging.getAPNSToken();
+        if (apnsToken != null && apnsToken.isNotEmpty) break;
+        await Future.delayed(const Duration(seconds: 1));
+      }
+      if (apnsToken == null || apnsToken.isEmpty) {
+        developer.log(
+          'APNs token is null; FCM device registration aborted',
+          name: 'FCM',
+        );
+        return null;
+      }
+      developer.log('APNs token acquired', name: 'FCM');
+    }
+
+    await _getToken();
+    if (_fcmToken == null || _fcmToken!.isEmpty) {
+      return getTokenManually();
+    }
+    return _fcmToken;
   }
 
   /// iOS için APNS token'ı al

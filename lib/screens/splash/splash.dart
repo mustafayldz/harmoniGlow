@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:drumly/constants.dart';
 import 'package:drumly/hive/models/beat_maker_model.dart';
 import 'package:drumly/hive/models/note_model.dart';
@@ -66,13 +65,10 @@ class _SplashViewState extends State<SplashView>
           await _refreshToken();
         }
 
-        // User initialization - arka planda başlat, beklemeden devam et
+        // Her app launch'ta kullanıcı ve notification-device upsert sonucunu
+        // yönlendirmeden önce bekle.
         final userProvider = Provider.of<UserProvider>(context, listen: false);
-        unawaited(
-          userProvider.initializeUser(context).catchError((e) {
-            debugPrint('⚠️ User init error: $e');
-          }),
-        );
+        await userProvider.initializeUser(context);
 
         _nextRoute = '/home';
       } else {

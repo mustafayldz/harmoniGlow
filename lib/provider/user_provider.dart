@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:drumly/models/user_model.dart';
@@ -100,11 +99,11 @@ class UserProvider with ChangeNotifier {
 
             setUser(existingUser);
 
-            // The endpoint is an upsert and also refreshes device metadata.
-            unawaited(_updateFCMTokenInBackground(context));
+            // İlk korumalı oturum açılışında cihaz kaydının backend tarafından
+            // kabul edilmesini bekle.
+            await registerNotificationDevice(context);
           } else {
-            // Yeni kullanıcı - arka planda oluştur
-            unawaited(_createUserInBackground(context, firebaseUser, idToken));
+            await _createUser(context, firebaseUser, idToken);
           }
         }
       }
@@ -116,56 +115,56 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  /// FCM token güncellemesi - arka planda
-  Future<void> _updateFCMTokenInBackground(BuildContext context) async {
-    try {
-      debugPrint('🔔 Updating FCM token in background...');
+  /// Mevcut installation'ı notification device endpointine kaydeder.
+  /// Login ve app launch çağrıları bu sonucu await eder.
+  Future<bool> registerNotificationDevice(
+    BuildContext context, {
+    String? token,
+  }) async {
+    if (_userModel == null) return false;
 
-      var fcmToken = await FirebaseNotificationService().fcmToken;
-      fcmToken ??= await FirebaseNotificationService().getTokenManually();
+    try {
+      final notificationService = FirebaseNotificationService();
+      final fcmToken =
+          token ?? await notificationService.getTokenForRegistration();
 
       if (fcmToken != null && fcmToken.isNotEmpty) {
+        debugPrint('FCM token acquired');
+        debugPrint('POST /notification-devices');
         final updated = await _userService.updateFCMToken(
           context,
           fcmToken: fcmToken,
         );
-
-        if (updated) {
-          debugPrint('✅ FCM token updated in background');
-        }
+        debugPrint('notification-device success: $updated');
+        return updated;
       }
+      debugPrint('notification-device registration skipped: no FCM token');
     } catch (e) {
-      debugPrint('⚠️ Background FCM update error: $e');
+      debugPrint('❌ Notification device registration error: $e');
     }
+    return false;
   }
 
-  /// Kullanıcı oluşturma - arka planda
-  Future<void> _createUserInBackground(
+  Future<void> _createUser(
     BuildContext context,
     User firebaseUser,
     String idToken,
   ) async {
     try {
-      // FCM token'ı al - ama bekleme
-      String? fcmToken;
-      try {
-        fcmToken = await FirebaseNotificationService().fcmToken;
-      } catch (_) {}
-
       final user = await _userService.createOrUpdateUser(
         context,
         firebaseToken: idToken,
         email: firebaseUser.email,
         name: firebaseUser.displayName,
-        fcmToken: fcmToken,
       );
 
       if (user != null) {
         setUser(user);
-        debugPrint('✅ User created in background: ${user.email}');
+        debugPrint('✅ User created: ${user.email}');
+        await registerNotificationDevice(context);
       }
     } catch (e) {
-      debugPrint('⚠️ Background user creation error: $e');
+      debugPrint('⚠️ User creation error: $e');
     }
   }
 
@@ -193,24 +192,12 @@ class UserProvider with ChangeNotifier {
   }
 
   /// FCM Token'ı manuel olarak güncelle
-  Future<void> updateFCMToken(
+  Future<bool> updateFCMToken(
     BuildContext context,
     String newFCMToken,
   ) async {
-    if (_userModel?.userId != null) {
-      try {
-        final updated = await _userService.updateFCMToken(
-          context,
-          fcmToken: newFCMToken,
-        );
-
-        if (updated) {
-          debugPrint('✅ FCM notification device updated');
-        }
-      } catch (e) {
-        debugPrint('❌ Error updating FCM token: $e');
-      }
-    }
+    if (_userModel?.userId == null) return false;
+    return registerNotificationDevice(context, token: newFCMToken);
   }
 
   /// Safe notify - aynı frame'de birden fazla notify'ı önler

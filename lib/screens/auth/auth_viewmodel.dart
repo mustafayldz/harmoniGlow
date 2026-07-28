@@ -1,10 +1,11 @@
-import 'package:drumly/services/firebase_notification_service.dart';
+import 'package:drumly/provider/user_provider.dart';
 import 'package:drumly/services/local_service.dart';
 import 'package:drumly/services/user_service.dart';
 import 'package:drumly/shared/common_functions.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final UserService userService = UserService();
@@ -60,30 +61,19 @@ class AuthViewModel extends ChangeNotifier {
         final idToken = await value.user!.getIdToken();
         await StorageService.saveFirebaseToken(idToken!);
 
-        // FCM token'ı güvenli şekilde al
-        debugPrint('🔔 FCM token alınıyor...');
-        String? fcmToken;
-
-        try {
-          fcmToken = await FirebaseNotificationService().fcmToken;
-          debugPrint(
-            '✅ FCM token result: ${fcmToken?.isNotEmpty == true ? "${fcmToken!.substring(0, 20)}..." : "null"}',
-          );
-        } catch (e) {
-          debugPrint('❌ FCM token alma hatası: $e');
-          fcmToken = null;
-        }
-
         final user = await userService.createOrUpdateUser(
           context,
           firebaseToken: idToken,
           email: email,
           name: value.user!.displayName,
-          fcmToken: fcmToken,
         );
 
         if (user != null) {
           debugPrint('✅ User login successful: ${user.email}');
+          final userProvider =
+              Provider.of<UserProvider>(context, listen: false);
+          userProvider.setUser(user);
+          await userProvider.registerNotificationDevice(context);
         } else {
           debugPrint('❌ Failed to create user in backend');
         }
@@ -158,28 +148,19 @@ class AuthViewModel extends ChangeNotifier {
         if (idToken != null) {
           await StorageService.saveFirebaseToken(idToken);
 
-          // FCM token'ı al
-          debugPrint('🔔 Registration: FCM token alınıyor...');
-          String? fcmToken;
-          try {
-            fcmToken = await FirebaseNotificationService().fcmToken;
-            debugPrint(
-              '✅ Registration FCM token: ${fcmToken?.substring(0, 20) ?? "null"}...',
-            );
-          } catch (e) {
-            debugPrint('❌ Registration FCM token error: $e');
-          }
-
           final user = await userService.createOrUpdateUser(
             context,
             firebaseToken: idToken,
             email: email,
             name: name.isNotEmpty ? name : null,
-            fcmToken: fcmToken, // FCM token'ı gönder
           );
 
           if (user != null) {
             debugPrint('✅ User registration successful: ${user.email}');
+            final userProvider =
+                Provider.of<UserProvider>(context, listen: false);
+            userProvider.setUser(user);
+            await userProvider.registerNotificationDevice(context);
           } else {
             debugPrint('❌ Failed to create user in backend');
           }

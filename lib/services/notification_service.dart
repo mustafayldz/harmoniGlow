@@ -37,10 +37,19 @@ class NotificationService {
             )
             .toList(),
         unreadCount: meta?['unread_count'] as int? ?? 0,
+        page: _asInt(meta?['page'], fallback: page),
+        totalPages: _asInt(meta?['total_pages'], fallback: 1),
+        total: _asInt(meta?['total']),
       );
     } catch (_) {
       return null;
     }
+  }
+
+  int _asInt(dynamic value, {int fallback = 0}) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? fallback;
   }
 
   Future<bool> markAsRead(
@@ -91,8 +100,14 @@ class NotificationPage {
   const NotificationPage({
     required this.notifications,
     required this.unreadCount,
+    required this.page,
+    required this.totalPages,
+    required this.total,
   });
 
   final List<NotificationModel> notifications;
   final int unreadCount;
+  final int page;
+  final int totalPages;
+  final int total;
 }

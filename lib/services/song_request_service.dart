@@ -7,10 +7,8 @@ import 'package:drumly/shared/request_helper.dart';
 import 'package:flutter/material.dart';
 
 class SongRequestService {
-  String get _baseUrl => ApiServiceUrl.endpoint('song-requests');
+  String get _baseUrl => ApiServiceUrl.endpoint('users/me/song-requests');
 
-  /// Ready for the public mobile route. Do not point this at
-  /// `/admin/song-requests`; that route requires an admin/content role.
   Future<SongRequestModel?> createSongRequest(
     BuildContext context,
     SongRequestModel request,

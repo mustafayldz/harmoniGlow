@@ -15,6 +15,11 @@ class _SongRequestPageState extends State<SongRequestPage> {
   final _songController = TextEditingController();
   final _artistController = TextEditingController();
   final _urlController = TextEditingController();
+  final _albumController = TextEditingController();
+  final _genreController = TextEditingController();
+  final _yearController = TextEditingController();
+  final _languageController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final SongRequestService _service = SongRequestService();
   bool _didPrefill = false;
   bool _isSubmitting = false;
@@ -35,6 +40,11 @@ class _SongRequestPageState extends State<SongRequestPage> {
     _songController.dispose();
     _artistController.dispose();
     _urlController.dispose();
+    _albumController.dispose();
+    _genreController.dispose();
+    _yearController.dispose();
+    _languageController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -141,37 +151,43 @@ class _SongRequestPageState extends State<SongRequestPage> {
                           isDarkMode: isDarkMode,
                           keyboardType: TextInputType.url,
                         ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B)
-                                .withValues(alpha: isDarkMode ? 0.14 : 0.1),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: const Color(0xFFF59E0B)
-                                  .withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.info_outline_rounded,
-                                color: Color(0xFFF59E0B),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'request_api_unavailable'.tr(),
-                                  style: TextStyle(
-                                    color: textColor.withValues(alpha: 0.72),
-                                    fontSize: 12,
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 14),
+                        _RequestField(
+                          controller: _albumController,
+                          label: 'album_name'.tr(),
+                          icon: Icons.album_rounded,
+                          isDarkMode: isDarkMode,
+                        ),
+                        const SizedBox(height: 14),
+                        _RequestField(
+                          controller: _genreController,
+                          label: 'genre'.tr(),
+                          icon: Icons.category_rounded,
+                          isDarkMode: isDarkMode,
+                        ),
+                        const SizedBox(height: 14),
+                        _RequestField(
+                          controller: _yearController,
+                          label: 'release_year'.tr(),
+                          icon: Icons.calendar_month_rounded,
+                          isDarkMode: isDarkMode,
+                          keyboardType: TextInputType.number,
+                          validator: _yearValidator,
+                        ),
+                        const SizedBox(height: 14),
+                        _RequestField(
+                          controller: _languageController,
+                          label: 'language'.tr(),
+                          icon: Icons.language_rounded,
+                          isDarkMode: isDarkMode,
+                        ),
+                        const SizedBox(height: 14),
+                        _RequestField(
+                          controller: _descriptionController,
+                          label: 'description'.tr(),
+                          icon: Icons.notes_rounded,
+                          isDarkMode: isDarkMode,
+                          maxLines: 4,
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -217,16 +233,28 @@ class _SongRequestPageState extends State<SongRequestPage> {
   String? _requiredValidator(String? value) =>
       value == null || value.trim().isEmpty ? 'required_fields'.tr() : null;
 
+  String? _yearValidator(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final year = int.tryParse(value.trim());
+    if (year == null || year < 1800 || year > 2100) {
+      return 'enter_year'.tr();
+    }
+    return null;
+  }
+
   Future<void> _submitRequest() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isSubmitting = true);
 
     final request = SongRequestModel(
       songTitle: _songController.text,
-      artist: _artistController.text,
-      notes: _urlController.text.trim().isEmpty
-          ? null
-          : 'Source link: ${_urlController.text.trim()}',
+      artistName: _artistController.text,
+      songLink: _optionalText(_urlController),
+      albumName: _optionalText(_albumController),
+      genre: _optionalText(_genreController),
+      releaseYear: int.tryParse(_yearController.text.trim()),
+      language: _optionalText(_languageController),
+      description: _optionalText(_descriptionController),
     );
     final created = await _service.createSongRequest(context, request);
     if (!mounted) return;
@@ -246,6 +274,11 @@ class _SongRequestPageState extends State<SongRequestPage> {
       Navigator.pop(context);
     }
   }
+
+  String? _optionalText(TextEditingController controller) {
+    final value = controller.text.trim();
+    return value.isEmpty ? null : value;
+  }
 }
 
 class _RequestField extends StatelessWidget {
@@ -256,6 +289,7 @@ class _RequestField extends StatelessWidget {
     required this.isDarkMode,
     this.validator,
     this.keyboardType,
+    this.maxLines = 1,
   });
 
   final TextEditingController controller;
@@ -264,12 +298,14 @@ class _RequestField extends StatelessWidget {
   final bool isDarkMode;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) => TextFormField(
         controller: controller,
         validator: validator,
         keyboardType: keyboardType,
+        maxLines: maxLines,
         style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
         decoration: InputDecoration(
           labelText: label,
