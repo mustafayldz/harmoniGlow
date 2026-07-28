@@ -57,6 +57,7 @@ class DrumKitLayout {
 /// 2) Lane order (left->right)
 /// ---------------------------------------------------------------------------
 const List<int> kLaneOrderToKitIndex = [1, 0, 3, 4, 7, 5, 6, 2];
+const List<int> kKitIndexToLanePosition = [1, 0, 7, 2, 3, 5, 6, 4];
 
 /// ---------------------------------------------------------------------------
 /// 3) Lane flash controller
@@ -65,7 +66,7 @@ class LaneFlashController extends ChangeNotifier {
   LaneFlashController() : v = Float32List(8);
   final Float32List v;
 
-  void decay(double dtMs) {
+  void advance(double dtMs, int flashMask, double flashMs) {
     bool changed = false;
     for (var i = 0; i < 8; i++) {
       final nv = v[i] - dtMs;
@@ -74,22 +75,64 @@ class LaneFlashController extends ChangeNotifier {
         v[i] = clamped;
         changed = true;
       }
+      if ((flashMask & (1 << i)) != 0 && v[i] != flashMs) {
+        v[i] = flashMs;
+        changed = true;
+      }
     }
     if (changed) notifyListeners();
-  }
-
-  void flashLane(int lane, double ms) {
-    if (lane < 0 || lane >= 8) return;
-    if (v[lane] != ms) {
-      v[lane] = ms;
-      notifyListeners();
-    }
   }
 
   void reset() {
     for (var i = 0; i < 8; i++) {
       v[i] = 0.0;
     }
+    notifyListeners();
+  }
+}
+
+class PlayerRenderQuality extends ChangeNotifier {
+  PlayerRenderQuality({required int lookaheadMs})
+      : _originalLookahead = lookaheadMs,
+        _lookaheadMs = lookaheadMs;
+
+  final int _originalLookahead;
+  bool _enableGlow = true;
+  int _maxNotesPerFrame = 900;
+  int _lookaheadMs;
+  int _targetFps = 60;
+
+  bool get enableGlow => _enableGlow;
+  int get maxNotesPerFrame => _maxNotesPerFrame;
+  int get lookaheadMs => _lookaheadMs;
+  int get targetFps => _targetFps;
+  double get frameIntervalMs => 1000 / _targetFps;
+
+  void useLowMode() {
+    if (_targetFps == 30 &&
+        !_enableGlow &&
+        _maxNotesPerFrame == 360 &&
+        _lookaheadMs <= 1400) {
+      return;
+    }
+    _targetFps = 30;
+    _enableGlow = false;
+    _maxNotesPerFrame = 360;
+    _lookaheadMs = math.min(_originalLookahead, 1400);
+    notifyListeners();
+  }
+
+  void useHighMode() {
+    if (_targetFps == 60 &&
+        _enableGlow &&
+        _maxNotesPerFrame == 900 &&
+        _lookaheadMs == _originalLookahead) {
+      return;
+    }
+    _targetFps = 60;
+    _enableGlow = true;
+    _maxNotesPerFrame = 900;
+    _lookaheadMs = _originalLookahead;
     notifyListeners();
   }
 }
@@ -196,7 +239,10 @@ class _NeonStagePainter extends CustomPainter {
       final baseR = layer == 0 ? 1.2 : 2.4;
 
       for (int i = 0; i < count; i++) {
-        final n = i + layer * 10000 + size.width.toInt() * 31 + size.height.toInt() * 17;
+        final n = i +
+            layer * 10000 +
+            size.width.toInt() * 31 +
+            size.height.toInt() * 17;
         final x = _rand01(n) * size.width;
         final y = _rand01(n + 999) * size.height;
 
@@ -230,7 +276,8 @@ class _NeonStagePainter extends CustomPainter {
   }
 
   void _ensureRoad(Size size) {
-    final key = _laneHash ^ (size.width.toInt() * 131) ^ (size.height.toInt() * 911);
+    final key =
+        _laneHash ^ (size.width.toInt() * 131) ^ (size.height.toInt() * 911);
     if (_roadPic != null && _roadSize == size && _roadKey == key) return;
 
     _roadSize = size;
@@ -351,9 +398,9 @@ class _NeonStagePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _NeonStagePainter old) => old._laneHash != _laneHash || old.dstRect != dstRect;
+  bool shouldRepaint(covariant _NeonStagePainter old) =>
+      old._laneHash != _laneHash || old.dstRect != dstRect;
 }
-
 
 /// ---------------------------------------------------------------------------
 /// 5) Notes + kit painter
@@ -369,11 +416,9 @@ class _NotesAndGlowPainter extends CustomPainter {
     required this.laneColors,
     required this.flashCtrl,
     required this.noteSprite,
-    required this.enableGlow,
-    required this.maxNotesPerFrame,
-    required this.dynamicLookahead,
+    required this.quality,
     required this.lanePaths,
-  }) : super(repaint: Listenable.merge([songMs, flashCtrl])) {
+  }) : super(repaint: Listenable.merge([songMs, flashCtrl, quality])) {
     _atlasPaint
       ..filterQuality = FilterQuality.none
       ..isAntiAlias = true;
@@ -387,9 +432,7 @@ class _NotesAndGlowPainter extends CustomPainter {
   final LaneFlashController flashCtrl;
   final ui.Image? noteSprite;
 
-  final bool enableGlow;
-  final int maxNotesPerFrame;
-  final int dynamicLookahead;
+  final PlayerRenderQuality quality;
 
   final List<LanePath> lanePaths; // indexed by LANE POS 0..7 (left->right)
 
@@ -446,12 +489,8 @@ class _NotesAndGlowPainter extends CustomPainter {
     return h;
   }
 
-  int _kitIndexToLanePos(int kitIndex) {
-    for (int i = 0; i < 8; i++) {
-      if (kLaneOrderToKitIndex[i] == kitIndex) return i;
-    }
-    return kitIndex.clamp(0, 7);
-  }
+  int _kitIndexToLanePos(int kitIndex) =>
+      kKitIndexToLanePosition[kitIndex.clamp(0, 7)];
 
   void _ensureLabelCache() {
     final needRebuild =
@@ -540,7 +579,10 @@ class _NotesAndGlowPainter extends CustomPainter {
       canvas.drawCircle(center, r, _fillPaint);
 
       final tp = _labelPainters![kitIndex];
-      tp.paint(canvas, Offset(center.dx - tp.width / 2, center.dy - tp.height / 2));
+      tp.paint(
+        canvas,
+        Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+      );
     }
 
     _baseKitPicture?.dispose();
@@ -548,8 +590,8 @@ class _NotesAndGlowPainter extends CustomPainter {
   }
 
   void _ensureAtlasBuffers(double spriteW, double spriteH) {
-    if (_rst == null || _cap < maxNotesPerFrame) {
-      _cap = maxNotesPerFrame;
+    if (_rst == null || _cap < quality.maxNotesPerFrame) {
+      _cap = quality.maxNotesPerFrame;
       _rst = Float32List(_cap * 4);
       _rects = Float32List(_cap * 4);
       _colors = Int32List(_cap);
@@ -573,7 +615,7 @@ class _NotesAndGlowPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final tNow = songMs.value;
-    final lookahead = dynamicLookahead;
+    final lookahead = quality.lookaheadMs;
 
     _ensureBaseKitPicture();
     if (_baseKitPicture != null) canvas.drawPicture(_baseKitPicture!);
@@ -584,7 +626,7 @@ class _NotesAndGlowPainter extends CustomPainter {
       _drawNotesFallback(canvas, tNow, lookahead);
     }
 
-    if (enableGlow) _paintHitGlows(canvas);
+    if (quality.enableGlow) _paintHitGlows(canvas);
   }
 
   void _paintHitGlows(Canvas canvas) {
@@ -640,7 +682,9 @@ class _NotesAndGlowPainter extends CustomPainter {
 
     int w = 0;
 
-    for (int i = idx; i < song.absT.length && w < maxNotesPerFrame; i++) {
+    for (int i = idx;
+        i < song.absT.length && w < quality.maxNotesPerFrame;
+        i++) {
       final t = song.absT[i];
       if (t > end) break;
 
@@ -657,7 +701,7 @@ class _NotesAndGlowPainter extends CustomPainter {
 
       for (int kitIndex = 0; kitIndex < 8; kitIndex++) {
         if ((mask & (1 << kitIndex)) == 0) continue;
-        if (w >= maxNotesPerFrame) break;
+        if (w >= quality.maxNotesPerFrame) break;
 
         final lanePos = _kitIndexToLanePos(kitIndex);
         final p = lanePaths[lanePos].at(progress);
@@ -683,22 +727,16 @@ class _NotesAndGlowPainter extends CustomPainter {
       }
     }
 
-    for (int j = w; j < _cap; j++) {
-      _colors![j] = 0;
-      final b = j * 4;
-      _rst![b + 0] = 0.0;
-      _rst![b + 1] = 0.0;
-      _rst![b + 2] = -999999.0;
-      _rst![b + 3] = -999999.0;
-    }
-
     if (w == 0) return;
 
+    final activeTransforms = Float32List.sublistView(_rst!, 0, w * 4);
+    final activeRects = Float32List.sublistView(_rects!, 0, w * 4);
+    final activeColors = Int32List.sublistView(_colors!, 0, w);
     canvas.drawRawAtlas(
       noteSprite!,
-      _rst!,
-      _rects!,
-      _colors,
+      activeTransforms,
+      activeRects,
+      activeColors,
       BlendMode.modulate,
       null,
       _atlasPaint,
@@ -715,6 +753,7 @@ class _NotesAndGlowPainter extends CustomPainter {
     final noteR = dstRect.width * 0.020;
     final paint = Paint()..isAntiAlias = true;
 
+    var drawn = 0;
     for (int i = idx; i < song.absT.length; i++) {
       final t = song.absT[i];
       if (t > end) break;
@@ -732,6 +771,7 @@ class _NotesAndGlowPainter extends CustomPainter {
 
       for (int kitIndex = 0; kitIndex < 8; kitIndex++) {
         if ((mask & (1 << kitIndex)) == 0) continue;
+        if (drawn >= quality.maxNotesPerFrame) return;
 
         final lanePos = _kitIndexToLanePos(kitIndex);
         final p = lanePaths[lanePos].at(progress);
@@ -748,6 +788,7 @@ class _NotesAndGlowPainter extends CustomPainter {
 
         paint.color = c.withValues(alpha: opacity);
         canvas.drawCircle(p, noteR, paint);
+        drawn++;
       }
     }
   }
@@ -757,9 +798,7 @@ class _NotesAndGlowPainter extends CustomPainter {
       old.song != song ||
       old.dstRect != dstRect ||
       old.noteSprite != noteSprite ||
-      old.enableGlow != enableGlow ||
-      old.maxNotesPerFrame != maxNotesPerFrame ||
-      old.dynamicLookahead != dynamicLookahead ||
+      old.quality != quality ||
       old.lanePaths != lanePaths ||
       !identical(old.laneColors, laneColors) ||
       old.flashCtrl != flashCtrl ||
@@ -834,20 +873,23 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   ui.Image? _noteSprite;
 
-  int _dynamicLookahead = 2000;
-  bool _enableGlow = true;
-  int _maxNotesPerFrame = 900;
-  int _overBudget = 0;
+  PlayerRenderQuality? _quality;
+  double _visualAccumMs = 0;
+  double _uiAccumMs = 0;
+  int _pendingFlashMask = 0;
+  int _slowFrameScore = 0;
+  int _stableFrameCount = 0;
 
   final SongV2Service _service = SongV2Service();
 
   // Bluetooth
-  final Set<int> _sentNoteIndices = {};
   BluetoothBloc? _bluetoothBloc;
 
   final List<_DrumSendInfo?> _drumSendCache =
       List<_DrumSendInfo?>.filled(8, null);
-  Future<void> _btSendChain = Future.value();
+  final SendData _sendData = SendData();
+  List<int>? _pendingBluetoothPayload;
+  bool _isBluetoothSending = false;
 
   // UI visibility control
   bool _showControls = true;
@@ -855,6 +897,11 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
   // Song intro overlay
   bool _showSongIntro = false;
+
+  int _profileFrameCount = 0;
+  int _profileSlowFrames = 0;
+  int _profileBuildMicros = 0;
+  int _profileRasterMicros = 0;
 
   @override
   void initState() {
@@ -868,15 +915,20 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     // Full screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
 
     _bluetoothBloc = context.read<BluetoothBloc>();
     _ticker = createTicker(_onTick);
+    if (kProfileMode) {
+      SchedulerBinding.instance.addTimingsCallback(_onFrameTimings);
+    }
 
     // ✅ Colors from DrumParts (NO static colors)
     _laneColors = List<Color>.generate(8, (i) => DrumParts.colorByKitIndex(i));
@@ -905,9 +957,38 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _songMsN.dispose();
     _playerMsN.dispose();
     _noteSprite?.dispose();
+    _quality?.dispose();
+    _pendingBluetoothPayload = null;
+    if (kProfileMode) {
+      SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings);
+    }
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
+  }
+
+  void _onFrameTimings(List<FrameTiming> timings) {
+    for (final timing in timings) {
+      final build = timing.buildDuration.inMicroseconds;
+      final raster = timing.rasterDuration.inMicroseconds;
+      _profileFrameCount++;
+      _profileBuildMicros += build;
+      _profileRasterMicros += raster;
+      if (build + raster > 16667) _profileSlowFrames++;
+    }
+    if (_profileFrameCount < 120) return;
+
+    debugPrint(
+      'PLAYER_PERF frames=$_profileFrameCount '
+      'slow=$_profileSlowFrames '
+      'buildAvg=${_profileBuildMicros ~/ _profileFrameCount}us '
+      'rasterAvg=${_profileRasterMicros ~/ _profileFrameCount}us '
+      'mode=${_quality?.targetFps ?? 60}fps',
+    );
+    _profileFrameCount = 0;
+    _profileSlowFrames = 0;
+    _profileBuildMicros = 0;
+    _profileRasterMicros = 0;
   }
 
   void _warmupDrumCache() {
@@ -936,9 +1017,13 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       }
 
       _song = s;
-      _dynamicLookahead = s.lookaheadMs;
+      _quality = PlayerRenderQuality(lookaheadMs: s.lookaheadMs);
+
+      // Build absolute note times before the first playable frame.
+      s.absT;
 
       _noteSprite = await _createNoteSpriteWaterDropReadable();
+      if (!mounted) return;
 
       if (s.source.type.toLowerCase() == 'youtube') {
         _ytController = YoutubePlayerController(
@@ -946,7 +1031,11 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
           flags: const YoutubePlayerFlags(
             autoPlay: false,
             hideControls: true,
+            hideThumbnail: true,
+            disableDragSeek: true,
             enableCaption: false,
+            useHybridComposition: false,
+            showLiveFullscreenButton: false,
           ),
         )..addListener(() {
             final ready = _ytController?.value.isReady ?? false;
@@ -957,7 +1046,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       }
 
       _playerMsN.value = _playerMs.round();
-      _songMsN.value = (_playerMs - s.syncMs).round();
+      _songMsN.value = (_playerMs - _song!.syncMs).round();
 
       setState(() {
         _isLoading = false;
@@ -980,24 +1069,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     final dtMs = (elapsed - last).inMicroseconds / 1000.0;
 
-    // perf adapt
-    const frameBudget = 16.7;
-    if (dtMs > frameBudget * 1.25) {
-      _overBudget++;
-      if (_overBudget >= 3) {
-        _enableGlow = false;
-        _dynamicLookahead = math.min(_dynamicLookahead, 1500);
-        _maxNotesPerFrame = math.min(_maxNotesPerFrame, 600);
-      }
-    } else {
-      _overBudget = 0;
-      if (!_enableGlow && dtMs < frameBudget * 0.85) _enableGlow = true;
-      if (_dynamicLookahead < _song!.lookaheadMs) {
-        _dynamicLookahead =
-            math.min(_dynamicLookahead + 50, _song!.lookaheadMs);
-      }
-      _maxNotesPerFrame = math.min(_maxNotesPerFrame + 40, 900);
-    }
+    _updateAdaptiveQuality(dtMs);
 
     // youtube sync only at 1.0 speed
     if (_ytController != null && _ytReady && _speed == 1.0) {
@@ -1018,38 +1090,122 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     final songMs = (_playerMs - _song!.syncMs).round();
 
-    _updateLaneHitsCursor(songMs);
-    _flashCtrl.decay(dtMs);
+    _pendingFlashMask |= _processNoteEvents(songMs);
+    _visualAccumMs += dtMs;
+    _uiAccumMs += dtMs;
 
     if (_playerMs >= _song!.durationMs) {
       _playerMs = _song!.durationMs.toDouble();
       _isPlaying = false;
       _lastElapsed = null;
       _ticker.stop();
+      _playerMsN.value = _playerMs.round();
+      _songMsN.value = (_playerMs - _song!.syncMs).round();
       if (_ytController != null && _ytReady) _ytController!.pause();
     }
 
-    _playerMsN.value = _playerMs.round();
-    _songMsN.value = songMs;
+    final quality = _quality;
+    final shouldRender = quality == null ||
+        _visualAccumMs >= quality.frameIntervalMs ||
+        !_isPlaying;
+    if (shouldRender) {
+      final visualDelta = _visualAccumMs;
+      _visualAccumMs = _isPlaying && quality != null
+          ? math.max(0, _visualAccumMs - quality.frameIntervalMs)
+          : 0;
+      _flashCtrl.advance(visualDelta, _pendingFlashMask, 180);
+      _pendingFlashMask = 0;
+      _songMsN.value = songMs;
+    }
+
+    if ((_showControls && _uiAccumMs >= 200) || !_isPlaying) {
+      _uiAccumMs = 0;
+      _playerMsN.value = _playerMs.round();
+    }
+  }
+
+  void _updateAdaptiveQuality(double frameMs) {
+    final quality = _quality;
+    if (quality == null) return;
+
+    if (quality.targetFps == 60) {
+      if (frameMs > 22) {
+        _slowFrameScore = math.min(_slowFrameScore + 2, 20);
+      } else {
+        _slowFrameScore = math.max(_slowFrameScore - 1, 0);
+      }
+      if (_slowFrameScore >= 12) {
+        quality.useLowMode();
+        _slowFrameScore = 0;
+        _stableFrameCount = 0;
+      }
+      return;
+    }
+
+    if (frameMs < 20) {
+      _stableFrameCount++;
+    } else {
+      _stableFrameCount = 0;
+    }
+    if (_stableFrameCount >= 600) {
+      quality.useHighMode();
+      _stableFrameCount = 0;
+    }
   }
 
   void _queueBluetoothSend(List<int> bytes) {
     final bloc = _bluetoothBloc;
     if (bloc == null || bloc.characteristic == null) return;
 
-    _btSendChain = _btSendChain.then((_) async {
-      final b = _bluetoothBloc;
-      if (b == null || b.characteristic == null) return;
-      await SendData().sendHexData(b, bytes);
-    });
+    _pendingBluetoothPayload =
+        _mergeBluetoothPayload(_pendingBluetoothPayload, bytes);
+    if (!_isBluetoothSending) unawaited(_drainBluetoothQueue());
   }
 
-  void _sendBluetoothSignals(int noteIndex, int laneMask) {
+  List<int> _mergeBluetoothPayload(List<int>? current, List<int> next) {
+    if (current == null || current.isEmpty) return List<int>.from(next);
+
+    final colorsByLed = <int, List<int>>{};
+    void addPayload(List<int> payload) {
+      for (var index = 0; index + 3 < payload.length; index += 4) {
+        colorsByLed[payload[index]] = [
+          payload[index + 1],
+          payload[index + 2],
+          payload[index + 3],
+        ];
+      }
+    }
+
+    addPayload(current);
+    addPayload(next);
+    final merged = <int>[];
+    for (final entry in colorsByLed.entries) {
+      merged
+        ..add(entry.key)
+        ..addAll(entry.value);
+    }
+    return merged;
+  }
+
+  Future<void> _drainBluetoothQueue() async {
+    if (_isBluetoothSending) return;
+    _isBluetoothSending = true;
+    try {
+      while (mounted && _pendingBluetoothPayload != null) {
+        final payload = _pendingBluetoothPayload!;
+        _pendingBluetoothPayload = null;
+        final bloc = _bluetoothBloc;
+        if (bloc == null || bloc.characteristic == null) break;
+        await _sendData.sendHexData(bloc, payload);
+      }
+    } finally {
+      _isBluetoothSending = false;
+    }
+  }
+
+  void _sendBluetoothSignals(int laneMask) {
     final bloc = _bluetoothBloc;
     if (bloc == null || bloc.characteristic == null) return;
-    if (_sentNoteIndices.contains(noteIndex)) return;
-
-    _sentNoteIndices.add(noteIndex);
 
     final data = <int>[];
     for (int lane = 0; lane < 8; lane++) {
@@ -1065,32 +1221,23 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     if (data.isNotEmpty) _queueBluetoothSend(data);
   }
 
-  void _updateLaneHitsCursor(int songMs) {
+  int _processNoteEvents(int songMs) {
     final s = _song;
-    if (s == null) return;
+    if (s == null) return 0;
     final absT = s.absT;
     final n = absT.length;
-    if (n == 0) return;
+    if (n == 0) return 0;
 
     final hitWindow = (s.hitMs / 2).round();
+    var flashMask = 0;
 
-    while (_hitCursor < n && absT[_hitCursor] < songMs - hitWindow) {
+    while (_hitCursor < n && absT[_hitCursor] <= songMs + hitWindow) {
+      final mask = s.m[_hitCursor];
+      _sendBluetoothSignals(mask);
+      flashMask |= mask;
       _hitCursor++;
     }
-
-    for (int i = _hitCursor; i < n && absT[i] <= songMs + hitWindow; i++) {
-      if ((absT[i] - songMs).abs() <= hitWindow) {
-        final mask = s.m[i];
-
-        _sendBluetoothSignals(i, mask);
-
-        for (int lane = 0; lane < 8; lane++) {
-          if ((mask & (1 << lane)) != 0) {
-            _flashCtrl.flashLane(lane, 180.0);
-          }
-        }
-      }
-    }
+    return flashMask;
   }
 
   Future<void> _togglePlay() async {
@@ -1102,7 +1249,6 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
         _playerMs = 0.0;
         _hitCursor = 0;
         _flashCtrl.reset();
-        _sentNoteIndices.clear();
         _playerMsN.value = 0;
         _songMsN.value = (-s.syncMs).round();
       }
@@ -1138,12 +1284,17 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       });
       _lastElapsed = null;
       _ticker.stop();
+      _playerMsN.value = _playerMs.round();
+      _songMsN.value = (_playerMs - s.syncMs).round();
       if (_ytController != null && _ytReady) _ytController!.pause();
     }
   }
 
   void _toggleControlsVisibility() {
     _hideControlsTimer?.cancel();
+    if (!_showControls) {
+      _playerMsN.value = _playerMs.round();
+    }
     setState(() => _showControls = !_showControls);
   }
 
@@ -1178,8 +1329,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _songMsN.value = (_playerMs - s.syncMs).round();
 
     // Reset hit cursor to find correct position
-    _hitCursor = _lowerBoundAbsT(s.absT, _songMsN.value);
-    _sentNoteIndices.clear();
+    final hitWindow = (s.hitMs / 2).round();
+    _hitCursor = _lowerBoundAbsT(s.absT, _songMsN.value - hitWindow);
 
     // Sync YouTube if playing at normal speed
     if (_ytController != null && _ytReady && _speed == 1.0) {
@@ -1241,7 +1392,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     );
   }
 
-  Widget _buildResponsiveCanvas(BuildContext context, BoxConstraints constraints) {
+  Widget _buildResponsiveCanvas(
+    BuildContext context,
+    BoxConstraints constraints,
+  ) {
     final s = _song;
     final screenWidth = constraints.maxWidth;
     final screenHeight = constraints.maxHeight;
@@ -1283,14 +1437,16 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       onTap: _toggleControlsVisibility,
       child: Stack(
         children: [
-          CustomPaint(
-            painter: _NeonStagePainter(
-              dstRect: dstRect,
-              roadTopY: roadTopY,
-              roadBottomY: roadBottomY,
-              lanePaths: lanePaths,
+          RepaintBoundary(
+            child: CustomPaint(
+              painter: _NeonStagePainter(
+                dstRect: dstRect,
+                roadTopY: roadTopY,
+                roadBottomY: roadBottomY,
+                lanePaths: lanePaths,
+              ),
+              child: const SizedBox.expand(),
             ),
-            child: const SizedBox.expand(),
           ),
 
           RepaintBoundary(
@@ -1302,9 +1458,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                 laneColors: _laneColors,
                 flashCtrl: _flashCtrl,
                 noteSprite: _noteSprite,
-                enableGlow: _enableGlow,
-                maxNotesPerFrame: _maxNotesPerFrame,
-                dynamicLookahead: _dynamicLookahead,
+                quality: _quality!,
                 lanePaths: lanePaths,
               ),
               isComplex: true,
@@ -1315,240 +1469,248 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
           if (_ytController != null)
             Positioned(
-            top: -1000,
-            child: SizedBox(
-              width: 1,
-              height: 1,
-              child: YoutubePlayer(
-                controller: _ytController!,
-                onReady: () {
-                  if (!_ytReady) setState(() => _ytReady = true);
-                },
-              ),
-            ),
-          ),
-
-        // Song Intro Overlay
-        Positioned(
-          top: progressY + (minDimension * 0.08),
-          left: horizontalPadding,
-          right: screenWidth * 0.15,
-          child: SongIntroOverlay(
-            title: s.title,
-            artist: s.artist,
-            bpm: s.bpm,
-            timeSignature: s.ts,
-            visible: _showSongIntro,
-            onHide: () {
-              if (mounted) setState(() => _showSongIntro = false);
-            },
-          ),
-        ),
-
-        // Back Button
-        Positioned(
-          top: topY,
-          left: horizontalPadding,
-          child: AnimatedOpacity(
-            opacity: _showControls ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: IgnorePointer(
-              ignoring: !_showControls,
-              child: _ResponsivePillButton(
-                icon: Icons.arrow_back,
-                size: buttonSize,
-                onTap: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ),
-
-        // Play/Pause Button
-        Positioned(
-          top: topY,
-          left: horizontalPadding + buttonSize + (minDimension * 0.02),
-          child: AnimatedOpacity(
-            opacity: _showControls ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: IgnorePointer(
-              ignoring: !_showControls,
-              child: _ResponsivePillButton(
-                icon: _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                size: buttonSize,
-                onTap: () => _togglePlay(),
-              ),
-            ),
-          ),
-        ),
-
-        // Timer Display
-        Positioned(
-          top: topY + (minDimension * 0.01),
-          right: horizontalPadding,
-          child: AnimatedOpacity(
-            opacity: _showControls ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: IgnorePointer(
-              ignoring: !_showControls,
-              child: ValueListenableBuilder<int>(
-                valueListenable: _playerMsN,
-                builder: (_, ms, __) => Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: minDimension * 0.025,
-                    vertical: minDimension * 0.02,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.40),
-                    borderRadius: BorderRadius.circular(minDimension * 0.035),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Text(
-                    '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: timerFontSize,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // Progress Bar (Seekable)
-        Positioned(
-          top: progressY + (minDimension * 0.02),
-          left: horizontalPadding,
-          right: horizontalPadding,
-          child: AnimatedOpacity(
-            opacity: _showControls ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: IgnorePointer(
-              ignoring: !_showControls,
-              child: ValueListenableBuilder<int>(
-                valueListenable: _playerMsN,
-                builder: (_, ms, __) {
-                  final progress = (ms / s.durationMs).clamp(0.0, 1.0).toDouble();
-                  return SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: progressHeight,
-                      thumbShape: RoundSliderThumbShape(
-                        enabledThumbRadius: progressHeight * 0.9,
-                      ),
-                      overlayShape: RoundSliderOverlayShape(
-                        overlayRadius: progressHeight * 2,
-                      ),
-                      activeTrackColor: Colors.yellowAccent.withValues(alpha: 0.9),
-                      inactiveTrackColor: Colors.white.withValues(alpha: 0.10),
-                      thumbColor: Colors.yellowAccent,
-                      overlayColor: Colors.yellowAccent.withValues(alpha: 0.2),
-                    ),
-                    child: Slider(
-                      value: progress,
-                      onChanged: (value) {
-                        _seekTo((value * s.durationMs).round());
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-
-        // Speed Slider
-        Positioned(
-          top: topY + (minDimension * 0.01),
-          left: 0,
-          right: 0,
-          child: AnimatedOpacity(
-            opacity: _showControls ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 300),
-            child: IgnorePointer(
-              ignoring: !_showControls,
-              child: Center(
-                child: GestureDetector(
-                  onTap: () {
-                    _speedSliderTimer?.cancel();
-                    setState(() => _showSpeedSlider = !_showSpeedSlider);
+              top: -1000,
+              child: SizedBox(
+                width: 1,
+                height: 1,
+                child: YoutubePlayer(
+                  controller: _ytController!,
+                  onReady: () {
+                    if (!_ytReady) setState(() => _ytReady = true);
                   },
-                  child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                padding: EdgeInsets.symmetric(
-                  horizontal: minDimension * 0.035,
-                  vertical: minDimension * 0.02,
                 ),
-                width: _showSpeedSlider
-                    ? (screenWidth * 0.82).clamp(200.0, 380.0)
-                    : (minDimension * 0.23).clamp(70.0, 100.0),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.50),
-                  borderRadius: BorderRadius.circular(minDimension * 0.045),
-                  border: Border.all(color: Colors.white24),
+              ),
+            ),
+
+          // Song Intro Overlay
+          Positioned(
+            top: progressY + (minDimension * 0.08),
+            left: horizontalPadding,
+            right: screenWidth * 0.15,
+            child: SongIntroOverlay(
+              title: s.title,
+              artist: s.artist,
+              bpm: s.bpm,
+              timeSignature: s.ts,
+              visible: _showSongIntro,
+              onHide: () {
+                if (mounted) setState(() => _showSongIntro = false);
+              },
+            ),
+          ),
+
+          // Back Button
+          Positioned(
+            top: topY,
+            left: horizontalPadding,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: _ResponsivePillButton(
+                  icon: Icons.arrow_back,
+                  size: buttonSize,
+                  onTap: () => Navigator.pop(context),
                 ),
-                child: _showSpeedSlider
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Speed',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: speedFontSize * 0.85,
-                            ),
-                          ),
-                          SizedBox(width: minDimension * 0.02),
-                          Expanded(
-                            child: SliderTheme(
-                              data: SliderTheme.of(context).copyWith(
-                                trackHeight:
-                                    (minDimension * 0.008).clamp(2.0, 4.0),
-                                thumbShape: RoundSliderThumbShape(
-                                  enabledThumbRadius:
-                                      (minDimension * 0.018).clamp(5.0, 9.0),
-                                ),
-                              ),
-                              child: Slider(
-                                value: _speed,
-                                min: 0.25,
-                                max: 2.0,
-                                divisions: 7,
-                                label: '${_speed.toStringAsFixed(2)}x',
-                                onChanged: _onSpeedChanged,
-                              ),
-                            ),
-                          ),
-                          Text(
-                            '${_speed.toStringAsFixed(2)}x',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: speedFontSize * 0.85,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        '${_speed.toStringAsFixed(2)}x',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: speedFontSize,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+            ),
+          ),
+
+          // Play/Pause Button
+          Positioned(
+            top: topY,
+            left: horizontalPadding + buttonSize + (minDimension * 0.02),
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: _ResponsivePillButton(
+                  icon: _isPlaying
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  size: buttonSize,
+                  onTap: () => _togglePlay(),
+                ),
+              ),
+            ),
+          ),
+
+          // Timer Display
+          Positioned(
+            top: topY + (minDimension * 0.01),
+            right: horizontalPadding,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _playerMsN,
+                  builder: (_, ms, __) => Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: minDimension * 0.025,
+                      vertical: minDimension * 0.02,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.40),
+                      borderRadius: BorderRadius.circular(minDimension * 0.035),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(
+                      '${_fmtMs(ms)} / ${_fmtMs(s.durationMs)}',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: timerFontSize,
+                        fontWeight: FontWeight.w700,
                       ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+
+          // Progress Bar (Seekable)
+          Positioned(
+            top: progressY + (minDimension * 0.02),
+            left: horizontalPadding,
+            right: horizontalPadding,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: ValueListenableBuilder<int>(
+                  valueListenable: _playerMsN,
+                  builder: (_, ms, __) {
+                    final progress =
+                        (ms / s.durationMs).clamp(0.0, 1.0).toDouble();
+                    return SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: progressHeight,
+                        thumbShape: RoundSliderThumbShape(
+                          enabledThumbRadius: progressHeight * 0.9,
+                        ),
+                        overlayShape: RoundSliderOverlayShape(
+                          overlayRadius: progressHeight * 2,
+                        ),
+                        activeTrackColor:
+                            Colors.yellowAccent.withValues(alpha: 0.9),
+                        inactiveTrackColor:
+                            Colors.white.withValues(alpha: 0.10),
+                        thumbColor: Colors.yellowAccent,
+                        overlayColor:
+                            Colors.yellowAccent.withValues(alpha: 0.2),
+                      ),
+                      child: Slider(
+                        value: progress,
+                        onChanged: (value) {
+                          _seekTo((value * s.durationMs).round());
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+
+          // Speed Slider
+          Positioned(
+            top: topY + (minDimension * 0.01),
+            left: 0,
+            right: 0,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      _speedSliderTimer?.cancel();
+                      setState(() => _showSpeedSlider = !_showSpeedSlider);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: minDimension * 0.035,
+                        vertical: minDimension * 0.02,
+                      ),
+                      width: _showSpeedSlider
+                          ? (screenWidth * 0.82).clamp(200.0, 380.0)
+                          : (minDimension * 0.23).clamp(70.0, 100.0),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.50),
+                        borderRadius:
+                            BorderRadius.circular(minDimension * 0.045),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: _showSpeedSlider
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Speed',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: speedFontSize * 0.85,
+                                  ),
+                                ),
+                                SizedBox(width: minDimension * 0.02),
+                                Expanded(
+                                  child: SliderTheme(
+                                    data: SliderTheme.of(context).copyWith(
+                                      trackHeight: (minDimension * 0.008)
+                                          .clamp(2.0, 4.0),
+                                      thumbShape: RoundSliderThumbShape(
+                                        enabledThumbRadius:
+                                            (minDimension * 0.018)
+                                                .clamp(5.0, 9.0),
+                                      ),
+                                    ),
+                                    child: Slider(
+                                      value: _speed,
+                                      min: 0.25,
+                                      max: 2.0,
+                                      divisions: 7,
+                                      label: '${_speed.toStringAsFixed(2)}x',
+                                      onChanged: _onSpeedChanged,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '${_speed.toStringAsFixed(2)}x',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: speedFontSize * 0.85,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              '${_speed.toStringAsFixed(2)}x',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: speedFontSize,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// ✅ Vertical lanes from top to drum centers (straight vertical)
   List<LanePath> _computePerspectiveLanePaths({
@@ -1669,7 +1831,8 @@ Future<ui.Image> _createNoteSpriteWaterDropReadable() async {
   const h = 160;
 
   final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()));
+  final canvas =
+      Canvas(recorder, Rect.fromLTWH(0, 0, w.toDouble(), h.toDouble()));
 
   final cx = w * 0.5;
   final headCy = h * 0.84;

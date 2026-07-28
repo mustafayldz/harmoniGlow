@@ -11,13 +11,13 @@ class SongRequestService {
 
   Future<SongRequestModel?> createSongRequest(
     BuildContext context,
-    SongRequestModel request,
+    SongRequestCreate request,
   ) async {
     final response = await RequestHelper.requestAsync(
       context,
       RequestType.post,
       _baseUrl,
-      request.toCreateJson(),
+      request.toJson(),
     );
     if (response == null || response.isEmpty) return null;
 

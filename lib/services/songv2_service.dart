@@ -3,7 +3,30 @@ import 'package:drumly/constants.dart';
 import 'package:drumly/models/songv2_model.dart';
 import 'package:drumly/shared/enums.dart';
 import 'package:drumly/shared/request_helper.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+Map<String, dynamic>? _decodeSongDetail(String response) {
+  final decoded = json.decode(response);
+  if (decoded is! Map ||
+      decoded['success'] != true ||
+      decoded['data'] is! Map) {
+    return null;
+  }
+
+  final data = Map<String, dynamic>.from(decoded['data'] as Map);
+  final rawDt = data['dt'];
+  if (rawDt is List) {
+    final absoluteTimes = List<int>.filled(rawDt.length, 0);
+    var time = 0;
+    for (var index = 0; index < rawDt.length; index++) {
+      time += (rawDt[index] as num).toInt();
+      absoluteTimes[index] = time;
+    }
+    data['_abs_t'] = absoluteTimes;
+  }
+  return data;
+}
 
 class SongV2Service {
   String getBaseUrlSongV2() => ApiServiceUrl.endpoint('songs');
@@ -78,14 +101,10 @@ class SongV2Service {
         return null;
       }
 
-      final decoded = json.decode(response);
-      if (decoded is Map &&
-          decoded['success'] == true &&
-          decoded['data'] != null) {
-        return SongV2Model.fromJson(decoded['data']);
-      }
-
-      return null;
+      final data = response.length >= 75000
+          ? await compute(_decodeSongDetail, response)
+          : _decodeSongDetail(response);
+      return data == null ? null : SongV2Model.fromJson(data);
     } catch (e) {
       debugPrint('Error in getSongV2ById: $e');
       return null;

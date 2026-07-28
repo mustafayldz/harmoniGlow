@@ -150,6 +150,7 @@ class _SongRequestPageState extends State<SongRequestPage> {
                           icon: Icons.link_rounded,
                           isDarkMode: isDarkMode,
                           keyboardType: TextInputType.url,
+                          validator: _urlValidator,
                         ),
                         const SizedBox(height: 14),
                         _RequestField(
@@ -188,6 +189,8 @@ class _SongRequestPageState extends State<SongRequestPage> {
                           icon: Icons.notes_rounded,
                           isDarkMode: isDarkMode,
                           maxLines: 4,
+                          maxLength: 2000,
+                          validator: _descriptionValidator,
                         ),
                         const SizedBox(height: 20),
                         SizedBox(
@@ -242,11 +245,25 @@ class _SongRequestPageState extends State<SongRequestPage> {
     return null;
   }
 
+  String? _urlValidator(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final uri = Uri.tryParse(value.trim());
+    final isValid = uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+    return isValid ? null : 'invalid_url'.tr();
+  }
+
+  String? _descriptionValidator(String? value) {
+    if (value == null || value.length <= 2000) return null;
+    return 'description_too_long'.tr();
+  }
+
   Future<void> _submitRequest() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isSubmitting = true);
 
-    final request = SongRequestModel(
+    final request = SongRequestCreate(
       songTitle: _songController.text,
       artistName: _artistController.text,
       songLink: _optionalText(_urlController),
@@ -290,6 +307,7 @@ class _RequestField extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.maxLines = 1,
+    this.maxLength,
   });
 
   final TextEditingController controller;
@@ -299,6 +317,7 @@ class _RequestField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final int maxLines;
+  final int? maxLength;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -306,6 +325,7 @@ class _RequestField extends StatelessWidget {
         validator: validator,
         keyboardType: keyboardType,
         maxLines: maxLines,
+        maxLength: maxLength,
         style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
         decoration: InputDecoration(
           labelText: label,

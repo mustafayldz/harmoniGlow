@@ -1,5 +1,5 @@
 import 'package:drumly/blocs/bluetooth/bluetooth_bloc.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class SendData {
   Future<void> sendHexData(BluetoothBloc bloc, List<int> payload) async {
@@ -13,13 +13,20 @@ class SendData {
 
     try {
       final fullPacket = [payload.length, ...payload];
-      final hexString = fullPacket
-          .map((e) => '0x${e.toRadixString(16).padLeft(2, '0').toUpperCase()}')
-          .toList();
-      debugPrint('📤 Sending data: $hexString');
+      if (kDebugMode) {
+        final hexString = fullPacket
+            .map(
+              (e) => '0x${e.toRadixString(16).padLeft(2, '0').toUpperCase()}',
+            )
+            .toList();
+        debugPrint('📤 Sending data: $hexString');
+      }
 
-      await characteristic.write(fullPacket);
-      debugPrint('✅ Data sent successfully.');
+      await characteristic.write(
+        fullPacket,
+        withoutResponse: characteristic.properties.writeWithoutResponse,
+      );
+      if (kDebugMode) debugPrint('✅ Data sent successfully.');
     } catch (error) {
       debugPrint('❗ Error sending data: $error');
     }

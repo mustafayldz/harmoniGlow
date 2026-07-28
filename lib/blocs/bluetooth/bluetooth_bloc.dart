@@ -195,7 +195,7 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothStateC> {
 
           if (service.uuid.toString().toLowerCase() == 'ffe0' &&
               c.uuid.toString().toLowerCase() == 'ffe1' &&
-              c.properties.write) {
+              (c.properties.write || c.properties.writeWithoutResponse)) {
             characteristic = c;
             _savedDeviceId = event.device.remoteId.str;
             await StorageService().saveDeviceId(event.device);

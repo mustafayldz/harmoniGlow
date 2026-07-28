@@ -21,7 +21,8 @@ class SongV2Model {
     this.isLocked = false,
     this.createdAt,
     this.updatedAt,
-  });
+    List<int>? precomputedAbsT,
+  }) : _absT = precomputedAbsT;
 
   factory SongV2Model.fromJson(Map<String, dynamic> json) => SongV2Model(
         id: json['_id'] as String?,
@@ -49,6 +50,7 @@ class SongV2Model {
         isLocked: json['is_locked'] as bool? ?? false,
         createdAt: json['created_at'] as String?,
         updatedAt: json['updated_at'] as String?,
+        precomputedAbsT: (json['_abs_t'] as List<dynamic>?)?.cast<int>(),
       );
 
   final String? id; // MongoDB ID
