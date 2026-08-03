@@ -36,13 +36,6 @@
 	<string>ca-app-pub-8628075241374370~7011684769</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSAllowsArbitraryLoads</key>
-	<true/>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>This app uses Bluetooth to connect to your drum training device and synchronize LED lights with beats in real time.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>

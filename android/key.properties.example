@@ -1,4 +1,5 @@
-storePassword=YOUR_STORE_PASSWORD
-keyPassword=YOUR_KEY_PASSWORD
+# Copy this file to android/key.properties and keep the real file private.
+storePassword=your-upload-keystore-password
+keyPassword=your-upload-key-password
 keyAlias=upload
-storeFile=/path/to/your/upload-keystore.jks
+storeFile=upload-keystore.jks

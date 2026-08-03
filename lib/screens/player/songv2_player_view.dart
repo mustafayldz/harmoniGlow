@@ -24,7 +24,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import 'package:drumly/constants.dart';
 import 'package:drumly/models/songv2_model.dart';
@@ -861,7 +861,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
   late final ValueNotifier<int> _songMsN = ValueNotifier<int>(0);
 
   YoutubePlayerController? _ytController;
+  StreamSubscription<YoutubePlayerValue>? _ytStateSubscription;
+  StreamSubscription<YoutubeVideoState>? _ytVideoStateSubscription;
   bool _ytReady = false;
+  int _ytPositionMs = 0;
   double _ytPollAccumMs = 0.0;
 
   late final LaneFlashController _flashCtrl = LaneFlashController();
@@ -952,7 +955,10 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     _speedSliderTimer?.cancel();
     _hideControlsTimer?.cancel();
     _ticker.dispose();
-    _ytController?.dispose();
+    _ytStateSubscription?.cancel();
+    _ytVideoStateSubscription?.cancel();
+    final ytController = _ytController;
+    if (ytController != null) unawaited(ytController.close());
     _flashCtrl.dispose();
     _songMsN.dispose();
     _playerMsN.dispose();
@@ -1026,23 +1032,29 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       if (!mounted) return;
 
       if (s.source.type.toLowerCase() == 'youtube') {
-        _ytController = YoutubePlayerController(
-          initialVideoId: s.source.videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            hideControls: true,
-            hideThumbnail: true,
-            disableDragSeek: true,
+        final controller = YoutubePlayerController.fromVideoId(
+          videoId: s.source.videoId,
+          params: const YoutubePlayerParams(
             enableCaption: false,
-            useHybridComposition: false,
-            showLiveFullscreenButton: false,
+            pointerEvents: PointerEvents.none,
+            showControls: false,
+            showVideoAnnotations: false,
+            strictRelatedVideos: true,
+            videoStateUpdateInterval: 350,
           ),
-        )..addListener(() {
-            final ready = _ytController?.value.isReady ?? false;
-            if (ready && !_ytReady) setState(() => _ytReady = true);
-          });
-
-        _ytController!.setPlaybackRate(_nearestPlaybackRate(_speed));
+        );
+        _ytController = controller;
+        _ytStateSubscription = controller.stream.listen((value) {
+          if (value.playerState != PlayerState.unknown &&
+              !_ytReady &&
+              mounted) {
+            setState(() => _ytReady = true);
+          }
+        });
+        _ytVideoStateSubscription = controller.videoStateStream.listen((state) {
+          _ytPositionMs = state.position.inMilliseconds;
+        });
+        unawaited(controller.setPlaybackRate(_nearestPlaybackRate(_speed)));
       }
 
       _playerMsN.value = _playerMs.round();
@@ -1075,7 +1087,7 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
     if (_ytController != null && _ytReady && _speed == 1.0) {
       _ytPollAccumMs += dtMs;
       if (_ytPollAccumMs >= 350.0) {
-        final posMs = _ytController!.value.position.inMilliseconds.toDouble();
+        final posMs = _ytPositionMs.toDouble();
         final diff = posMs - _playerMs;
         _playerMs += diff * 0.08;
         _ytPollAccumMs = 0.0;
@@ -1101,7 +1113,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _ticker.stop();
       _playerMsN.value = _playerMs.round();
       _songMsN.value = (_playerMs - _song!.syncMs).round();
-      if (_ytController != null && _ytReady) _ytController!.pause();
+      if (_ytController != null && _ytReady) {
+        unawaited(_ytController!.pauseVideo());
+      }
     }
 
     final quality = _quality;
@@ -1274,8 +1288,11 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _ticker.start();
 
       if (_ytController != null && _ytReady && _speed == 1.0) {
-        _ytController!.seekTo(Duration(milliseconds: _playerMs.round()));
-        _ytController!.play();
+        await _ytController!.seekTo(
+          seconds: _playerMs / 1000,
+          allowSeekAhead: true,
+        );
+        await _ytController!.playVideo();
       }
     } else {
       setState(() {
@@ -1286,7 +1303,9 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
       _ticker.stop();
       _playerMsN.value = _playerMs.round();
       _songMsN.value = (_playerMs - s.syncMs).round();
-      if (_ytController != null && _ytReady) _ytController!.pause();
+      if (_ytController != null && _ytReady) {
+        await _ytController!.pauseVideo();
+      }
     }
   }
 
@@ -1311,11 +1330,16 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     if (_ytController != null && _ytReady) {
       if (isNormalSpeed) {
-        _ytController!.seekTo(Duration(milliseconds: _playerMs.round()));
-        _ytController!.setPlaybackRate(1.0);
-        if (_isPlaying) _ytController!.play();
+        unawaited(
+          _ytController!.seekTo(
+            seconds: _playerMs / 1000,
+            allowSeekAhead: true,
+          ),
+        );
+        unawaited(_ytController!.setPlaybackRate(1.0));
+        if (_isPlaying) unawaited(_ytController!.playVideo());
       } else {
-        _ytController!.pause();
+        unawaited(_ytController!.pauseVideo());
       }
     }
   }
@@ -1334,7 +1358,12 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
 
     // Sync YouTube if playing at normal speed
     if (_ytController != null && _ytReady && _speed == 1.0) {
-      _ytController!.seekTo(Duration(milliseconds: _playerMs.round()));
+      unawaited(
+        _ytController!.seekTo(
+          seconds: _playerMs / 1000,
+          allowSeekAhead: true,
+        ),
+      );
     }
   }
 
@@ -1475,9 +1504,8 @@ class _SongV2PlayerViewState extends State<SongV2PlayerView>
                 height: 1,
                 child: YoutubePlayer(
                   controller: _ytController!,
-                  onReady: () {
-                    if (!_ytReady) setState(() => _ytReady = true);
-                  },
+                  autoFullScreen: false,
+                  enableFullScreenOnVerticalDrag: false,
                 ),
               ),
             ),
