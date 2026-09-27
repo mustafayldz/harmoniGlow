@@ -15,6 +15,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserService {
   static const _notificationDeviceIdKey = 'notification_device_id';
+  static const _pendingFCMTokenKey = 'pending_fcm_token';
+
+  Future<void> savePendingFCMToken(String token) async {
+    if (token.isEmpty) return;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_pendingFCMTokenKey, token);
+  }
+
+  Future<String?> getPendingFCMToken() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getString(_pendingFCMTokenKey);
+  }
+
+  Future<void> clearPendingFCMTokenIfMatches(String token) async {
+    final preferences = await SharedPreferences.getInstance();
+    if (preferences.getString(_pendingFCMTokenKey) == token) {
+      await preferences.remove(_pendingFCMTokenKey);
+    }
+  }
 
   Future<UserModel?> getUser(BuildContext context) async {
     final response = await RequestHelper.requestAsync(

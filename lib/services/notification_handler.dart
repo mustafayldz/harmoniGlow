@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drumly/services/firebase_notification_service.dart';
+import 'package:drumly/services/user_service.dart';
 import 'package:drumly/main.dart'; // navigatorKey için
 import 'package:drumly/provider/notification_provider.dart';
 import 'package:drumly/provider/user_provider.dart';
@@ -14,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class NotificationHandler {
   static final FirebaseNotificationService _notificationService =
       FirebaseNotificationService();
+  static bool _pendingTokenRetryScheduled = false;
 
   static void initialize() {
     // Notification callback'lerini ayarla
@@ -58,8 +60,8 @@ class NotificationHandler {
 
   /// FCM token yenileme
   static void _handleTokenRefresh(String token) {
-    // Token'ı sunucuya gönderin
-    _sendTokenToServer(token);
+    debugPrint('FCM token refresh received');
+    unawaited(_persistAndUploadRefreshedToken(token));
   }
 
   /// Navigation işlemi
@@ -83,15 +85,63 @@ class NotificationHandler {
   }
 
   /// Token'ı sunucuya gönder
-  static void _sendTokenToServer(String token) {
-    // Context'i al ve UserProvider'a gönder
-    final context = navigatorKey.currentContext;
-    if (context != null) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      if (userProvider.isLoggedIn) {
-        unawaited(userProvider.updateFCMToken(context, token));
-      }
+  static Future<void> _persistAndUploadRefreshedToken(String token) async {
+    final userService = UserService();
+    try {
+      await userService.savePendingFCMToken(token);
+    } catch (error) {
+      debugPrint('FCM token could not be saved for retry: $error');
+      return;
     }
+
+    final context = navigatorKey.currentContext;
+    if (context == null) {
+      debugPrint('FCM token upload deferred; token is pending');
+      _schedulePendingTokenRetry();
+      return;
+    }
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      if (!userProvider.isLoggedIn) {
+        debugPrint('FCM token upload deferred; token is pending');
+        return;
+      }
+
+      final uploaded = await userProvider.registerNotificationDevice(
+        context,
+        token: token,
+      );
+      if (!uploaded) {
+        debugPrint('FCM token upload deferred; token remains pending');
+      }
+    } catch (error) {
+      debugPrint('FCM token upload deferred; token remains pending: $error');
+    }
+  }
+
+  static void _schedulePendingTokenRetry() {
+    if (_pendingTokenRetryScheduled) return;
+    _pendingTokenRetryScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _pendingTokenRetryScheduled = false;
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        debugPrint('FCM token upload still deferred; token is pending');
+        return;
+      }
+
+      try {
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        if (userProvider.isLoggedIn) {
+          unawaited(userProvider.registerNotificationDevice(context));
+        } else {
+          debugPrint('FCM token upload deferred; token is pending');
+        }
+      } catch (error) {
+        debugPrint('FCM token upload deferred; token remains pending: $error');
+      }
+    });
   }
 
   /// Topic'lere abone ol

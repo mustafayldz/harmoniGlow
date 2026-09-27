@@ -125,17 +125,24 @@ class UserProvider with ChangeNotifier {
 
     try {
       final notificationService = FirebaseNotificationService();
-      final fcmToken =
-          token ?? await notificationService.getTokenForRegistration();
+      final pendingToken = await _userService.getPendingFCMToken();
+      final fcmToken = token ??
+          pendingToken ??
+          await notificationService.getTokenForRegistration();
 
       if (fcmToken != null && fcmToken.isNotEmpty) {
-        debugPrint('FCM token acquired');
-        debugPrint('POST /notification-devices');
+        await _userService.savePendingFCMToken(fcmToken);
+        debugPrint('FCM token upload attempted');
         final updated = await _userService.updateFCMToken(
           context,
           fcmToken: fcmToken,
         );
-        debugPrint('notification-device success: $updated');
+        if (updated) {
+          await _userService.clearPendingFCMTokenIfMatches(fcmToken);
+          debugPrint('FCM token upload succeeded');
+        } else {
+          debugPrint('FCM token upload deferred; token remains pending');
+        }
         return updated;
       }
       debugPrint('notification-device registration skipped: no FCM token');

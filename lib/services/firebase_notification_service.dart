@@ -472,6 +472,7 @@ class FirebaseNotificationService {
     try {
       // APNS token'ı al
       final apnsToken = await _firebaseMessaging.getAPNSToken();
+      debugPrint('APNs token: ${apnsToken ?? 'null'}');
 
       if (apnsToken != null) {
         developer.log(
